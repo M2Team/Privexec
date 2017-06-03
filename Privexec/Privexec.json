@@ -1,0 +1,7 @@
+{
+    "Command": [
+        "%SYSTEMROOT%\\System32\\WindowsPowerShell\\v1.0\\PowerShell.exe -NoProfile",
+        "cmd",
+        "notepad"
+    ]
+}
