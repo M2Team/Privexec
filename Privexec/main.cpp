@@ -4,6 +4,7 @@
 #include <Shlobj.h>
 #include <string>
 #include <fstream>
+#include <unordered_map>
 #include "resource.h"
 /// include json.hpp
 #include "json.hpp"
@@ -22,9 +23,10 @@ public:
 HINSTANCE g_hInst = nullptr;
 
 std::vector<std::pair<int, const wchar_t *>> users;
+std::unordered_map<std::wstring, std::wstring> Aliascmd;
 
 bool InitializeCombobox(HWND hCombox) {
-	int usersindex = 0;
+  int usersindex = 0;
   users.push_back(std::make_pair(kAppContainer, L"App Container"));
   users.push_back(std::make_pair(kMandatoryIntegrityControl,
                                  L"Mandatory Integrity Control"));
@@ -32,8 +34,8 @@ bool InitializeCombobox(HWND hCombox) {
   users.push_back(std::make_pair(kAdministrator, L"Administrator"));
   usersindex = (int)(users.size() - 1);
   if (IsUserAdministratorsGroup()) {
-	  users.push_back(std::make_pair(kSystem, L"System"));
-	  users.push_back(std::make_pair(kTrustedInstaller, L"TrustedInstaller"));
+    users.push_back(std::make_pair(kSystem, L"System"));
+    users.push_back(std::make_pair(kTrustedInstaller, L"TrustedInstaller"));
   }
   for (const auto &i : users) {
     ::SendMessage(hCombox, CB_ADDSTRING, 0, (LPARAM)i.second);
@@ -43,9 +45,18 @@ bool InitializeCombobox(HWND hCombox) {
 }
 
 bool Execute(int cur, const std::wstring &cmdline) {
+  auto iter = Aliascmd.find(cmdline);
+
   std::wstring xcmd(PATHCCH_MAX_CCH, L'\0');
-  auto N = ExpandEnvironmentStringsW(cmdline.data(), &xcmd[0], PATHCCH_MAX_CCH);
-  xcmd.resize(N-1);
+  DWORD N = 0;
+  if (iter != Aliascmd.end()) {
+    N = ExpandEnvironmentStringsW(iter->second.data(), &xcmd[0],
+                                  PATHCCH_MAX_CCH);
+  } else {
+    N = ExpandEnvironmentStringsW(cmdline.data(), &xcmd[0], PATHCCH_MAX_CCH);
+  }
+
+  xcmd.resize(N - 1);
   if (cur >= users.size()) {
     return false;
   }
@@ -94,20 +105,21 @@ bool InitializePrivApp(HWND hWnd) {
   }
   auto hCombox = GetDlgItem(hWnd, IDC_COMMAND_COMBOX);
   if (IsUserAdministratorsGroup()) {
-	  WCHAR title[256];
-	  auto N=GetWindowTextW(hWnd, title, ARRAYSIZE(title));
-	  wcscat_s(title, L" [Administrator]");
-	  SetWindowTextW(hWnd, title);
+    WCHAR title[256];
+    auto N = GetWindowTextW(hWnd, title, ARRAYSIZE(title));
+    wcscat_s(title, L" [Administrator]");
+    SetWindowTextW(hWnd, title);
   }
   try {
     std::ifstream fs;
     fs.open(file);
     auto json = nlohmann::json::parse(fs);
-    auto cmds = json["Command"];
+    auto cmds = json["Alias"];
     for (auto &cmd : cmds) {
-      auto str = cmd.get<std::string>();
-      auto wstr = utf8towide(cmd.get<std::string>());
-      ::SendMessage(hCombox, CB_ADDSTRING, 0, (LPARAM)wstr.data());
+      auto name = utf8towide(cmd["Name"].get<std::string>());
+      auto command = utf8towide(cmd["Command"].get<std::string>());
+      Aliascmd.insert(std::make_pair(name, command));
+      ::SendMessage(hCombox, CB_ADDSTRING, 0, (LPARAM)name.data());
     }
   } catch (const std::exception &e) {
     OutputDebugStringA(e.what());
@@ -149,8 +161,9 @@ INT_PTR WINAPI ApplicationProc(HWND hWndDlg, UINT message, WPARAM wParam,
       auto N =
           SendMessage(GetDlgItem(hWndDlg, IDC_USER_COMBOX), CB_GETCURSEL, 0, 0);
       if (!Execute((int)N, cmd)) {
-		  ErrorMessage err(GetLastError());
-		  MessageBoxW(hWndDlg,err.message(), L"Privexec create process failed", MB_OK | MB_ICONERROR);
+        ErrorMessage err(GetLastError());
+        MessageBoxW(hWndDlg, err.message(), L"Privexec create process failed",
+                    MB_OK | MB_ICONERROR);
       }
     } break;
     case IDB_EXIT_BUTTON:
