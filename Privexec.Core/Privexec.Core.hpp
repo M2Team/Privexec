@@ -18,6 +18,12 @@ enum PrivexecUsersLevel {
 	kTrustedInstaller
 };
 
+BOOL EnableDebugPrivilege(void);
+HANDLE OpenSystemProcessToken();
+bool GetCurrentSessionId(DWORD &dwSessionId);
+bool PrivAdjustTokenPrivileges(HANDLE hExistingToken, bool enable);
+bool ImpersonateAsSystem();
+
 bool CreateTiProcess(LPWSTR pszCmdline, DWORD &dwProcessId);
 bool CreateSystemProcess(LPWSTR pszCmdline,DWORD &dwProcessId);
 bool CreateAdministratorsProcess(LPWSTR pszCmdline, DWORD &dwProcessId);

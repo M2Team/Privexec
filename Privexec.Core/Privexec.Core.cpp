@@ -60,6 +60,8 @@ bool PrivCreateProcess(int level, LPWSTR pszCmdline, DWORD &dwProcessId) {
 		return CreateAdministratorsProcess(pszCmdline, dwProcessId);
 	case kSystem:
 		return CreateSystemProcess(pszCmdline, dwProcessId);
+	case kTrustedInstaller:
+		return CreateTiProcess(pszCmdline, dwProcessId);
 	default:
 		break;
 	}

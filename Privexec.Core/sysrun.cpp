@@ -1,6 +1,7 @@
 #include "stdafx.h"
 #include <WtsApi32.h>
 #include <cstdio>
+#include "Privexec.Core.hpp"
 
 BOOL IsSystemSid(PSID sid) {
 	return ::IsWellKnownSid(sid, WinLocalSystemSid);
@@ -11,23 +12,32 @@ BOOL IsSystemSid(PSID sid) {
 HANDLE OpenSystemProcessToken() {
 	PWTS_PROCESS_INFO pInfo;
 	DWORD count;
+	DWORD dwSessionId;
+	if (!GetCurrentSessionId(dwSessionId)) {
+		return INVALID_HANDLE_VALUE;
+	}
 	if (!::WTSEnumerateProcesses(WTS_CURRENT_SERVER_HANDLE, 0, 1, &pInfo, &count)) {
 		printf("Error enumerating processes (are you running elevated?) (error=%d)\n", ::GetLastError());
-		return nullptr;
+		return INVALID_HANDLE_VALUE;
 	}
 
-	HANDLE hToken{};
-	for (DWORD i = 0; i < count && !hToken; i++) {
-		if (pInfo[i].SessionId == 0 && IsSystemSid(pInfo[i].pUserSid)) {
-			auto hProcess = ::OpenProcess(PROCESS_QUERY_INFORMATION, FALSE, pInfo[i].ProcessId);
+	HANDLE hExistingToken = nullptr;
+	HANDLE hToken = INVALID_HANDLE_VALUE;
+	for (DWORD i = 0; i < count && !hExistingToken; i++) {
+		if (pInfo[i].SessionId == dwSessionId && IsSystemSid(pInfo[i].pUserSid)) {
+			auto hProcess = ::OpenProcess(MAXIMUM_ALLOWED, FALSE, pInfo[i].ProcessId);
 			if (hProcess) {
-				::OpenProcessToken(hProcess, TOKEN_DUPLICATE | TOKEN_ASSIGN_PRIMARY | TOKEN_QUERY | TOKEN_IMPERSONATE, &hToken);
+				::OpenProcessToken(hProcess,MAXIMUM_ALLOWED, &hExistingToken);
 				::CloseHandle(hProcess);
 			}
 		}
 	}
 
 	::WTSFreeMemory(pInfo);
+	if (hExistingToken != nullptr) {
+		DuplicateTokenEx(hExistingToken, MAXIMUM_ALLOWED, nullptr, SecurityIdentification, TokenPrimary,&hToken);
+		CloseHandle(hExistingToken);
+	}
 	return hToken;
 }
 
