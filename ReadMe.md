@@ -34,11 +34,16 @@ wsudo alias ? working in progress
 
 ## Screenshot
 
-![image](images/admin.png)
+![ui](images/admin.png)
+
+
+Alias:
+
+![alias](images/alias.png)
 
 wsudo:
 
-![image](images/wsudo.png)
+![wsudo](images/wsudo.png)
 
 ## LICENSE
 
