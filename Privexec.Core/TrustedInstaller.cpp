@@ -200,8 +200,8 @@ NSudoDuplicateSystemToken(_In_ DWORD dwDesiredAccess,
     return false;
   }
   return NSudoDuplicateProcessToken(dwWinLogonPID, dwDesiredAccess,
-                                      lpTokenAttributes, ImpersonationLevel,
-                                      TokenType, phToken);
+                                    lpTokenAttributes, ImpersonationLevel,
+                                    TokenType, phToken);
 }
 
 BOOL WINAPI NSudoImpersonateAsSystem() {
