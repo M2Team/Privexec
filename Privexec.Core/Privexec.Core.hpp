@@ -2,9 +2,9 @@
 #define PRIVEXEC_CORE_HPP
 #pragma once
 
-#ifndef _INC_WINDOWS
+#ifndef _WINDOWS_
 #ifndef WIN32_LEAN_AND_MEAN
-#define WIN32_LEAN_AND_MEAN     // 从 Windows 头中排除极少使用的资料
+#define WIN32_LEAN_AND_MEAN     // 
 #endif
 #include <Windows.h>
 #endif

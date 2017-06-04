@@ -2,6 +2,8 @@
 #define WIN32_LEAN_AND_MEAN // Exclude rarely-used stuff from Windows headers
 // Windows Header Files:
 #include <windows.h>
+#include "../Privexec.Core/Privexec.Core.hpp"
+#include "../Privexec.Console/Privexec.Console.hpp"
 
 class ArgvBuffer {
 public:
@@ -70,6 +72,7 @@ private:
 int wmain(int argc, wchar_t **argv) {
   /// wsudo -U=user
   auto Args = GetCommandLineW();
-  // SetConsoleTitleW()
+  console::Print(console::fc::Cyan, L"%s Cyan\n", argv[0]);
+  console::Print(console::fc::Red, L"%s Read\n", argv[0]);
   return 0;
 }

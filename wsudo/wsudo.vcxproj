@@ -152,6 +152,9 @@
     <ResourceCompile Include="wsudo.rc" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\Privexec.Console\Privexec.Console.vcxproj">
+      <Project>{7f8a8206-9146-4f3a-85bd-3344a8f78195}</Project>
+    </ProjectReference>
     <ProjectReference Include="..\Privexec.Core\Privexec.Core.vcxproj">
       <Project>{f4d12ff3-f5eb-42d8-901a-b2fce4ae48fc}</Project>
     </ProjectReference>
