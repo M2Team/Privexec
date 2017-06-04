@@ -2,6 +2,7 @@
 #define WIN32_LEAN_AND_MEAN // Exclude rarely-used stuff from Windows headers
 // Windows Header Files:
 #include <windows.h>
+#include <unordered_map>
 #include "../Privexec.Core/Privexec.Core.hpp"
 #include "../Privexec.Console/Privexec.Console.hpp"
 
@@ -69,10 +70,139 @@ private:
   std::wstring argv_;
 };
 
-int wmain(int argc, wchar_t **argv) {
-  /// wsudo -U=user
-  auto Args = GetCommandLineW();
-  console::Print(console::fc::Cyan, L"%s Cyan\n", argv[0]);
-  console::Print(console::fc::Red, L"%s Read\n", argv[0]);
+bool CreateProcessInternal(int level, int Argc, wchar_t **Argv) {
+  ArgvBuffer argb;
+  argb.assign(Argv[0]);
+  for (int i = 1; i < Argc; i++) {
+    argb.append(Argv[i]);
+  }
+  DWORD dwProcessId;
+  console::Print(console::fc::Yellow, L"Command: %s\n", argb.cmdline());
+  if (PrivCreateProcess(level, argb.cmdline(), dwProcessId)) {
+    console::Print(console::fc::Green, L"new process is running: %d\n",
+                   dwProcessId);
+    return true;
+  }
+  ErrorMessage err(GetLastError());
+  console::Print(console::fc::Red, L"create process failed: %s\n",
+                 err.message());
+  return false;
+}
+
+inline bool IsArg(const wchar_t *candidate, const wchar_t *longname) {
+  if (wcscmp(candidate, longname) == 0)
+    return true;
+  return false;
+}
+
+inline bool IsArg(const wchar_t *candidate, const wchar_t *shortname,
+                  const wchar_t *longname) {
+  if (wcscmp(candidate, shortname) == 0 ||
+      (longname != nullptr && wcscmp(candidate, longname) == 0))
+    return true;
+  return false;
+}
+
+inline bool IsArg(const wchar_t *candidate, const wchar_t *longname, size_t n,
+                  const wchar_t **off) {
+  auto l = wcslen(candidate);
+  if (l < n)
+    return false;
+  if (wcsncmp(candidate, longname, n) == 0) {
+    if (l > n && candidate[n] == '=') {
+      *off = candidate + n + 1;
+    } else {
+      *off = nullptr;
+    }
+    return true;
+  }
+  return false;
+}
+
+int SearchUser(const wchar_t *user) {
+  std::unordered_map<std::wstring, int> users = {
+      {L"a", kAppContainer}, {L"m", kMandatoryIntegrityControl},
+      {L"u", kUACElevated},  {L"A", kAdministrator},
+      {L"s", kSystem},       {L"t", kTrustedInstaller}};
+  auto iter = users.find(user);
+  if (iter != users.end()) {
+    return iter->second;
+  }
+  return -1;
+}
+
+const wchar_t *kUsage = LR"(wsudo execute some app
+usage: wsudo args command ....
+  -v|--version   print version and exit
+  -h|--help      print help information and exit
+  -u|--user      use user level (example -u=a|-u a)
+users:
+   a   AppContainer
+   m   Mandatory Integrity Control
+   u   UAC No Elevated (default)
+   A   Administrator
+   s   System
+   t   TrustedInstaller
+)";
+
+int wmain(int argc, const wchar_t *argv[]) {
+  if (argc <= 1) {
+    console::Print(console::fc::LightRed, L"usage: wsudo args");
+    return 1;
+  }
+  auto Arg = argv[1];
+  if (IsArg(Arg, L"-v", L"--version")) {
+    console::Print(console::fc::Cyan, L"wsudo 1.0\n");
+    return 0;
+  }
+  if (IsArg(Arg, L"-h", L"--help")) {
+    console::Print(console::fc::Cyan, kUsage);
+    return 0;
+  }
+  int index = 1;
+  auto Argv = argv + 1;
+  int level = kUACElevated;
+  const wchar_t *Argoff = nullptr;
+  if (IsArg(Arg, L"--user", 6, &Argoff)) {
+    if (!Argoff) {
+      if (argc < 3) {
+        console::Print(console::fc::Red, L"Invalid Argument: %s\n", Arg);
+        return 1;
+      }
+      Argoff = argv[2];
+      index = 3;
+    } else {
+      index = 2;
+    }
+  } else if (IsArg(Arg, L"-u", 2, &Argoff)) {
+    if (!Argoff) {
+      if (argc < 3) {
+        console::Print(console::fc::Red, L"Invalid Argument: %s\n", Arg);
+        return 1;
+      }
+      Argoff = argv[2];
+      index = 3;
+    } else {
+      index = 2;
+    }
+  } else if (Arg[0] == L'-') {
+    console::Print(console::fc::Red, L"Invalid Argument: %s\n", Arg);
+    return 1;
+  }
+  if (Argoff) {
+    level = SearchUser(Argoff);
+    if (level == -1) {
+      console::Print(console::fc::Red, L"Invalid Argument: %s\n", Argoff);
+      return 1;
+    }
+  }
+  if (argc == index) {
+	  console::Print(console::fc::Red, L"Invalid Argument: %s\n", GetCommandLineW());
+	  return 1;
+  }
+  if (!CreateProcessInternal(level, argc - index,
+                             const_cast<wchar_t **>(argv + index))) {
+    return 1;
+  }
   return 0;
 }

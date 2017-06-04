@@ -43,7 +43,7 @@ bool CreateAdministratorsProcess(LPWSTR pszCmdline, DWORD &dwProcessId) {
 	info.cbSize = sizeof(info);
 	info.hwnd = NULL;
 	info.nShow = SW_SHOWNORMAL;
-	info.fMask = SEE_MASK_DEFAULT;
+	info.fMask = SEE_MASK_DEFAULT | SEE_MASK_NOCLOSEPROCESS;
 	info.lpDirectory = nullptr;
 	auto bResult = ShellExecuteExW(&info);
 	if (bResult) {
