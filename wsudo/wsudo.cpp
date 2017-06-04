@@ -12,9 +12,9 @@ public:
   Arguments() : argv_(4096, L'\0') {}
   Arguments &assign(const wchar_t *app) {
     std::wstring realcmd(0x8000, L'\0');
-	//// N include terminating null character 
+    //// N include terminating null character
     auto N = ExpandEnvironmentStringsW(app, &realcmd[0], 0x8000);
-    realcmd.resize(N-1);
+    realcmd.resize(N - 1);
     std::wstring buf;
     bool needwarp = false;
     for (auto iter = realcmd.begin(); iter != realcmd.end(); iter++) {
@@ -77,8 +77,9 @@ bool CreateProcessInternal(int level, int Argc, wchar_t **Argv) {
     argb.append(Argv[i]);
   }
   DWORD dwProcessId;
-  console::Print(console::fc::Yellow, L"Command: %s\n",argb.str());
-  if (PrivCreateProcess(level, const_cast<LPWSTR>(argb.str().data()), dwProcessId)) {
+  console::Print(console::fc::Yellow, L"Command: %s\n", argb.str());
+  if (PrivCreateProcess(level, const_cast<LPWSTR>(argb.str().data()),
+                        dwProcessId)) {
     console::Print(console::fc::Green, L"new process is running: %d\n",
                    dwProcessId);
     return true;
@@ -158,7 +159,7 @@ int wmain(int argc, const wchar_t *argv[]) {
     return 0;
   }
   if (IsArg(Arg, L"-h", L"--help")) {
-    console::Print(console::fc::Cyan,L"%s",kUsage);
+    console::Print(console::fc::Cyan, L"%s", kUsage);
     return 0;
   }
   int index = 1;
@@ -199,8 +200,9 @@ int wmain(int argc, const wchar_t *argv[]) {
     }
   }
   if (argc == index) {
-	  console::Print(console::fc::Red, L"Invalid Argument: %s\n", GetCommandLineW());
-	  return 1;
+    console::Print(console::fc::Red, L"Invalid Argument: %s\n",
+                   GetCommandLineW());
+    return 1;
   }
   if (!CreateProcessInternal(level, argc - index,
                              const_cast<wchar_t **>(argv + index))) {
