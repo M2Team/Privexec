@@ -38,5 +38,14 @@
     <ClCompile Include="TrustedInstaller.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="LowUserAccess.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="AppContainers.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="NoElevated.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>

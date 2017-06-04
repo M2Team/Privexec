@@ -12,7 +12,7 @@ bool CreateAdministratorsProcess(LPWSTR pszCmdline, DWORD &dwProcessId) {
 		PROCESS_INFORMATION pi;
 		ZeroMemory(&pi, sizeof(pi));
 		auto bResult = CreateProcessW(nullptr, pszCmdline, nullptr, nullptr, FALSE,
-			CREATE_UNICODE_ENVIRONMENT, nullptr, nullptr, &si, &pi);
+			0, nullptr, nullptr, &si, &pi);
 		if (bResult) {
 			dwProcessId = pi.dwProcessId;
 			CloseHandle(pi.hThread);
@@ -56,6 +56,12 @@ bool CreateAdministratorsProcess(LPWSTR pszCmdline, DWORD &dwProcessId) {
 
 bool PrivCreateProcess(int level, LPWSTR pszCmdline, DWORD &dwProcessId) {
 	switch (level) {
+	case kAppContainer:
+		return CreateAppContainerProcess(pszCmdline, dwProcessId);
+	case kUACElevated:
+		return CreateNoElevatedProcess(pszCmdline, dwProcessId);
+	case kMandatoryIntegrityControl:
+		return CreateLowlevelProcess(pszCmdline, dwProcessId);
 	case kAdministrator:
 		return CreateAdministratorsProcess(pszCmdline, dwProcessId);
 	case kSystem:

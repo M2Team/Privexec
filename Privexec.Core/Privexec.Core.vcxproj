@@ -129,6 +129,9 @@
     <ClInclude Include="targetver.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="AppContainers.cpp" />
+    <ClCompile Include="LowUserAccess.cpp" />
+    <ClCompile Include="NoElevated.cpp" />
     <ClCompile Include="Privexec.Core.cpp" />
     <ClCompile Include="stdafx.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>

@@ -21,12 +21,13 @@ enum PrivexecUsersLevel {
 BOOL EnableDebugPrivilege(void);
 HANDLE OpenSystemProcessToken();
 bool GetCurrentSessionId(DWORD &dwSessionId);
-bool PrivAdjustTokenPrivileges(HANDLE hExistingToken, bool enable);
-bool ImpersonateAsSystem();
 
-bool CreateTiProcess(LPWSTR pszCmdline, DWORD &dwProcessId);
-bool CreateSystemProcess(LPWSTR pszCmdline,DWORD &dwProcessId);
+bool CreateAppContainerProcess(LPWSTR pszComline, DWORD &dwProcessId);
+bool CreateLowlevelProcess(LPWSTR pszCmdline, DWORD &dwProcessId);
+bool CreateNoElevatedProcess(LPWSTR pszCmdline, DWORD &dwProcessId);
 bool CreateAdministratorsProcess(LPWSTR pszCmdline, DWORD &dwProcessId);
+bool CreateSystemProcess(LPWSTR pszCmdline, DWORD &dwProcessId);
+bool CreateTiProcess(LPWSTR pszCmdline, DWORD &dwProcessId);
 bool PrivCreateProcess(int level, LPWSTR pszCmdline, DWORD &dwProcessId);
 
 class ErrorMessage {
