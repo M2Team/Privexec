@@ -45,7 +45,7 @@ bool InitializeCombobox(HWND hCombox) {
 bool Execute(int cur, const std::wstring &cmdline) {
   std::wstring xcmd(PATHCCH_MAX_CCH, L'\0');
   auto N = ExpandEnvironmentStringsW(cmdline.data(), &xcmd[0], PATHCCH_MAX_CCH);
-  xcmd.resize(N);
+  xcmd.resize(N-1);
   if (cur >= users.size()) {
     return false;
   }

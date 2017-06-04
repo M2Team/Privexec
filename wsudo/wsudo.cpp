@@ -3,16 +3,18 @@
 // Windows Header Files:
 #include <windows.h>
 #include <unordered_map>
+#include <iostream>
 #include "../Privexec.Core/Privexec.Core.hpp"
 #include "../Privexec.Console/Privexec.Console.hpp"
 
-class ArgvBuffer {
+class Arguments {
 public:
-  ArgvBuffer() : argv_(4096, L'\0') {}
-  ArgvBuffer &assign(const wchar_t *app) {
+  Arguments() : argv_(4096, L'\0') {}
+  Arguments &assign(const wchar_t *app) {
     std::wstring realcmd(0x8000, L'\0');
+	//// N include terminating null character 
     auto N = ExpandEnvironmentStringsW(app, &realcmd[0], 0x8000);
-    realcmd.resize(N);
+    realcmd.resize(N-1);
     std::wstring buf;
     bool needwarp = false;
     for (auto iter = realcmd.begin(); iter != realcmd.end(); iter++) {
@@ -37,7 +39,7 @@ public:
     }
     return *this;
   }
-  ArgvBuffer &append(const wchar_t *cmd) {
+  Arguments &append(const wchar_t *cmd) {
     std::wstring buf;
     bool needwarp = false;
     auto end = cmd + wcslen(cmd);
@@ -50,7 +52,6 @@ public:
       case L' ':
       case L'\t':
         needwarp = true;
-        break;
       default:
         buf.push_back(*iter);
         break;
@@ -63,22 +64,21 @@ public:
     }
     return *this;
   }
-  std::wstring &str() { return argv_; }
-  LPWSTR cmdline() { return &argv_[0]; }
+  const std::wstring &str() { return argv_; }
 
 private:
   std::wstring argv_;
 };
 
 bool CreateProcessInternal(int level, int Argc, wchar_t **Argv) {
-  ArgvBuffer argb;
+  Arguments argb;
   argb.assign(Argv[0]);
   for (int i = 1; i < Argc; i++) {
     argb.append(Argv[i]);
   }
   DWORD dwProcessId;
-  console::Print(console::fc::Yellow, L"Command: %s\n", argb.cmdline());
-  if (PrivCreateProcess(level, argb.cmdline(), dwProcessId)) {
+  console::Print(console::fc::Yellow, L"Command: %s\n",argb.str());
+  if (PrivCreateProcess(level, const_cast<LPWSTR>(argb.str().data()), dwProcessId)) {
     console::Print(console::fc::Green, L"new process is running: %d\n",
                    dwProcessId);
     return true;
@@ -143,6 +143,8 @@ users:
    A   Administrator
    s   System
    t   TrustedInstaller
+Example:
+   wsudo --user=A "%SYSTEMROOT%/System32/WindowsPowerShell/v1.0/powershell.exe" -NoProfile
 )";
 
 int wmain(int argc, const wchar_t *argv[]) {
@@ -156,7 +158,7 @@ int wmain(int argc, const wchar_t *argv[]) {
     return 0;
   }
   if (IsArg(Arg, L"-h", L"--help")) {
-    console::Print(console::fc::Cyan, kUsage);
+    console::Print(console::fc::Cyan,L"%s",kUsage);
     return 0;
   }
   int index = 1;
