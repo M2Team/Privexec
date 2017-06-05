@@ -132,7 +132,6 @@ bool IsWindowsConhost(HANDLE hConsole, bool &isvt) {
   //// VT module
   if ((mode & ENABLE_VIRTUAL_TERMINAL_PROCESSING) != 0) {
     isvt = true;
-    return false;
   }
   return true;
 }
@@ -152,10 +151,6 @@ public:
     bool isvt = false;
     if (IsWindowsConhost(hConsole, isvt)) {
       impl = WriteConhost;
-      return;
-    }
-    if (isvt) {
-      impl = WriteVTConsole;
       return;
     }
     impl = WriteTerminals;
