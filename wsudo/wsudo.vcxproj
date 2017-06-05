@@ -159,6 +159,9 @@
       <Project>{f4d12ff3-f5eb-42d8-901a-b2fce4ae48fc}</Project>
     </ProjectReference>
   </ItemGroup>
+  <ItemGroup>
+    <None Include="wsudo.json" />
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>

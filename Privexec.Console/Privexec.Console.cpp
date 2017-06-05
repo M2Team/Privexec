@@ -11,6 +11,16 @@ std::string wchar2utf8(const wchar_t *buf, size_t len) {
   return str;
 }
 
+std::string wchar2acp(const wchar_t *buf, size_t len) {
+  std::string str;
+  static auto cp = GetConsoleCP();
+  auto N =
+      WideCharToMultiByte(cp, 0, buf, (int)len, nullptr, 0, nullptr, nullptr);
+  str.resize(N);
+  WideCharToMultiByte(cp, 0, buf, (int)len, &str[0], N, nullptr, nullptr);
+  return str;
+}
+
 struct TerminalsColorTable {
   int index;
   bool blod;
@@ -73,6 +83,23 @@ int WriteTerminals(int color, const wchar_t *data, size_t len) {
   return static_cast<int>(l);
 }
 
+// https://msdn.microsoft.com/en-us/library/windows/desktop/mt638032(v=vs.85).aspx VT
+int WriteVTConsole(int color, const wchar_t *data, size_t len) {
+  TerminalsColorTable co;
+  auto str = wchar2acp(data, len);
+  if (!TerminalsConvertColor(color, co)) {
+    return static_cast<int>(fwrite(str.data(), 1, str.size(), stdout));
+  }
+  if (co.blod) {
+    fprintf(stdout, "\33[1;%dm", co.index);
+  } else {
+    fprintf(stdout, "\33[%dm", co.index);
+  }
+  auto l = fwrite(str.data(), 1, str.size(), stdout);
+  fwrite("\33[0m", 1, sizeof("\33[0m") - 1, stdout);
+  return static_cast<int>(l);
+}
+
 /// if is a Conhost
 int WriteConhost(int color, const wchar_t *data, size_t len) {
   CONSOLE_SCREEN_BUFFER_INFO csbi;
@@ -94,7 +121,7 @@ int WriteFiles(int color, const wchar_t *data, size_t len) {
   return static_cast<int>(N);
 }
 
-bool IsWindowsConhost(HANDLE hConsole) {
+bool IsWindowsConhost(HANDLE hConsole, bool &isvt) {
   if (GetFileType(hConsole) != FILE_TYPE_CHAR) {
     return false;
   }
@@ -104,6 +131,7 @@ bool IsWindowsConhost(HANDLE hConsole) {
   }
   //// VT module
   if ((mode & ENABLE_VIRTUAL_TERMINAL_PROCESSING) != 0) {
+    isvt = true;
     return false;
   }
   return true;
@@ -121,8 +149,13 @@ public:
       impl = WriteFiles;
       return;
     }
-    if (IsWindowsConhost(hConsole)) {
+    bool isvt = false;
+    if (IsWindowsConhost(hConsole, isvt)) {
       impl = WriteConhost;
+      return;
+    }
+    if (isvt) {
+      impl = WriteVTConsole;
       return;
     }
     impl = WriteTerminals;
