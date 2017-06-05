@@ -45,6 +45,8 @@ wsudo:
 
 ![wsudo](images/wsudo.png)
 
+![wsudo2](images/wsudo2.png)
+
 ## LICENSE
 
 This project use MIT License, and JSON use https://github.com/nlohmann/json , some API use NSudo.
