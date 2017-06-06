@@ -1,0 +1,19 @@
+version: 1.0.0.{build}
+image: Visual Studio 2017
+configuration: Release
+platform: x64
+clone_depth: 1
+build:
+  project: Privexec.sln
+  verbosity: minimal
+after_build:
+- ps: >-
+    if ($env:PLATFORM -eq "x64") {
+        Compress-Archive -Path "Privexec\Privexec.json", "x64\${env:CONFIGURATION}\*.exe" -CompressionLevel Fastest -DestinationPath "Privexec_${env:PLATFORM}_${env:CONFIGURATION}.zip"
+    }
+
+    else {
+        Compress-Archive -Path "Privexec\Privexec.json", "${env:CONFIGURATION}\*.exe" -CompressionLevel Fastest -DestinationPath "Privexec_${env:PLATFORM}_${env:CONFIGURATION}.zip"
+    }
+artifacts:
+- path: Privexec_%PLATFORM%_%CONFIGURATION%.zip
