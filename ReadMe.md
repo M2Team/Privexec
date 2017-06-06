@@ -1,5 +1,7 @@
 # Privexec
 
+[![Build status](https://ci.appveyor.com/api/projects/status/2cbd4pceqbldlixx/branch/master?svg=true)](https://ci.appveyor.com/project/fcharlie/privexec/branch/master)
+
 Execute some command
 
 ## Alias
@@ -49,4 +51,4 @@ wsudo:
 
 ## LICENSE
 
-This project use MIT License, and JSON use https://github.com/nlohmann/json , some API use NSudo.
+This project use MIT License, and JSON use [https://github.com/nlohmann/json](https://github.com/nlohmann/json) , some API use NSudo.
