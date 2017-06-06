@@ -83,7 +83,8 @@ int WriteTerminals(int color, const wchar_t *data, size_t len) {
   return static_cast<int>(l);
 }
 
-// https://msdn.microsoft.com/en-us/library/windows/desktop/mt638032(v=vs.85).aspx VT
+// https://msdn.microsoft.com/en-us/library/windows/desktop/mt638032(v=vs.85).aspx
+// VT
 int WriteVTConsole(int color, const wchar_t *data, size_t len) {
   TerminalsColorTable co;
   auto str = wchar2acp(data, len);
@@ -107,7 +108,12 @@ int WriteConhost(int color, const wchar_t *data, size_t len) {
   GetConsoleScreenBufferInfo(hConsole, &csbi);
   WORD oldColor = csbi.wAttributes;
   WORD color_ = static_cast<WORD>(color);
-  WORD newColor = (oldColor & 0xF0) | color_;
+  WORD newColor;
+  if (color > console::fc::LightWhite) {
+    newColor = (oldColor & 0x0F) | color_;
+  } else {
+    newColor = (oldColor & 0xF0) | color_;
+  }
   SetConsoleTextAttribute(hConsole, newColor);
   DWORD dwWrite;
   WriteConsoleW(hConsole, data, (DWORD)len, &dwWrite, nullptr);

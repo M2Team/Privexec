@@ -151,7 +151,7 @@ Example:
 
 int wmain(int argc, const wchar_t *argv[]) {
   if (argc <= 1) {
-    console::Print(console::fc::LightRed, L"usage: wsudo args");
+    console::Print(console::fc::Red, L"usage: wsudo args");
     return 1;
   }
   auto Arg = argv[1];
