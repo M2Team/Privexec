@@ -131,7 +131,7 @@ bool InitializePrivApp(HWND hWnd) {
 INT_PTR WINAPI ApplicationProc(HWND hWndDlg, UINT message, WPARAM wParam,
                                LPARAM lParam) {
   switch (message) {
-  // White background
+  // DarkGray background
   case WM_CTLCOLORDLG:
   case WM_CTLCOLORSTATIC:
     // case WM_CTLCOLORBTN:

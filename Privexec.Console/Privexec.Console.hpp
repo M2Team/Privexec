@@ -12,34 +12,32 @@
 #include <string>
 
 namespace console {
-// enum ConsoleColor {
-//	Black
-//};
+
 namespace fc {
 enum Color : WORD {
   Black = 0,
-  Blue = FOREGROUND_BLUE,
-  Green = FOREGROUND_GREEN,
-  Cyan = FOREGROUND_GREEN | FOREGROUND_BLUE,
-  Red = FOREGROUND_RED,
-  Purple = FOREGROUND_RED | FOREGROUND_BLUE,
-  Yellow = FOREGROUND_RED | FOREGROUND_GREEN,
-  White = FOREGROUND_BLUE | FOREGROUND_GREEN | FOREGROUND_RED,
-  Gray = FOREGROUND_INTENSITY,
-  LightBlue = FOREGROUND_BLUE | FOREGROUND_INTENSITY,
-  LightGreen = FOREGROUND_GREEN | FOREGROUND_INTENSITY,
-  LightCyan = FOREGROUND_GREEN | FOREGROUND_BLUE | FOREGROUND_INTENSITY,
-  LightRed = FOREGROUND_RED | FOREGROUND_INTENSITY,
-  LightMagenta = FOREGROUND_RED | FOREGROUND_BLUE | FOREGROUND_INTENSITY,
-  LightYellow = FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_INTENSITY,
-  LightWhite =
-      FOREGROUND_BLUE | FOREGROUND_GREEN | FOREGROUND_RED | FOREGROUND_INTENSITY
+  DarkBlue = 1,
+  DarkGreen = 2,
+  DarkCyan = 3,
+  DarkRed = 4,
+  DarkMagenta = 5,
+  DarkYellow = 6,
+  Gray = 7,
+  DarkGray = 8,
+  Blue = 9,
+  Green = 10,
+  Cyan = 11,
+  Red = 12,
+  Magenta = 13,
+  Yellow = 14,
+  White = 15
 };
 }
+
 namespace bc {
 enum Color : WORD {
   Black = 0,
-  White = BACKGROUND_BLUE | BACKGROUND_GREEN | BACKGROUND_RED,
+  DarkGray = BACKGROUND_BLUE | BACKGROUND_GREEN | BACKGROUND_RED,
   Blue = BACKGROUND_BLUE,
   Green = BACKGROUND_GREEN,
   Red = BACKGROUND_RED,
@@ -57,6 +55,7 @@ enum Color : WORD {
 };
 }
 
+bool EnableVTMode();
 int WriteInternal(int color, const wchar_t *buf, size_t len);
 
 template <typename T> T Argument(T value) noexcept { return value; }

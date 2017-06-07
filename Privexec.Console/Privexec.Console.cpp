@@ -11,53 +11,73 @@ std::string wchar2utf8(const wchar_t *buf, size_t len) {
   return str;
 }
 
-std::string wchar2acp(const wchar_t *buf, size_t len) {
-  std::string str;
-  static auto cp = GetConsoleCP();
-  auto N =
-      WideCharToMultiByte(cp, 0, buf, (int)len, nullptr, 0, nullptr, nullptr);
-  str.resize(N);
-  WideCharToMultiByte(cp, 0, buf, (int)len, &str[0], N, nullptr, nullptr);
-  return str;
-}
-
 struct TerminalsColorTable {
   int index;
   bool blod;
 };
 
+namespace vt {
+namespace fg {
+enum Color {
+  Black = 30,
+  Red = 31,
+  Green = 32,
+  Yellow = 33,
+  Blue = 34,
+  Magenta = 35,
+  Cyan = 36,
+  Gray = 37,
+  Reset = 39
+};
+}
+namespace bg {
+enum Color {
+  Black = 40,
+  Red = 41,
+  Green = 42,
+  Yellow = 43,
+  Blue = 44,
+  Magenta = 45,
+  Cyan = 46,
+  Gray = 47,
+  Reset = 49
+};
+}
+}
+
 bool TerminalsConvertColor(int color, TerminalsColorTable &co) {
+
   std::unordered_map<int, TerminalsColorTable> tables = {
-      {console::fc::Black, {30, false}},
-      {console::fc::Blue, {34, false}},
-      {console::fc::Green, {32, false}},
-      {console::fc::Cyan, {36, false}},
-      {console::fc::Red, {31, false}},
-      {console::fc::Purple, {35, false}},
-      {console::fc::Yellow, {33, false}},
-      {console::fc::White, {37, false}},
-      {console::fc::LightBlue, {34, true}},
-      {console::fc::LightGreen, {32, true}},
-      {console::fc::LightCyan, {36, true}},
-      {console::fc::LightRed, {31, true}},
-      {console::fc::LightMagenta, {35, true}},
-      {console::fc::LightYellow, {33, true}},
-      {console::fc::LightWhite, {37, true}},
-      {console::bc::Black, {40, false}},
-      {console::bc::Blue, {44, false}},
-      {console::bc::Green, {42, false}},
-      {console::bc::Cyan, {46, false}},
-      {console::bc::Red, {41, false}},
-      {console::bc::Magenta, {45, false}},
-      {console::bc::Yellow, {43, false}},
-      {console::bc::White, {47, false}},
-      {console::bc::LightBlue, {44, true}},
-      {console::bc::LightGreen, {42, true}},
-      {console::bc::LightCyan, {46, true}},
-      {console::bc::LightRed, {41, true}},
-      {console::bc::LightMagenta, {45, true}},
-      {console::bc::LightYellow, {46, true}},
-      {console::bc::LightWhite, {47, true}},
+      {console::fc::Black, {vt::fg::Black, false}},
+      {console::fc::DarkBlue, {vt::fg::Blue, false}},
+      {console::fc::DarkGreen, {vt::fg::Green, false}},
+      {console::fc::DarkCyan, {vt::fg::Cyan, false}},
+      {console::fc::DarkRed, {vt::fg::Red, false}},
+      {console::fc::DarkMagenta, {vt::fg::Magenta, false}},
+      {console::fc::DarkYellow, {vt::fg::Yellow, false}},
+      {console::fc::DarkGray, {vt::fg::Gray, false}},
+      {console::fc::Blue, {vt::fg::Blue, true}},
+      {console::fc::Green, {vt::fg::Green, true}},
+      {console::fc::Cyan, {vt::fg::Cyan, true}},
+      {console::fc::Red, {vt::fg::Red, true}},
+      {console::fc::Magenta, {vt::fg::Magenta, true}},
+      {console::fc::Yellow, {vt::fg::Yellow, true}},
+      {console::fc::White, {vt::fg::Gray, true}},
+      {console::bc::Black, {vt::bg::Black, false}},
+      {console::bc::Blue, {vt::bg::Blue, false}},
+      {console::bc::Green, {vt::bg::Green, false}},
+      {console::bc::Cyan, {vt::bg::Cyan, false}},
+      {console::bc::Red, {vt::bg::Red, false}},
+      {console::bc::Magenta, {vt::bg::Magenta, false}},
+      {console::bc::Yellow, {vt::bg::Yellow, false}},
+      {console::bc::DarkGray, {vt::bg::Gray, false}},
+      {console::bc::LightBlue, {vt::bg::Blue, true}},
+      {console::bc::LightGreen, {vt::bg::Green, true}},
+      {console::bc::LightCyan, {vt::bg::Cyan, true}},
+      {console::bc::LightRed, {vt::fg::Red, true}},
+      {console::bc::LightMagenta, {vt::bg::Magenta, true}},
+      {console::bc::LightYellow, {vt::bg::Yellow, true}},
+      {console::bc::LightWhite, {vt::bg::Gray, true}},
   };
   auto iter = tables.find(color);
   if (iter == tables.end()) {
@@ -65,6 +85,15 @@ bool TerminalsConvertColor(int color, TerminalsColorTable &co) {
   }
   co = iter->second;
   return true;
+}
+
+int WriteConsoleInternal(const wchar_t *buffer, DWORD len) {
+  DWORD dwWrite = 0;
+  auto hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
+  if (WriteConsoleW(hConsole, buffer, len, &dwWrite, nullptr)) {
+    return static_cast<int>(dwWrite);
+  }
+  return 0;
 }
 
 int WriteTerminals(int color, const wchar_t *data, size_t len) {
@@ -85,20 +114,22 @@ int WriteTerminals(int color, const wchar_t *data, size_t len) {
 
 // https://msdn.microsoft.com/en-us/library/windows/desktop/mt638032(v=vs.85).aspx
 // VT
+
 int WriteVTConsole(int color, const wchar_t *data, size_t len) {
   TerminalsColorTable co;
-  auto str = wchar2acp(data, len);
   if (!TerminalsConvertColor(color, co)) {
-    return static_cast<int>(fwrite(str.data(), 1, str.size(), stdout));
+    return WriteConsoleInternal(data, (DWORD)len);
   }
+  std::wstring buf(L"\x1b[");
   if (co.blod) {
-    fprintf(stdout, "\33[1;%dm", co.index);
+    buf.append(L"1;").append(std::to_wstring(co.index)).push_back(L'm');
   } else {
-    fprintf(stdout, "\33[%dm", co.index);
+    buf.append(std::to_wstring(co.index)).push_back(L'm');
   }
-  auto l = fwrite(str.data(), 1, str.size(), stdout);
-  fwrite("\33[0m", 1, sizeof("\33[0m") - 1, stdout);
-  return static_cast<int>(l);
+  WriteConsoleInternal(buf.data(), (DWORD)buf.size());
+  auto N = WriteConsoleInternal(data, (DWORD)len);
+  WriteConsoleInternal(L"\x1b[0m", (sizeof("\x1b[0m") - 1));
+  return static_cast<int>(N);
 }
 
 /// if is a Conhost
@@ -109,7 +140,7 @@ int WriteConhost(int color, const wchar_t *data, size_t len) {
   WORD oldColor = csbi.wAttributes;
   WORD color_ = static_cast<WORD>(color);
   WORD newColor;
-  if (color > console::fc::LightWhite) {
+  if (color > console::fc::White) {
     newColor = (oldColor & 0x0F) | color_;
   } else {
     newColor = (oldColor & 0xF0) | color_;
@@ -135,16 +166,15 @@ bool IsWindowsConhost(HANDLE hConsole, bool &isvt) {
   if (!GetConsoleMode(hConsole, &mode)) {
     return false;
   }
-  //// VT module
   if ((mode & ENABLE_VIRTUAL_TERMINAL_PROCESSING) != 0) {
     isvt = true;
   }
   return true;
 }
 
-class WriteProvider {
+class ConsoleInternal {
 public:
-  WriteProvider() {
+  ConsoleInternal() {
     HANDLE hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
     if (hConsole == INVALID_HANDLE_VALUE) {
       impl = WriteFiles;
@@ -156,12 +186,16 @@ public:
     }
     bool isvt = false;
     if (IsWindowsConhost(hConsole, isvt)) {
+      if (isvt) {
+        impl = WriteVTConsole;
+        return;
+      }
       impl = WriteConhost;
       return;
     }
     impl = WriteTerminals;
   }
-  int WriteImpl(int color, const wchar_t *data, size_t len) {
+  int WriteRealize(int color, const wchar_t *data, size_t len) {
     return this->impl(color, data, len);
   }
 
@@ -170,8 +204,26 @@ private:
 };
 
 namespace console {
+bool EnableVTMode() {
+  // Set output mode to handle virtual terminal sequences
+  HANDLE hOut = GetStdHandle(STD_OUTPUT_HANDLE);
+  if (hOut == INVALID_HANDLE_VALUE) {
+    return false;
+  }
+
+  DWORD dwMode = 0;
+  if (!GetConsoleMode(hOut, &dwMode)) {
+    return false;
+  }
+
+  dwMode |= ENABLE_VIRTUAL_TERMINAL_PROCESSING;
+  if (!SetConsoleMode(hOut, dwMode)) {
+    return false;
+  }
+  return true;
+}
 int WriteInternal(int color, const wchar_t *buf, size_t len) {
-  static WriteProvider provider;
-  return provider.WriteImpl(color, buf, len);
+  static ConsoleInternal provider;
+  return provider.WriteRealize(color, buf, len);
 }
 }
