@@ -56,6 +56,7 @@ enum Color : WORD {
 }
 
 bool EnableVTMode();
+int WriteConsoleInternal(const wchar_t *buffer, DWORD len);
 int WriteInternal(int color, const wchar_t *buf, size_t len);
 
 template <typename T> T Argument(T value) noexcept { return value; }
@@ -69,6 +70,15 @@ int StringPrint(wchar_t *const buffer, size_t const bufferCount,
   int const result = swprintf(buffer, bufferCount, format, Argument(args)...);
   // ASSERT(-1 != result);
   return result;
+}
+
+template <typename... Args>
+int PrintConsole(const wchar_t *format, Args... args) {
+  std::wstring buffer;
+  size_t size = StringPrint(nullptr, 0, format, args...);
+  buffer.resize(size);
+  size = StringPrint(&buffer[0], buffer.size() + 1, format, args...);
+  return WriteConsoleInternal(buffer.data(), size);
 }
 
 template <typename... Args>
