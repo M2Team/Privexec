@@ -132,7 +132,7 @@ int SearchUser(const wchar_t *user) {
   return -1;
 }
 
-const wchar_t *kUsage = LR"(wsudo execute some app
+const wchar_t *kUsage = LR"(execute some app
 usage: wsudo args command ....
   -v|--version   print version and exit
   -h|--help      print help information and exit
@@ -161,7 +161,7 @@ int wmain(int argc, const wchar_t *argv[]) {
     return 0;
   }
   if (IsArg(Arg, L"-h", L"--help")) {
-    console::Print(console::fc::Cyan, L"%s", kUsage);
+    console::Print(console::fc::Cyan, L"wsudo \x2665 %s", kUsage);
     return 0;
   }
   int index = 1;

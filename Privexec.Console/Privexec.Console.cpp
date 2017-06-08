@@ -2,6 +2,7 @@
 #include "Privexec.Console.hpp"
 #include <unordered_map>
 
+namespace console {
 std::string wchar2utf8(const wchar_t *buf, size_t len) {
   std::string str;
   auto N = WideCharToMultiByte(CP_UTF8, 0, buf, (int)len, nullptr, 0, nullptr,
@@ -87,10 +88,10 @@ bool TerminalsConvertColor(int color, TerminalsColorTable &co) {
   return true;
 }
 
-int WriteConsoleInternal(const wchar_t *buffer, DWORD len) {
+int WriteConsoleInternal(const wchar_t *buffer, size_t len) {
   DWORD dwWrite = 0;
   auto hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
-  if (WriteConsoleW(hConsole, buffer, len, &dwWrite, nullptr)) {
+  if (WriteConsoleW(hConsole, buffer, (DWORD)len, &dwWrite, nullptr)) {
     return static_cast<int>(dwWrite);
   }
   return 0;
@@ -118,7 +119,7 @@ int WriteTerminals(int color, const wchar_t *data, size_t len) {
 int WriteVTConsole(int color, const wchar_t *data, size_t len) {
   TerminalsColorTable co;
   if (!TerminalsConvertColor(color, co)) {
-    return WriteConsoleInternal(data, (DWORD)len);
+    return WriteConsoleInternal(data, len);
   }
   std::wstring buf(L"\x1b[");
   if (co.blod) {
@@ -203,7 +204,6 @@ private:
   int (*impl)(int color, const wchar_t *data, size_t len);
 };
 
-namespace console {
 bool EnableVTMode() {
   // Set output mode to handle virtual terminal sequences
   HANDLE hOut = GetStdHandle(STD_OUTPUT_HANDLE);

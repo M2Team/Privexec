@@ -56,7 +56,7 @@ enum Color : WORD {
 }
 
 bool EnableVTMode();
-int WriteConsoleInternal(const wchar_t *buffer, DWORD len);
+int WriteConsoleInternal(const wchar_t *buffer, size_t len);
 int WriteInternal(int color, const wchar_t *buf, size_t len);
 
 template <typename T> T Argument(T value) noexcept { return value; }
