@@ -143,8 +143,26 @@ INT_PTR WINAPI ApplicationProc(HWND hWndDlg, UINT message, WPARAM wParam,
     InitializePrivApp(hWndDlg);
     auto hCombox = GetDlgItem(hWndDlg, IDC_USER_COMBOX);
     InitializeCombobox(hCombox);
+    HMENU hSystemMenu = ::GetSystemMenu(hWndDlg, FALSE);
+    InsertMenuW(hSystemMenu, SC_CLOSE, MF_ENABLED, IDM_PRIVEXEC_ABOUT,
+                L"About Privexec\tAlt+F1");
     return 0;
   } break;
+  case WM_SYSCOMMAND:
+    switch (LOWORD(wParam)) {
+    case IDM_PRIVEXEC_ABOUT: {
+      MessageWindowEx(hWndDlg, L"About Privexec",
+                      L"Prerelease: 1.0.0.0\nCopyright \xA9 2017, Force "
+                      L"Charlie. All Rights Reserved.",
+                      L"For more information about this tool.\nVisit: <a "
+                      L"href=\"http://forcemz.net/\">forcemz.net</a>",
+                      kAboutWindow);
+    }
+      return 0;
+    default:
+      return DefWindowProcW(hWndDlg, message, wParam, lParam);
+    }
+    break;
   case WM_COMMAND: {
     switch (LOWORD(wParam)) {
     case IDB_EXECUTE_BUTTON: {

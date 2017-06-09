@@ -152,7 +152,7 @@ Example:
 int wmain(int argc, const wchar_t *argv[]) {
   console::EnableVTMode();
   if (argc <= 1) {
-    console::Print(console::fc::Red, L"usage: wsudo args");
+    console::Print(console::fc::Red, L"usage: wsudo args\n");
     return 1;
   }
   auto Arg = argv[1];

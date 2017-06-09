@@ -18,5 +18,19 @@
 #include <Shlwapi.h>
 #include <PathCch.h>
 
+enum MessageWinodwEnum {
+	kInfoWindow,
+	kWarnWindow,
+	kFatalWindow,
+	kAboutWindow
+};
+
+HRESULT WINAPI MessageWindowEx(
+	HWND hWnd,
+	LPCWSTR pszWindowTitle,
+	LPCWSTR pszContent,
+	LPCWSTR pszExpandedInfo,
+	MessageWinodwEnum type);
+
 #endif // !PRECOMPILED_H
 

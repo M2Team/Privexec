@@ -2,6 +2,9 @@
 #define RESOURCE_H
 #define IDI_APPLICATION_ICON            101
 #define IDD_APPLICATION_DIALOG          102
+
+#define IDM_PRIVEXEC_ABOUT  500
+
 #define IDC_USER_COMBOX                 1001
 #define IDC_USER_STATIC                 1002
 #define IDC_COMMAND_STATIC              1003
