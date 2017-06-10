@@ -134,7 +134,7 @@ int SearchUser(const wchar_t *user) {
 }
 
 const wchar_t *kUsage = LR"(execute some app
-usage: wsudo args command ....
+usage: wsudo command args....
   -v|--version   print version and exit
   -h|--help      print help information and exit
   -u|--user      run as user (optional), support '-u=X' or '-u X'

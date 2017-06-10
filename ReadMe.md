@@ -61,7 +61,7 @@ wsudo is a console command client
 
 ```txt
 wsudo ♥ execute some app
-usage: wsudo args command ....
+usage: wsudo command args....
   -v|--version   print version and exit
   -h|--help      print help information and exit
   -u|--user      run as user (optional), support '-u=X' or '-u X'
