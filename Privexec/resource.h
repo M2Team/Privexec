@@ -1,5 +1,6 @@
 #ifndef RESOURCE_H
 #define RESOURCE_H
+#include "..\inc\version.h"
 #define IDI_APPLICATION_ICON            101
 #define IDD_APPLICATION_DIALOG          102
 

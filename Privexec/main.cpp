@@ -9,6 +9,7 @@
 /// include json.hpp
 #include "json.hpp"
 #include "../Privexec.Core/Privexec.Core.hpp"
+#include "../inc/version.h"
 
 class DotComInitialize {
 public:
@@ -151,12 +152,14 @@ INT_PTR WINAPI ApplicationProc(HWND hWndDlg, UINT message, WPARAM wParam,
   case WM_SYSCOMMAND:
     switch (LOWORD(wParam)) {
     case IDM_PRIVEXEC_ABOUT: {
-      MessageWindowEx(hWndDlg, L"About Privexec",
-                      L"Prerelease: 1.0.0.0\nCopyright \xA9 2017, Force "
-                      L"Charlie. All Rights Reserved.",
-                      L"For more information about this tool.\nVisit: <a "
-                      L"href=\"http://forcemz.net/\">forcemz.net</a>",
-                      kAboutWindow);
+      MessageWindowEx(
+          hWndDlg, L"About Privexec",
+          L"Prerelease:"
+          L" " PRIVEXEC_BUILD_VERSION L"\nCopyright \xA9 2017, Force "
+          L"Charlie. All Rights Reserved.",
+          L"For more information about this tool.\nVisit: <a "
+          L"href=\"http://forcemz.net/\">forcemz.net</a>",
+          kAboutWindow);
     }
       return 0;
     default:

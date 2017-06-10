@@ -7,7 +7,10 @@ build:
   project: Privexec.sln
   verbosity: minimal
 before_build:
-- cmd: 'echo %APPVEYOR_BUILD_NUMBER%"'
+- cmd: >-
+    echo #define APPVEYOR_BUILD_NUMBER %APPVEYOR_BUILD_NUMBER% >> %APPVEYOR_BUILD_FOLDER%\inc\config.h
+    echo #define APPVEYOR_BUILD_VERSION L"%APPVEYOR_BUILD_VERSION% (appveyor)" >> %APPVEYOR_BUILD_FOLDER%\inc\config.h
+    echo. >> %APPVEYOR_BUILD_FOLDER%\inc\config.h
 after_build:
 - ps: >-
     if ($env:PLATFORM -eq "x64") {

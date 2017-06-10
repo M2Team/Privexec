@@ -6,6 +6,7 @@
 #include <iostream>
 #include "../Privexec.Core/Privexec.Core.hpp"
 #include "../Privexec.Console/Privexec.Console.hpp"
+#include "../inc/version.h"
 
 class Arguments {
 public:
@@ -157,7 +158,7 @@ int wmain(int argc, const wchar_t *argv[]) {
   }
   auto Arg = argv[1];
   if (IsArg(Arg, L"-v", L"--version")) {
-    console::Print(console::fc::Cyan, L"wsudo 1.0\n");
+    console::Print(console::fc::Cyan, L"wsudo " PRIVEXEC_BUILD_VERSION L"\n");
     return 0;
   }
   if (IsArg(Arg, L"-h", L"--help")) {
