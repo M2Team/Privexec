@@ -51,6 +51,11 @@ wsudo:
 
 ![wsudo3](images/wsudo3.png)
 
+## Download
+
+下载最新构建：
+[https://ci.appveyor.com/project/fcharlie/privexec/build/artifacts](https://ci.appveyor.com/project/fcharlie/privexec/build/artifacts)
+
 ## LICENSE
 
 This project use MIT License, and JSON use [https://github.com/nlohmann/json](https://github.com/nlohmann/json) , some API use NSudo.
