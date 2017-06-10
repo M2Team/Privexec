@@ -53,7 +53,7 @@ wsudo:
 
 ## Download
 
-下载最新构建：
+Download CI Build:
 [https://ci.appveyor.com/project/fcharlie/privexec/build/artifacts](https://ci.appveyor.com/project/fcharlie/privexec/build/artifacts)
 
 ## LICENSE
