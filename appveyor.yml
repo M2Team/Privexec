@@ -8,8 +8,7 @@ build:
   verbosity: minimal
 before_build:
 - ps: >-
-    $Content="#define APPVEYOR_BUILD_NUMBER $env:APPVEYOR_BUILD_NUMBER`n#define APPVEYOR_BUILD_VERSION L`"$env:APPVEYOR_BUILD_VERSION (appveyor)`" `n"
-    [System.IO.File]::WriteAllText("$env:APPVEYOR_BUILD_FOLDER\inc\config.h",$Content)
+    Write-Output "#define APPVEYOR_BUILD_NUMBER $env:APPVEYOR_BUILD_NUMBER`r`n#define APPVEYOR_BUILD_VERSION L`"$env:APPVEYOR_BUILD_VERSION (appveyor)`" `r`n">$env:APPVEYOR_BUILD_FOLDER\inc\config.h
 after_build:
 - ps: >-
     if ($env:PLATFORM -eq "x64") {
