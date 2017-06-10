@@ -185,6 +185,7 @@ INT_PTR WINAPI ApplicationProc(HWND hWndDlg, UINT message, WPARAM wParam,
       }
     } break;
     case IDB_EXIT_BUTTON:
+      DestroyWindow(hWndDlg);
       break;
     }
     return 0;
