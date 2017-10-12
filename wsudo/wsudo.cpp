@@ -1,12 +1,12 @@
 #include <string>
 #define WIN32_LEAN_AND_MEAN // Exclude rarely-used stuff from Windows headers
 // Windows Header Files:
-#include <windows.h>
-#include <unordered_map>
-#include <iostream>
-#include "../Privexec.Core/Privexec.Core.hpp"
 #include "../Privexec.Console/Privexec.Console.hpp"
+#include "../Privexec.Core/Privexec.Core.hpp"
 #include "../inc/version.h"
+#include <iostream>
+#include <unordered_map>
+#include <windows.h>
 
 class Arguments {
 public:
@@ -24,10 +24,11 @@ public:
         buf.push_back(L'\\');
         buf.push_back(L'"');
         break;
-      case L' ':
       case L'\t':
         needwarp = true;
         break;
+      case L' ':
+        needwarp = true;
       default:
         buf.push_back(*iter);
         break;
