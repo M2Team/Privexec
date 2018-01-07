@@ -155,7 +155,7 @@ INT_PTR WINAPI ApplicationProc(HWND hWndDlg, UINT message, WPARAM wParam,
       MessageWindowEx(
           hWndDlg, L"About Privexec",
           L"Prerelease:"
-          L" " PRIVEXEC_BUILD_VERSION L"\nCopyright \xA9 2017, Force "
+          L" " PRIVEXEC_BUILD_VERSION L"\nCopyright \xA9 2018, Force "
           L"Charlie. All Rights Reserved.",
           L"For more information about this tool.\nVisit: <a "
           L"href=\"http://forcemz.net/\">forcemz.net</a>",
