@@ -18,8 +18,8 @@ public:
     realcmd.resize(N - 1);
     std::wstring buf;
     bool needwarp = false;
-    for (auto iter = realcmd.begin(); iter != realcmd.end(); iter++) {
-      switch (*iter) {
+    for (auto c : realcmd) {
+      switch (c) {
       case L'"':
         buf.push_back(L'\\');
         buf.push_back(L'"');
@@ -30,7 +30,7 @@ public:
       case L' ':
         needwarp = true;
       default:
-        buf.push_back(*iter);
+        buf.push_back(c);
         break;
       }
     }
@@ -93,17 +93,13 @@ bool CreateProcessInternal(int level, int Argc, wchar_t **Argv) {
 }
 
 inline bool IsArg(const wchar_t *candidate, const wchar_t *longname) {
-  if (wcscmp(candidate, longname) == 0)
-    return true;
-  return false;
+  return (wcscmp(candidate, longname) == 0);
 }
 
 inline bool IsArg(const wchar_t *candidate, const wchar_t *shortname,
                   const wchar_t *longname) {
-  if (wcscmp(candidate, shortname) == 0 ||
-      (longname != nullptr && wcscmp(candidate, longname) == 0))
-    return true;
-  return false;
+  return (wcscmp(candidate, shortname) == 0 ||
+          (longname != nullptr && wcscmp(candidate, longname) == 0));
 }
 
 inline bool IsArg(const wchar_t *candidate, const wchar_t *longname, size_t n,

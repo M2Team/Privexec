@@ -11,6 +11,17 @@
 #include "../Privexec.Core/Privexec.Core.hpp"
 #include "../inc/version.h"
 
+inline std::wstring utf8towide(const std::string str) {
+  std::wstring wstr;
+  auto N =
+      MultiByteToWideChar(CP_UTF8, 0, str.data(), (int)str.size(), nullptr, 0);
+  if (N > 0) {
+    wstr.resize(N);
+    MultiByteToWideChar(CP_UTF8, 0, str.data(), (int)str.size(), &wstr[0], N);
+  }
+  return wstr;
+}
+
 class DotComInitialize {
 public:
   DotComInitialize() {
@@ -39,9 +50,9 @@ bool InitializeCombobox(HWND hCombox) {
     users.push_back(std::make_pair(kTrustedInstaller, L"TrustedInstaller"));
   }
   for (const auto &i : users) {
-    ::SendMessage(hCombox, CB_ADDSTRING, 0, (LPARAM)i.second);
+    ::SendMessageW(hCombox, CB_ADDSTRING, 0, (LPARAM)i.second);
   }
-  ::SendMessage(hCombox, CB_SETCURSEL, (WPARAM)usersindex, 0);
+  ::SendMessageW(hCombox, CB_SETCURSEL, (WPARAM)usersindex, 0);
   return true;
 }
 
@@ -86,17 +97,6 @@ bool PathAppImageCombineExists(std::wstring &file, const wchar_t *cmd) {
     return true;
   file.clear();
   return false;
-}
-
-std::wstring utf8towide(const std::string str) {
-  std::wstring wstr;
-  auto N =
-      MultiByteToWideChar(CP_UTF8, 0, str.data(), (int)str.size(), nullptr, 0);
-  if (N > 0) {
-    wstr.resize(N);
-    MultiByteToWideChar(CP_UTF8, 0, str.data(), (int)str.size(), &wstr[0], N);
-  }
-  return wstr;
 }
 
 bool InitializePrivApp(HWND hWnd) {
