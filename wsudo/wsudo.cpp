@@ -44,7 +44,12 @@ public:
   Arguments &append(const wchar_t *cmd) {
     std::wstring buf;
     bool needwarp = false;
-    auto end = cmd + wcslen(cmd);
+    auto xlen = wcslen(cmd);
+    if (xlen == 0) {
+      argv_.append(L" \"\"");
+      return *this;
+    }
+    auto end = cmd + xlen;
     for (auto iter = cmd; iter != end; iter++) {
       switch (*iter) {
       case L'"':
