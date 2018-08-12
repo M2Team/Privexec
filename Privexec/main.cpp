@@ -1,17 +1,18 @@
 ////
 #define NOMINMAX
 #include "Precompiled.h"
-#include <Shlobj.h>
-#include <string>
-#include <fstream>
-#include <unordered_map>
 #include "resource.h"
+#include <Shlobj.h>
+#include <fstream>
+#include <string>
+#include <string_view>
+#include <unordered_map>
 /// include json.hpp
-#include "json.hpp"
 #include "../Privexec.Core/Privexec.Core.hpp"
 #include "../inc/version.h"
+#include "json.hpp"
 
-inline std::wstring utf8towide(const std::string str) {
+inline std::wstring utf8towide(std::string_view str) {
   std::wstring wstr;
   auto N =
       MultiByteToWideChar(CP_UTF8, 0, str.data(), (int)str.size(), nullptr, 0);
@@ -194,13 +195,17 @@ INT_PTR WINAPI ApplicationProc(HWND hWndDlg, UINT message, WPARAM wParam,
     return 0;
   }
 
-  case WM_CLOSE:
+  case WM_CLOSE: {
     DestroyWindow(hWndDlg);
     return 0;
+  }
 
-  case WM_DESTROY:
+  case WM_DESTROY: {
     PostQuitMessage(0);
     return 0;
+  }
+  default:
+    break;
   }
   return FALSE;
 }

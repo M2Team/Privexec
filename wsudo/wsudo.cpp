@@ -1,12 +1,14 @@
-#include <string>
+////
 #define WIN32_LEAN_AND_MEAN // Exclude rarely-used stuff from Windows headers
 // Windows Header Files:
+#include <windows.h>
+#include <iostream>
+#include <unordered_map>
+#include <string>
+
 #include "../Privexec.Console/Privexec.Console.hpp"
 #include "../Privexec.Core/Privexec.Core.hpp"
 #include "../inc/version.h"
-#include <iostream>
-#include <unordered_map>
-#include <windows.h>
 
 class Arguments {
 public:

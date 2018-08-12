@@ -1,5 +1,5 @@
-#include "stdafx.h"
 #include "Privexec.Core.hpp"
+#include "stdafx.h"
 #include <Sddl.h>
 
 bool CreateLowlevelProcess(LPWSTR pszCmdline, DWORD &dwProcessId) {
