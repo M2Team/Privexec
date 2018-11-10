@@ -1,6 +1,8 @@
-#include "Privexec.Core.hpp"
 #include "stdafx.h"
 #include <Sddl.h>
+#include "Privexec.Core.hpp"
+
+namespace priv {
 
 bool CreateLowlevelProcess(LPWSTR pszCmdline, DWORD &dwProcessId) {
   HANDLE hToken;
@@ -54,3 +56,4 @@ bool CreateLowlevelProcess(LPWSTR pszCmdline, DWORD &dwProcessId) {
   LocalFree(pIntegritySid);
   return false;
 }
+} // namespace priv

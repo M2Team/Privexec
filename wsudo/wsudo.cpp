@@ -87,13 +87,13 @@ bool CreateProcessInternal(int level, int Argc, wchar_t **Argv) {
   }
   DWORD dwProcessId;
   console::Print(console::fc::Yellow, L"Command: %s\n", argb.str());
-  if (PrivCreateProcess(level, const_cast<LPWSTR>(argb.str().data()),
+  if (priv::PrivCreateProcess(level, const_cast<LPWSTR>(argb.str().data()),
                         dwProcessId)) {
     console::Print(console::fc::Green, L"new process is running: %d\n",
                    dwProcessId);
     return true;
   }
-  ErrorMessage err(GetLastError());
+  priv::ErrorMessage err(GetLastError());
   console::Print(console::fc::Red, L"create process failed: %s\n",
                  err.message());
   return false;

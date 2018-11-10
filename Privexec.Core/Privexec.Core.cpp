@@ -4,6 +4,8 @@
 #include <Shlwapi.h>
 #include <string>
 
+namespace priv {
+
 bool CreateAdministratorsProcess(LPWSTR pszCmdline, DWORD &dwProcessId) {
   if (IsUserAdministratorsGroup()) {
     STARTUPINFOW si;
@@ -53,10 +55,10 @@ bool CreateAdministratorsProcess(LPWSTR pszCmdline, DWORD &dwProcessId) {
   return false;
 }
 
-bool PrivCreateProcess(int level, LPWSTR pszCmdline, DWORD &dwProcessId,const std::wstring &sid) {
+bool PrivCreateProcess(int level, LPWSTR pszCmdline, DWORD &dwProcessId) {
   switch (level) {
   case kAppContainer:
-    return CreateAppContainerProcess(pszCmdline, dwProcessId,sid);
+    return CreateAppContainerProcess(pszCmdline, dwProcessId);
   case kUACElevated:
     return CreateNoElevatedProcess(pszCmdline, dwProcessId);
   case kMandatoryIntegrityControl:
@@ -73,3 +75,4 @@ bool PrivCreateProcess(int level, LPWSTR pszCmdline, DWORD &dwProcessId,const st
   SetLastError(ERROR_NOT_SUPPORTED);
   return false;
 }
+} // namespace priv

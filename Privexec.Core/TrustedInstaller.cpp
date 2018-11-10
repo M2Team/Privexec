@@ -103,6 +103,7 @@ private:
   SERVICE_STATUS_PROCESS ssr;
 };
 
+namespace priv {
 bool GetCurrentSessionId(DWORD &dwSessionId) {
   HANDLE hToken = INVALID_HANDLE_VALUE;
   if (!OpenProcessToken(GetCurrentProcess(), MAXIMUM_ALLOWED, &hToken)) {
@@ -261,3 +262,4 @@ bool CreateTiProcess(LPWSTR pszCmdline, DWORD &dwProcessId) {
   CloseHandle(hToken);
   return false;
 }
+} // namespace priv

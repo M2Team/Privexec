@@ -9,6 +9,7 @@
 #include <Windows.h>
 #endif
 #include <string>
+#include <vector>
 
 enum PrivexecUsersLevel {
   kAppContainer = 0,
@@ -19,20 +20,59 @@ enum PrivexecUsersLevel {
   kTrustedInstaller
 };
 
+namespace priv {
+struct error_code {
+  std::wstring msg;
+  int ec{0};
+  bool operator()() { return ec == 0; }
+  const std::wstring &message() const { return msg; }
+};
+// Add key todo
+bool CapabilitiesAdd(std::vector<WELL_KNOWN_SID_TYPE> &caps, const char *key);
+bool WellKnownFromAppmanifest(const std::wstring &file, std::vector<WELL_KNOWN_SID_TYPE> &sids);
+
+class AppContainerContext {
+public:
+  using capabilities = std::vector<SID_AND_ATTRIBUTES>;
+  AppContainerContext() = default;
+  AppContainerContext(const AppContainerContext &) = delete;
+  AppContainerContext &operator=(const AppContainerContext &) = delete;
+  ~AppContainerContext() {
+    for (auto &c : ca) {
+      if (c.Sid) {
+        HeapFree(GetProcessHeap(), 0, c.Sid);
+      }
+    }
+    if (sid != nullptr) {
+      FreeSid(sid);
+    }
+  }
+  bool InitializeWithCapabilities(WELL_KNOWN_SID_TYPE *knarr, int arraylen);
+  bool InitializeWithSID(const std::wstring &ssid);
+  bool InitializeWithAppmanifest(const std::wstring &file);
+  bool Initialize();
+  capabilities &Capabilitis() { return ca; }
+  PSID AppContainerSid() { return sid; }
+  bool Execute(LPWSTR pszComline, DWORD &dwProcessId);
+private:
+  PSID sid{nullptr};
+  capabilities ca;
+};
+
+
 BOOL EnableDebugPrivilege(void);
 HANDLE OpenSystemProcessToken();
 bool GetCurrentSessionId(DWORD &dwSessionId);
 
 // AppContainer support SID
 bool CreateAppContainerProcess(LPWSTR pszComline, DWORD &dwProcessId,
-                               const std::wstring &sid = L"");
+                               const std::wstring &appmanifest = L"");
 bool CreateLowlevelProcess(LPWSTR pszCmdline, DWORD &dwProcessId);
 bool CreateNoElevatedProcess(LPWSTR pszCmdline, DWORD &dwProcessId);
 bool CreateAdministratorsProcess(LPWSTR pszCmdline, DWORD &dwProcessId);
 bool CreateSystemProcess(LPWSTR pszCmdline, DWORD &dwProcessId);
 bool CreateTiProcess(LPWSTR pszCmdline, DWORD &dwProcessId);
-bool PrivCreateProcess(int level, LPWSTR pszCmdline, DWORD &dwProcessId,
-                       const std::wstring &sid = L"");
+bool PrivCreateProcess(int level, LPWSTR pszCmdline, DWORD &dwProcessId);
 
 class ErrorMessage {
 public:
@@ -84,5 +124,7 @@ FALSE - Caller does not have Administrators local group. --
 
   return b == TRUE;
 }
+
+} // namespace priv
 
 #endif

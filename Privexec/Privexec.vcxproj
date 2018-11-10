@@ -147,6 +147,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="opendialog.cpp" />
     <ClCompile Include="taskdialog.cpp" />
     <ClCompile Include="main.cpp" />
   </ItemGroup>

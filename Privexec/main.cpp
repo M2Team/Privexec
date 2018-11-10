@@ -46,7 +46,7 @@ bool InitializeCombobox(HWND hCombox) {
   users.push_back(std::make_pair(kUACElevated, L"UAC Elevated"));
   users.push_back(std::make_pair(kAdministrator, L"Administrator"));
   usersindex = (int)(users.size() - 1);
-  if (IsUserAdministratorsGroup()) {
+  if (priv::IsUserAdministratorsGroup()) {
     users.push_back(std::make_pair(kSystem, L"System"));
     users.push_back(std::make_pair(kTrustedInstaller, L"TrustedInstaller"));
   }
@@ -57,7 +57,7 @@ bool InitializeCombobox(HWND hCombox) {
   return true;
 }
 
-bool Execute(int cur, const std::wstring &cmdline, const std::wstring &sid) {
+bool Execute(int cur, const std::wstring &cmdline) {
   auto iter = Aliascmd.find(cmdline);
 
   std::wstring xcmd(PATHCCH_MAX_CCH, L'\0');
@@ -74,7 +74,7 @@ bool Execute(int cur, const std::wstring &cmdline, const std::wstring &sid) {
     return false;
   }
   DWORD dwProcessId;
-  return PrivCreateProcess(users[cur].first, &xcmd[0], dwProcessId, sid);
+  return priv::PrivCreateProcess(users[cur].first, &xcmd[0], dwProcessId);
 }
 
 bool PathAppImageCombineExists(std::wstring &file, const wchar_t *cmd) {
@@ -106,7 +106,7 @@ bool InitializePrivApp(HWND hWnd) {
     return false;
   }
   auto hCombox = GetDlgItem(hWnd, IDC_COMMAND_COMBOX);
-  if (IsUserAdministratorsGroup()) {
+  if (priv::IsUserAdministratorsGroup()) {
     WCHAR title[256];
     auto N = GetWindowTextW(hWnd, title, ARRAYSIZE(title));
     wcscat_s(title, L" [Administrator]");
@@ -130,6 +130,77 @@ bool InitializePrivApp(HWND hWnd) {
   return true;
 }
 
+std::unordered_map<HWND, int> capchecks;
+
+bool ChangeCapabilitiesVisible(bool enable) {
+  for (auto c : capchecks) {
+    EnableWindow(c.first, enable ? TRUE : FALSE);
+  }
+  return true;
+}
+
+bool InitializeCapabilities(HWND hParent) {
+  //
+  auto func = [&](int id, int wsid) {
+    auto h = GetDlgItem(hParent, id);
+    capchecks.insert(std::pair<HWND, int>(h, wsid));
+  };
+  func(IDP_INTERNETCLIENT, WinCapabilityInternetClientSid);
+  func(IDP_INTERNETCLIENTSERVER, WinCapabilityInternetClientServerSid);
+  func(IDP_PRIVATENETWORKCLIENTSERVER,
+       WinCapabilityPrivateNetworkClientServerSid);
+  func(IDP_DOCUMENTSLIBRARY, WinCapabilityDocumentsLibrarySid);
+  func(IDP_PICTURESLIBRARY, WinCapabilityPicturesLibrarySid);
+  func(IDP_VIDEOSLIBRARY, WinCapabilityVideosLibrarySid);
+  func(IDP_MUSICLIBRARY, WinCapabilityMusicLibrarySid);
+  func(IDP_ENTERPRISEAUTHENTICATION, WinCapabilityEnterpriseAuthenticationSid);
+  func(IDP_SHAREDUSERCERTIFICATES, WinCapabilitySharedUserCertificatesSid);
+  func(IDP_REMOVABLESTORAGE, WinCapabilityRemovableStorageSid);
+  func(IDP_APPOINTMENTS, WinCapabilityAppointmentsSid);
+  func(IDP_CONTACTS, WinCapabilityContactsSid);
+  return true;
+}
+
+bool UpdateCapabilities(HWND hParent, const std::wstring &file) {
+  //
+  std::vector<WELL_KNOWN_SID_TYPE> cas;
+  if (!priv::WellKnownFromAppmanifest(file, cas)) {
+  }
+  for (auto &c : capchecks) {
+    if (std::find(cas.begin(), cas.end(), c.second) != cas.end()) {
+      Button_SetCheck(c.first, TRUE);
+    } else {
+      Button_SetCheck(c.first, FALSE);
+    }
+  }
+  return true;
+}
+
+bool ExecuteAppcontainer(const std::wstring &cmdline) {
+  auto iter = Aliascmd.find(cmdline);
+  std::wstring xcmd(PATHCCH_MAX_CCH, L'\0');
+  DWORD N = 0;
+  if (iter != Aliascmd.end()) {
+    N = ExpandEnvironmentStringsW(iter->second.data(), &xcmd[0],
+                                  PATHCCH_MAX_CCH);
+  } else {
+    N = ExpandEnvironmentStringsW(cmdline.data(), &xcmd[0], PATHCCH_MAX_CCH);
+  }
+  xcmd.resize(N - 1);
+  std::vector<WELL_KNOWN_SID_TYPE> cas;
+  for (auto &c : capchecks) {
+    if (Button_GetCheck(c.first) == BST_CHECKED) {
+      cas.push_back((WELL_KNOWN_SID_TYPE)c.second);
+    }
+  }
+  priv::AppContainerContext ctx;
+  if (!ctx.InitializeWithCapabilities(cas.data(), (int)cas.size())) {
+    return false;
+  }
+  DWORD dwProcessId;
+  return ctx.Execute(&xcmd[0], dwProcessId);
+}
+
 INT_PTR WINAPI ApplicationProc(HWND hWndDlg, UINT message, WPARAM wParam,
                                LPARAM lParam) {
   switch (message) {
@@ -148,9 +219,12 @@ INT_PTR WINAPI ApplicationProc(HWND hWndDlg, UINT message, WPARAM wParam,
     HMENU hSystemMenu = ::GetSystemMenu(hWndDlg, FALSE);
     InsertMenuW(hSystemMenu, SC_CLOSE, MF_ENABLED, IDM_PRIVEXEC_ABOUT,
                 L"About Privexec\tAlt+F1");
-    Edit_SetText(GetDlgItem(hWndDlg, IDE_APPCONTAINER_SID), L"SID: N/A");
-    EnableWindow(GetDlgItem(hWndDlg, IDE_APPCONTAINER_SID),
+    Edit_SetText(GetDlgItem(hWndDlg, IDE_APPCONTAINER_APPMANIFEST),
+                 L"AppxManifest.xml or Package.appxmanifest");
+    EnableWindow(GetDlgItem(hWndDlg, IDE_APPCONTAINER_APPMANIFEST),
                  FALSE); // Disable AppContainer SID
+    InitializeCapabilities(hWndDlg);
+    ChangeCapabilitiesVisible(false);
     return 0;
   } break;
   case WM_SYSCOMMAND:
@@ -178,10 +252,33 @@ INT_PTR WINAPI ApplicationProc(HWND hWndDlg, UINT message, WPARAM wParam,
         auto N = SendMessage(GetDlgItem(hWndDlg, IDC_USER_COMBOX), CB_GETCURSEL,
                              0, 0);
         if (N == kAppContainer) {
-          EnableWindow(GetDlgItem(hWndDlg, IDE_APPCONTAINER_SID), TRUE);
+          EnableWindow(GetDlgItem(hWndDlg, IDE_APPCONTAINER_APPMANIFEST), TRUE);
+          SetWindowTextW(GetDlgItem(hWndDlg, IDE_APPCONTAINER_APPMANIFEST),
+                         L"");
+          ChangeCapabilitiesVisible(true);
         } else {
-          EnableWindow(GetDlgItem(hWndDlg, IDE_APPCONTAINER_SID), FALSE);
+          EnableWindow(GetDlgItem(hWndDlg, IDE_APPCONTAINER_APPMANIFEST),
+                       FALSE);
+          SetWindowTextW(GetDlgItem(hWndDlg, IDE_APPCONTAINER_APPMANIFEST),
+                         L"AppxManifest.xml or Package.appxmanifest");
+          ChangeCapabilitiesVisible(false);
         }
+      }
+    } break;
+    case IDB_COMMAND_TARGET: {
+      std::wstring cmd;
+      if (PriveexecDiscoverWindow(hWndDlg, cmd, L"Privexec: Open Execute",
+                                  kExecute)) {
+        SetWindowTextW(GetDlgItem(hWndDlg, IDC_COMMAND_COMBOX), cmd.c_str());
+      }
+    } break;
+    case IDB_APPCONTAINER_BUTTON: {
+      std::wstring manifest;
+      if (PriveexecDiscoverWindow(
+              hWndDlg, manifest, L"Privexec: Open AppManifest", kAppmanifest)) {
+        SetWindowTextW(GetDlgItem(hWndDlg, IDE_APPCONTAINER_APPMANIFEST),
+                       manifest.c_str());
+        UpdateCapabilities(hWndDlg, manifest);
       }
     } break;
     case IDB_EXECUTE_BUTTON: {
@@ -197,20 +294,19 @@ INT_PTR WINAPI ApplicationProc(HWND hWndDlg, UINT message, WPARAM wParam,
 
       auto N =
           SendMessage(GetDlgItem(hWndDlg, IDC_USER_COMBOX), CB_GETCURSEL, 0, 0);
-      std::wstring sid;
       if (N == kAppContainer) {
-        auto hedit = GetDlgItem(hWndDlg, IDE_APPCONTAINER_SID);
-        if (Edit_GetTextLength(hedit) > sizeof("S-1-16-4096-XXXXX")) {
-          WCHAR sidbuf[512];
-          auto n = Edit_GetText(hedit, sidbuf, 512);
-          sid.assign(sidbuf, n);
-          MessageBoxW(hWndDlg, sid.c_str(), L"ApContainer use sid", MB_OK);
+        if (!ExecuteAppcontainer(cmd)) {
+          priv::ErrorMessage err(GetLastError());
+          MessageBoxW(hWndDlg, err.message(),
+                      L"Privexec create appconatiner process failed",
+                      MB_OK | MB_ICONERROR);
         }
-      }
-      if (!Execute((int)N, cmd, sid)) {
-        ErrorMessage err(GetLastError());
-        MessageBoxW(hWndDlg, err.message(), L"Privexec create process failed",
-                    MB_OK | MB_ICONERROR);
+      } else {
+        if (!Execute((int)N, cmd)) {
+          priv::ErrorMessage err(GetLastError());
+          MessageBoxW(hWndDlg, err.message(), L"Privexec create process failed",
+                      MB_OK | MB_ICONERROR);
+        }
       }
 
     } break;

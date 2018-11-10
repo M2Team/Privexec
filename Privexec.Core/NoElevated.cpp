@@ -53,6 +53,7 @@ private:
   T *ptr;
 };
 
+namespace priv {
 bool CreateNoElevatedProcess(LPWSTR pszCmdline, DWORD &dwProcessId) {
   if (!IsUserAdministratorsGroup()) {
     STARTUPINFOW si;
@@ -179,3 +180,4 @@ bool CreateNoElevatedProcess(LPWSTR pszCmdline, DWORD &dwProcessId) {
               _variant_t(), TASK_LOGON_INTERACTIVE_TOKEN, _variant_t(L""),
               &iRegisteredTask) == S_OK);
 }
+} // namespace priv

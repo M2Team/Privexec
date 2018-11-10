@@ -6,7 +6,7 @@
 BOOL IsSystemSid(PSID sid) { return ::IsWellKnownSid(sid, WinLocalSystemSid); }
 
 // find first SYSTEM process with a good token to use
-
+namespace priv {
 HANDLE OpenSystemProcessToken() {
   PWTS_PROCESS_INFO pInfo;
   DWORD count;
@@ -151,3 +151,4 @@ bool CreateSystemProcess(LPWSTR pszCmdline, DWORD &dwProcessId) {
   dwProcessId = pi.dwProcessId;
   return true;
 }
+} // namespace priv
