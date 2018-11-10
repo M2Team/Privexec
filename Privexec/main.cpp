@@ -57,7 +57,7 @@ bool InitializeCombobox(HWND hCombox) {
   return true;
 }
 
-bool Execute(int cur, const std::wstring &cmdline) {
+bool Execute(int cur, const std::wstring &cmdline, const std::wstring &sid) {
   auto iter = Aliascmd.find(cmdline);
 
   std::wstring xcmd(PATHCCH_MAX_CCH, L'\0');
@@ -74,7 +74,7 @@ bool Execute(int cur, const std::wstring &cmdline) {
     return false;
   }
   DWORD dwProcessId;
-  return PrivCreateProcess(users[cur].first, &xcmd[0], dwProcessId);
+  return PrivCreateProcess(users[cur].first, &xcmd[0], dwProcessId, sid);
 }
 
 bool PathAppImageCombineExists(std::wstring &file, const wchar_t *cmd) {
@@ -148,6 +148,9 @@ INT_PTR WINAPI ApplicationProc(HWND hWndDlg, UINT message, WPARAM wParam,
     HMENU hSystemMenu = ::GetSystemMenu(hWndDlg, FALSE);
     InsertMenuW(hSystemMenu, SC_CLOSE, MF_ENABLED, IDM_PRIVEXEC_ABOUT,
                 L"About Privexec\tAlt+F1");
+    Edit_SetText(GetDlgItem(hWndDlg, IDE_APPCONTAINER_SID), L"SID: N/A");
+    EnableWindow(GetDlgItem(hWndDlg, IDE_APPCONTAINER_SID),
+                 FALSE); // Disable AppContainer SID
     return 0;
   } break;
   case WM_SYSCOMMAND:
@@ -169,6 +172,18 @@ INT_PTR WINAPI ApplicationProc(HWND hWndDlg, UINT message, WPARAM wParam,
     break;
   case WM_COMMAND: {
     switch (LOWORD(wParam)) {
+    case IDC_USER_COMBOX: {
+      auto wmEvent = HIWORD(wParam);
+      if (wmEvent == CBN_SELCHANGE) {
+        auto N = SendMessage(GetDlgItem(hWndDlg, IDC_USER_COMBOX), CB_GETCURSEL,
+                             0, 0);
+        if (N == kAppContainer) {
+          EnableWindow(GetDlgItem(hWndDlg, IDE_APPCONTAINER_SID), TRUE);
+        } else {
+          EnableWindow(GetDlgItem(hWndDlg, IDE_APPCONTAINER_SID), FALSE);
+        }
+      }
+    } break;
     case IDB_EXECUTE_BUTTON: {
       std::wstring cmd;
       auto hCombox = GetDlgItem(hWndDlg, IDC_COMMAND_COMBOX);
@@ -182,11 +197,22 @@ INT_PTR WINAPI ApplicationProc(HWND hWndDlg, UINT message, WPARAM wParam,
 
       auto N =
           SendMessage(GetDlgItem(hWndDlg, IDC_USER_COMBOX), CB_GETCURSEL, 0, 0);
-      if (!Execute((int)N, cmd)) {
+      std::wstring sid;
+      if (N == kAppContainer) {
+        auto hedit = GetDlgItem(hWndDlg, IDE_APPCONTAINER_SID);
+        if (Edit_GetTextLength(hedit) > sizeof("S-1-16-4096-XXXXX")) {
+          WCHAR sidbuf[512];
+          auto n = Edit_GetText(hedit, sidbuf, 512);
+          sid.assign(sidbuf, n);
+          MessageBoxW(hWndDlg, sid.c_str(), L"ApContainer use sid", MB_OK);
+        }
+      }
+      if (!Execute((int)N, cmd, sid)) {
         ErrorMessage err(GetLastError());
         MessageBoxW(hWndDlg, err.message(), L"Privexec create process failed",
                     MB_OK | MB_ICONERROR);
       }
+
     } break;
     case IDB_EXIT_BUTTON:
       DestroyWindow(hWndDlg);

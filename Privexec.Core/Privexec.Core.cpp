@@ -53,10 +53,10 @@ bool CreateAdministratorsProcess(LPWSTR pszCmdline, DWORD &dwProcessId) {
   return false;
 }
 
-bool PrivCreateProcess(int level, LPWSTR pszCmdline, DWORD &dwProcessId) {
+bool PrivCreateProcess(int level, LPWSTR pszCmdline, DWORD &dwProcessId,const std::wstring &sid) {
   switch (level) {
   case kAppContainer:
-    return CreateAppContainerProcess(pszCmdline, dwProcessId);
+    return CreateAppContainerProcess(pszCmdline, dwProcessId,sid);
   case kUACElevated:
     return CreateNoElevatedProcess(pszCmdline, dwProcessId);
   case kMandatoryIntegrityControl:

@@ -41,6 +41,12 @@ public:
     }
     return true;
   }
+  bool AppContainerContextInitialzieWithSID(const std::wstring &sid) {
+    if (ConvertStringSidToSidW(sid.c_str(), &appContainerSid) != TRUE) {
+      return false;
+    }
+    return false;
+  }
   PSID GetAppContainerSid() const { return appContainerSid; }
   TCapabilitiesList &Capabilitis() { return mCapabilities; }
 
@@ -83,11 +89,19 @@ private:
   TCapabilitiesList mCapabilities;
 };
 
-bool CreateAppContainerProcess(LPWSTR pszComline, DWORD &dwProcessId) {
+bool CreateAppContainerProcess(LPWSTR pszComline, DWORD &dwProcessId,
+                               const std::wstring &sid) {
   AppContainerContext context;
-  if (!context.AppContainerContextInitialize()) {
-    return false;
+  if (sid.empty()) {
+    if (!context.AppContainerContextInitialize()) {
+      return false;
+    }
+  } else {
+    if (!context.AppContainerContextInitialzieWithSID(sid)) {
+      return false;
+    }
   }
+
   PROCESS_INFORMATION pi;
   STARTUPINFOEX siex = {sizeof(STARTUPINFOEX)};
   siex.StartupInfo.cb = sizeof(siex);

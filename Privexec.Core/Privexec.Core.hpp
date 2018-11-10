@@ -8,6 +8,7 @@
 #endif
 #include <Windows.h>
 #endif
+#include <string>
 
 enum PrivexecUsersLevel {
   kAppContainer = 0,
@@ -22,13 +23,16 @@ BOOL EnableDebugPrivilege(void);
 HANDLE OpenSystemProcessToken();
 bool GetCurrentSessionId(DWORD &dwSessionId);
 
-bool CreateAppContainerProcess(LPWSTR pszComline, DWORD &dwProcessId);
+// AppContainer support SID
+bool CreateAppContainerProcess(LPWSTR pszComline, DWORD &dwProcessId,
+                               const std::wstring &sid = L"");
 bool CreateLowlevelProcess(LPWSTR pszCmdline, DWORD &dwProcessId);
 bool CreateNoElevatedProcess(LPWSTR pszCmdline, DWORD &dwProcessId);
 bool CreateAdministratorsProcess(LPWSTR pszCmdline, DWORD &dwProcessId);
 bool CreateSystemProcess(LPWSTR pszCmdline, DWORD &dwProcessId);
 bool CreateTiProcess(LPWSTR pszCmdline, DWORD &dwProcessId);
-bool PrivCreateProcess(int level, LPWSTR pszCmdline, DWORD &dwProcessId);
+bool PrivCreateProcess(int level, LPWSTR pszCmdline, DWORD &dwProcessId,
+                       const std::wstring &sid = L"");
 
 class ErrorMessage {
 public:
