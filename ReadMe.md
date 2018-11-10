@@ -43,6 +43,10 @@ Alias:
 
 ![alias](images/alias.png)
 
+AppContainer:
+
+![appcoantiner](images/appcontainer.png)
+
 wsudo:
 
 ![wsudo](images/wsudo.png)
