@@ -82,7 +82,8 @@ BOOL EnableDebugPrivilege(void) {
   return result;
 }
 
-bool CreateSystemProcess(LPWSTR pszCmdline, DWORD &dwProcessId) {
+bool CreateSystemProcess(LPWSTR pszCmdline, DWORD &dwProcessId,
+                         LPWSTR lpCurrentDirectory) {
   if (FALSE == EnableDebugPrivilege()) {
     SetLastError(ERROR_ACCESS_DENIED);
     printf("EnableDebugPrivilege failed: Access denied (are you running "
@@ -141,7 +142,8 @@ bool CreateSystemProcess(LPWSTR pszCmdline, DWORD &dwProcessId) {
                                   sizeof(session));
 
   if (!::CreateProcessAsUserW(hPrimary, nullptr, pszCmdline, nullptr, nullptr,
-                              FALSE, 0, nullptr, nullptr, &si, &pi)) {
+                              FALSE, 0, nullptr, lpCurrentDirectory, &si,
+                              &pi)) {
     printf("Failed to create process (error=%d)\n", ::GetLastError());
     return false;
   }

@@ -27,6 +27,7 @@ HRESULT WINAPI MessageWindowEx(HWND hWnd, LPCWSTR pszWindowTitle,
 
 enum OpenDialogType : int { kExecute, kAppmanifest };
 bool PrivexecDiscoverWindow(HWND hParent, std::wstring &filename,
-                             const wchar_t *pszWindowTitle,int type);
-
+                            const wchar_t *pszWindowTitle, int type);
+bool FolderOpenWindow(HWND hParent, std::wstring &folder,
+                      const wchar_t *pszWindowTitle);
 #endif // !PRECOMPILED_H

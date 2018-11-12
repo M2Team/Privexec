@@ -161,7 +161,8 @@ bool AppContainerContext::InitializeWithAppmanifest(const std::wstring &file) {
   return InitializeWithCapabilities(sids.data(), (int)sids.size());
 }
 
-bool AppContainerContext::Execute(LPWSTR pszComline, DWORD &dwProcessId) {
+bool AppContainerContext::Execute(LPWSTR pszComline, DWORD &dwProcessId,
+                                  LPWSTR lpCurrentDirectory) {
   PROCESS_INFORMATION pi;
   STARTUPINFOEX siex = {sizeof(STARTUPINFOEX)};
   siex.StartupInfo.cb = sizeof(siex);
@@ -188,7 +189,7 @@ bool AppContainerContext::Execute(LPWSTR pszComline, DWORD &dwProcessId) {
   bReturn = CreateProcessW(
       nullptr, pszComline, nullptr, nullptr, FALSE,
       EXTENDED_STARTUPINFO_PRESENT | CREATE_UNICODE_ENVIRONMENT, nullptr,
-      nullptr, reinterpret_cast<STARTUPINFOW *>(&siex), &pi);
+      lpCurrentDirectory, reinterpret_cast<STARTUPINFOW *>(&siex), &pi);
   if (bReturn) {
     dwProcessId = pi.dwProcessId;
     CloseHandle(pi.hThread);
@@ -199,6 +200,7 @@ bool AppContainerContext::Execute(LPWSTR pszComline, DWORD &dwProcessId) {
 }
 
 bool CreateAppContainerProcess(LPWSTR pszComline, DWORD &dwProcessId,
+                               LPWSTR lpCurrentDirectory,
                                const std::wstring &appmanifest) {
   AppContainerContext ctx;
   if (appmanifest.empty()) {
@@ -210,7 +212,7 @@ bool CreateAppContainerProcess(LPWSTR pszComline, DWORD &dwProcessId,
       return false;
     }
   }
-  return ctx.Execute(pszComline, dwProcessId);
+  return ctx.Execute(pszComline, dwProcessId, lpCurrentDirectory);
 }
 
 } // namespace priv

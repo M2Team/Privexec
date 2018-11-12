@@ -54,7 +54,8 @@ public:
   bool Initialize();
   capabilities &Capabilitis() { return ca; }
   PSID AppContainerSid() const { return appcontainersid; }
-  bool Execute(LPWSTR pszComline, DWORD &dwProcessId);
+  bool Execute(LPWSTR pszComline, DWORD &dwProcessId,
+               LPWSTR lpCurrentDirectory);
 
 private:
   PSID appcontainersid{nullptr};
@@ -67,13 +68,20 @@ bool GetCurrentSessionId(DWORD &dwSessionId);
 
 // AppContainer support SID
 bool CreateAppContainerProcess(LPWSTR pszComline, DWORD &dwProcessId,
+                               LPWSTR lpCurrentDirectory,
                                const std::wstring &appmanifest = L"");
-bool CreateLowlevelProcess(LPWSTR pszCmdline, DWORD &dwProcessId);
-bool CreateNoElevatedProcess(LPWSTR pszCmdline, DWORD &dwProcessId);
-bool CreateAdministratorsProcess(LPWSTR pszCmdline, DWORD &dwProcessId);
-bool CreateSystemProcess(LPWSTR pszCmdline, DWORD &dwProcessId);
-bool CreateTiProcess(LPWSTR pszCmdline, DWORD &dwProcessId);
-bool PrivCreateProcess(int level, LPWSTR pszCmdline, DWORD &dwProcessId);
+bool CreateLowlevelProcess(LPWSTR pszCmdline, DWORD &dwProcessId,
+                           LPWSTR lpCurrentDirectory);
+bool CreateNoElevatedProcess(LPWSTR pszCmdline, DWORD &dwProcessId,
+                             LPWSTR lpCurrentDirectory);
+bool CreateAdministratorsProcess(LPWSTR pszCmdline, DWORD &dwProcessId,
+                                 LPWSTR lpCurrentDirectory);
+bool CreateSystemProcess(LPWSTR pszCmdline, DWORD &dwProcessId,
+                         LPWSTR lpCurrentDirectory);
+bool CreateTiProcess(LPWSTR pszCmdline, DWORD &dwProcessId,
+                     LPWSTR lpCurrentDirectory);
+bool PrivCreateProcess(int level, LPWSTR pszCmdline, DWORD &dwProcessId,
+                       LPWSTR lpCurrentDirectory);
 
 class ErrorMessage {
 public:

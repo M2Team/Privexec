@@ -54,7 +54,8 @@ private:
 };
 
 namespace priv {
-bool CreateNoElevatedProcess(LPWSTR pszCmdline, DWORD &dwProcessId) {
+bool CreateNoElevatedProcess(LPWSTR pszCmdline, DWORD &dwProcessId,
+                             LPWSTR lpCurrentDirectory) {
   if (!IsUserAdministratorsGroup()) {
     STARTUPINFOW si;
     ZeroMemory(&si, sizeof(si));
@@ -62,7 +63,7 @@ bool CreateNoElevatedProcess(LPWSTR pszCmdline, DWORD &dwProcessId) {
     PROCESS_INFORMATION pi;
     ZeroMemory(&pi, sizeof(pi));
     auto bResult = CreateProcessW(nullptr, pszCmdline, nullptr, nullptr, FALSE,
-                                  0, nullptr, nullptr, &si, &pi);
+                                  0, nullptr, lpCurrentDirectory, &si, &pi);
     if (bResult) {
       dwProcessId = pi.dwProcessId;
       CloseHandle(pi.hThread);
@@ -159,6 +160,7 @@ bool CreateNoElevatedProcess(LPWSTR pszCmdline, DWORD &dwProcessId) {
   if (iRegistrationTrigger->put_Delay(L"PT0S") != S_OK) {
     return false;
   }
+  // iRegistrationTrigger->put_StartBoundary()
   if (iTask->get_Actions(&iActionCollection) != S_OK) {
     return false;
   }
@@ -169,6 +171,9 @@ bool CreateNoElevatedProcess(LPWSTR pszCmdline, DWORD &dwProcessId) {
     return false;
   }
   if (iExecAction->put_Path(_bstr_t(file.data())) != S_OK) {
+    return false;
+  }
+  if (iExecAction->put_WorkingDirectory(lpCurrentDirectory) != S_OK) {
     return false;
   }
   if (pszArgs) {

@@ -23,6 +23,24 @@ inline std::wstring utf8towide(std::string_view str) {
   return wstr;
 }
 
+inline std::wstring PWDExpand(const std::wstring &d) {
+  std::wstring xd(PATHCCH_MAX_CCH, L'\0');
+  if (d.empty()) {
+    auto N = GetCurrentDirectoryW(PATHCCH_MAX_CCH, &xd[0]);
+    xd.resize(N > 0 ? (size_t)N : 0);
+    return xd;
+  }
+  auto N = ExpandEnvironmentStringsW(d.c_str(), &xd[0], PATHCCH_MAX_CCH);
+  if (N <= 0) {
+    return L"";
+  }
+  xd.resize(N);
+  if ((GetFileAttributesW(xd.c_str()) & FILE_ATTRIBUTE_DIRECTORY) != 0) {
+    return xd;
+  }
+  return L"";
+}
+
 class DotComInitialize {
 public:
   DotComInitialize() {
@@ -57,7 +75,7 @@ bool InitializeCombobox(HWND hCombox) {
   return true;
 }
 
-bool Execute(int cur, const std::wstring &cmdline) {
+bool Execute(int cur, const std::wstring &cmdline, const std::wstring &pwd) {
   auto iter = Aliascmd.find(cmdline);
 
   std::wstring xcmd(PATHCCH_MAX_CCH, L'\0');
@@ -73,8 +91,10 @@ bool Execute(int cur, const std::wstring &cmdline) {
   if (cur >= users.size()) {
     return false;
   }
+  auto xpwd = PWDExpand(pwd);
   DWORD dwProcessId;
-  return priv::PrivCreateProcess(users[cur].first, &xcmd[0], dwProcessId);
+  return priv::PrivCreateProcess(users[cur].first, &xcmd[0], dwProcessId,
+                                 xpwd.empty() ? nullptr : &xpwd[0]);
 }
 
 bool PathAppImageCombineExists(std::wstring &file, const wchar_t *cmd) {
@@ -176,7 +196,7 @@ bool UpdateCapabilities(HWND hParent, const std::wstring &file) {
   return true;
 }
 
-bool ExecuteAppcontainer(const std::wstring &cmdline) {
+bool ExecuteAppcontainer(const std::wstring &cmdline, const std::wstring &pwd) {
   auto iter = Aliascmd.find(cmdline);
   std::wstring xcmd(PATHCCH_MAX_CCH, L'\0');
   DWORD N = 0;
@@ -187,6 +207,7 @@ bool ExecuteAppcontainer(const std::wstring &cmdline) {
     N = ExpandEnvironmentStringsW(cmdline.data(), &xcmd[0], PATHCCH_MAX_CCH);
   }
   xcmd.resize(N - 1);
+
   std::vector<WELL_KNOWN_SID_TYPE> cas;
   for (auto &c : capchecks) {
     if (Button_GetCheck(c.first) == BST_CHECKED) {
@@ -198,8 +219,9 @@ bool ExecuteAppcontainer(const std::wstring &cmdline) {
   if (!ctx.InitializeWithCapabilities(cas.data(), (int)cas.size())) {
     return false;
   }
+  auto xpwd = PWDExpand(pwd);
   DWORD dwProcessId;
-  return ctx.Execute(&xcmd[0], dwProcessId);
+  return ctx.Execute(&xcmd[0], dwProcessId, xpwd.empty() ? nullptr : &xpwd[0]);
 }
 
 INT_PTR WINAPI ApplicationProc(HWND hWndDlg, UINT message, WPARAM wParam,
@@ -273,6 +295,12 @@ INT_PTR WINAPI ApplicationProc(HWND hWndDlg, UINT message, WPARAM wParam,
         SetWindowTextW(GetDlgItem(hWndDlg, IDC_COMMAND_COMBOX), cmd.c_str());
       }
     } break;
+    case IDB_APPSTARTUP: {
+      std::wstring pwd;
+      if (FolderOpenWindow(hWndDlg, pwd, L"Privexec: Startup Folder")) {
+        SetWindowTextW(GetDlgItem(hWndDlg, IDE_APPSTARTUP), pwd.c_str());
+      }
+    } break;
     case IDB_APPCONTAINER_BUTTON: {
       std::wstring manifest;
       if (PrivexecDiscoverWindow(hWndDlg, manifest,
@@ -284,6 +312,7 @@ INT_PTR WINAPI ApplicationProc(HWND hWndDlg, UINT message, WPARAM wParam,
     } break;
     case IDB_EXECUTE_BUTTON: {
       std::wstring cmd;
+      std::wstring folder;
       auto hCombox = GetDlgItem(hWndDlg, IDC_COMMAND_COMBOX);
       auto Length = GetWindowTextLengthW(hCombox);
       if (Length == 0) {
@@ -292,19 +321,28 @@ INT_PTR WINAPI ApplicationProc(HWND hWndDlg, UINT message, WPARAM wParam,
       cmd.resize(Length + 1);
       GetWindowTextW(hCombox, &cmd[0], Length + 1); //// Null T
       cmd.resize(Length);
+      ///
+      auto hPWD = GetDlgItem(hWndDlg, IDE_APPSTARTUP);
+      Length = GetWindowTextLengthW(hPWD);
+      if (Length == 0) {
+        return 0;
+      }
+      folder.resize(Length + 1);
+      GetWindowTextW(hPWD, &folder[0], Length + 1); //// Null T
+      folder.resize(Length);
 
       auto N =
           SendMessage(GetDlgItem(hWndDlg, IDC_USER_COMBOX), CB_GETCURSEL, 0, 0);
       ::EnableWindow(GetDlgItem(hWndDlg, IDB_EXECUTE_BUTTON), FALSE);
       if (N == kAppContainer) {
-        if (!ExecuteAppcontainer(cmd)) {
+        if (!ExecuteAppcontainer(cmd, folder)) {
           priv::ErrorMessage err(GetLastError());
           MessageBoxW(hWndDlg, err.message(),
                       L"Privexec create appconatiner process failed",
                       MB_OK | MB_ICONERROR);
         }
       } else {
-        if (!Execute((int)N, cmd)) {
+        if (!Execute((int)N, cmd, folder)) {
           priv::ErrorMessage err(GetLastError());
           MessageBoxW(hWndDlg, err.message(), L"Privexec create process failed",
                       MB_OK | MB_ICONERROR);

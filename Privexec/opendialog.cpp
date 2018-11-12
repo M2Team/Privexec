@@ -37,7 +37,7 @@ void ReportErrorMessage(LPCWSTR pszFunction, HRESULT hr) {
   }
 }
 bool PrivexecDiscoverWindow(HWND hParent, std::wstring &filename,
-                             const wchar_t *pszWindowTitle, int type) {
+                            const wchar_t *pszWindowTitle, int type) {
   HRESULT hr = S_OK;
   IFileOpenDialog *pWindow = nullptr;
   IShellItem *pItem = nullptr;
@@ -93,4 +93,35 @@ done:
     pWindow->Release();
   }
   return hr == S_OK;
+}
+
+bool FolderOpenWindow(HWND hParent, std::wstring &folder,
+                      const wchar_t *pszWindowTitle) {
+  IFileDialog *pfd = nullptr;
+  HRESULT hr = S_OK;
+  bool bRet = false;
+  if (SUCCEEDED(CoCreateInstance(CLSID_FileOpenDialog, NULL,
+                                 CLSCTX_INPROC_SERVER, IID_PPV_ARGS(&pfd)))) {
+    DWORD dwOptions;
+    if (!SUCCEEDED(pfd->GetOptions(&dwOptions))) {
+      return false;
+    }
+    pfd->SetOptions(dwOptions | FOS_PICKFOLDERS);
+    pfd->SetTitle(pszWindowTitle ? pszWindowTitle : L"Open Folder");
+    if (SUCCEEDED(pfd->Show(hParent))) {
+      IShellItem *psi;
+      if (SUCCEEDED(pfd->GetResult(&psi))) {
+        PWSTR pwsz = NULL;
+        hr = psi->GetDisplayName(SIGDN_FILESYSPATH, &pwsz);
+        if (SUCCEEDED(hr)) {
+          folder = pwsz;
+          bRet = true;
+          CoTaskMemFree(pwsz);
+        }
+        psi->Release();
+      }
+    }
+    pfd->Release();
+  }
+  return bRet;
 }

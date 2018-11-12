@@ -4,7 +4,8 @@
 
 namespace priv {
 
-bool CreateLowlevelProcess(LPWSTR pszCmdline, DWORD &dwProcessId) {
+bool CreateLowlevelProcess(LPWSTR pszCmdline, DWORD &dwProcessId,
+                           LPWSTR lpCurrentDirectory) {
   HANDLE hToken;
   HANDLE hNewToken;
   PWSTR szIntegritySid = L"S-1-16-4096";
@@ -42,7 +43,7 @@ bool CreateLowlevelProcess(LPWSTR pszCmdline, DWORD &dwProcessId) {
   }
 
   if (CreateProcessAsUserW(hNewToken, NULL, pszCmdline, NULL, NULL, FALSE, 0,
-                           NULL, NULL, &si, &pi)) {
+                           NULL, lpCurrentDirectory, &si, &pi)) {
     CloseHandle(pi.hThread);
     CloseHandle(pi.hProcess);
     dwProcessId = pi.dwProcessId;

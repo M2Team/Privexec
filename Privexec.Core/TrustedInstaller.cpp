@@ -221,7 +221,8 @@ BOOL WINAPI NSudoImpersonateAsSystem() {
   return false;
 }
 
-bool CreateTiProcess(LPWSTR pszCmdline, DWORD &dwProcessId) {
+bool CreateTiProcess(LPWSTR pszCmdline, DWORD &dwProcessId,
+                     LPWSTR lpCurrentDirectory) {
   if (!IsUserAdministratorsGroup()) {
     SetLastError(ERROR_ACCESS_DENIED);
     return false;
@@ -251,7 +252,7 @@ bool CreateTiProcess(LPWSTR pszCmdline, DWORD &dwProcessId) {
   si.lpDesktop = L"WinSta0\\Default";
   auto result =
       CreateProcessAsUserW(hToken, nullptr, pszCmdline, nullptr, nullptr, FALSE,
-                           0, nullptr, nullptr, &si, &pi);
+                           0, nullptr, lpCurrentDirectory, &si, &pi);
   if (result) {
     dwProcessId = pi.dwProcessId;
     CloseHandle(hToken);

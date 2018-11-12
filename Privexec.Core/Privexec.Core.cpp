@@ -6,7 +6,7 @@
 
 namespace priv {
 
-bool CreateAdministratorsProcess(LPWSTR pszCmdline, DWORD &dwProcessId) {
+bool CreateAdministratorsProcess(LPWSTR pszCmdline, DWORD &dwProcessId,LPWSTR lpCurrentDirectory) {
   if (IsUserAdministratorsGroup()) {
     STARTUPINFOW si;
     ZeroMemory(&si, sizeof(si));
@@ -55,20 +55,20 @@ bool CreateAdministratorsProcess(LPWSTR pszCmdline, DWORD &dwProcessId) {
   return false;
 }
 
-bool PrivCreateProcess(int level, LPWSTR pszCmdline, DWORD &dwProcessId) {
+bool PrivCreateProcess(int level, LPWSTR pszCmdline, DWORD &dwProcessId,LPWSTR lpCurrentDirectory) {
   switch (level) {
   case kAppContainer:
-    return CreateAppContainerProcess(pszCmdline, dwProcessId);
+    return CreateAppContainerProcess(pszCmdline, dwProcessId,lpCurrentDirectory);
   case kUACElevated:
-    return CreateNoElevatedProcess(pszCmdline, dwProcessId);
+    return CreateNoElevatedProcess(pszCmdline, dwProcessId,lpCurrentDirectory);
   case kMandatoryIntegrityControl:
-    return CreateLowlevelProcess(pszCmdline, dwProcessId);
+    return CreateLowlevelProcess(pszCmdline, dwProcessId,lpCurrentDirectory);
   case kAdministrator:
-    return CreateAdministratorsProcess(pszCmdline, dwProcessId);
+    return CreateAdministratorsProcess(pszCmdline, dwProcessId,lpCurrentDirectory);
   case kSystem:
-    return CreateSystemProcess(pszCmdline, dwProcessId);
+    return CreateSystemProcess(pszCmdline, dwProcessId,lpCurrentDirectory);
   case kTrustedInstaller:
-    return CreateTiProcess(pszCmdline, dwProcessId);
+    return CreateTiProcess(pszCmdline, dwProcessId,lpCurrentDirectory);
   default:
     break;
   }
