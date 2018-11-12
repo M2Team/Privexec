@@ -9,9 +9,9 @@
 #include "pugixml/pugixml.hpp"
 #include "Privexec.Core.hpp"
 
-#define APPCONTAINER_PROFILE_NAME L"Privexec.Core.AppContainer"
-#define APPCONTAINER_PROFILE_DISPLAYNAME L"Privexec.Core.AppContainer"
-#define APPCONTAINER_PROFILE_DESCRIPTION L"Privexec Core AppContainer"
+#define APPCONTAINER_PROFILE_NAME L"Privexec.Core.AppContainer.v1"
+#define APPCONTAINER_PROFILE_DISPLAYNAME L"Privexec.Core.AppContainer.v1"
+#define APPCONTAINER_PROFILE_DESCRIPTION L"Privexec Core AppContainer.v1"
 
 namespace priv {
 
@@ -92,7 +92,6 @@ bool WellKnownFromAppmanifest(const std::wstring &file,
   return true;
 }
 
-
 bool AppContainerContext::InitializeWithCapabilities(WELL_KNOWN_SID_TYPE *knarr,
                                                      int arraylen) {
   if (knarr == nullptr || arraylen == 0) {
@@ -104,24 +103,28 @@ bool AppContainerContext::InitializeWithCapabilities(WELL_KNOWN_SID_TYPE *knarr,
       return false;
     }
     DWORD sidListSize = SECURITY_MAX_SID_SIZE;
-    if (::CreateWellKnownSid(knarr[i], NULL, sid, &sidListSize) == FALSE) {
+    if (::CreateWellKnownSid(knarr[i], NULL, sid_, &sidListSize) != TRUE) {
       HeapFree(GetProcessHeap(), 0, sid_);
       continue;
     }
-    if (::IsWellKnownSid(sid, knarr[i]) == FALSE) {
+    if (::IsWellKnownSid(sid_, knarr[i]) != TRUE) {
       HeapFree(GetProcessHeap(), 0, knarr);
       continue;
     }
     SID_AND_ATTRIBUTES attr;
-    attr.Sid = sid;
+    attr.Sid = sid_;
     attr.Attributes = SE_GROUP_ENABLED;
     ca.push_back(attr);
   }
+
   auto hr = DeleteAppContainerProfile(APPCONTAINER_PROFILE_NAME);
-  if (::CreateAppContainerProfile(
-          APPCONTAINER_PROFILE_NAME, APPCONTAINER_PROFILE_DISPLAYNAME,
-          APPCONTAINER_PROFILE_DESCRIPTION, (ca.empty() ? NULL : ca.data()),
-          (DWORD)ca.size(), &sid) != S_OK) {
+  if (hr != S_OK) {
+    OutputDebugStringW(L"DeleteAppContainerProfile error");
+  }
+  if ((hr = ::CreateAppContainerProfile(
+           APPCONTAINER_PROFILE_NAME, APPCONTAINER_PROFILE_DISPLAYNAME,
+           APPCONTAINER_PROFILE_DESCRIPTION, (ca.empty() ? NULL : ca.data()),
+           (DWORD)ca.size(), &appcontainersid)) != S_OK) {
     return false;
   }
   return true;
@@ -144,7 +147,7 @@ bool AppContainerContext::Initialize() {
 }
 
 bool AppContainerContext::InitializeWithSID(const std::wstring &ssid) {
-  if (ConvertStringSidToSidW(ssid.c_str(), &sid) != TRUE) {
+  if (ConvertStringSidToSidW(ssid.c_str(), &appcontainersid) != TRUE) {
     return false;
   }
   return true;
@@ -169,10 +172,10 @@ bool AppContainerContext::Execute(LPWSTR pszComline, DWORD &dwProcessId) {
   BOOL bReturn = TRUE;
   if ((bReturn = InitializeProcThreadAttributeList(
            siex.lpAttributeList, 3, 0, &cbAttributeListSize)) == FALSE) {
-    return FALSE;
+    return false;
   }
   SECURITY_CAPABILITIES sc;
-  sc.AppContainerSid = sid;
+  sc.AppContainerSid = appcontainersid;
   sc.Capabilities = (ca.empty() ? NULL : ca.data());
   sc.CapabilityCount = static_cast<DWORD>(ca.size());
   sc.Reserved = 0;
@@ -180,7 +183,7 @@ bool AppContainerContext::Execute(LPWSTR pszComline, DWORD &dwProcessId) {
            siex.lpAttributeList, 0, PROC_THREAD_ATTRIBUTE_SECURITY_CAPABILITIES,
            &sc, sizeof(sc), NULL, NULL)) == FALSE) {
     DeleteProcThreadAttributeList(siex.lpAttributeList);
-    return FALSE;
+    return false;
   }
   bReturn = CreateProcessW(
       nullptr, pszComline, nullptr, nullptr, FALSE,

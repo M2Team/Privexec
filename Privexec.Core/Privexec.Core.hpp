@@ -29,7 +29,8 @@ struct error_code {
 };
 // Add key todo
 bool CapabilitiesAdd(std::vector<WELL_KNOWN_SID_TYPE> &caps, const char *key);
-bool WellKnownFromAppmanifest(const std::wstring &file, std::vector<WELL_KNOWN_SID_TYPE> &sids);
+bool WellKnownFromAppmanifest(const std::wstring &file,
+                              std::vector<WELL_KNOWN_SID_TYPE> &sids);
 
 class AppContainerContext {
 public:
@@ -43,8 +44,8 @@ public:
         HeapFree(GetProcessHeap(), 0, c.Sid);
       }
     }
-    if (sid != nullptr) {
-      FreeSid(sid);
+    if (appcontainersid != nullptr) {
+      FreeSid(appcontainersid);
     }
   }
   bool InitializeWithCapabilities(WELL_KNOWN_SID_TYPE *knarr, int arraylen);
@@ -52,13 +53,13 @@ public:
   bool InitializeWithAppmanifest(const std::wstring &file);
   bool Initialize();
   capabilities &Capabilitis() { return ca; }
-  PSID AppContainerSid() { return sid; }
+  PSID AppContainerSid() const { return appcontainersid; }
   bool Execute(LPWSTR pszComline, DWORD &dwProcessId);
+
 private:
-  PSID sid{nullptr};
+  PSID appcontainersid{nullptr};
   capabilities ca;
 };
-
 
 BOOL EnableDebugPrivilege(void);
 HANDLE OpenSystemProcessToken();

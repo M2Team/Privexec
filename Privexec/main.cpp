@@ -130,7 +130,7 @@ bool InitializePrivApp(HWND hWnd) {
   return true;
 }
 
-std::unordered_map<HWND, int> capchecks;
+std::unordered_map<HWND, WELL_KNOWN_SID_TYPE> capchecks;
 
 bool ChangeCapabilitiesVisible(bool enable) {
   for (auto c : capchecks) {
@@ -141,9 +141,9 @@ bool ChangeCapabilitiesVisible(bool enable) {
 
 bool InitializeCapabilities(HWND hParent) {
   //
-  auto func = [&](int id, int wsid) {
+  auto func = [&](int id, WELL_KNOWN_SID_TYPE wsid) {
     auto h = GetDlgItem(hParent, id);
-    capchecks.insert(std::pair<HWND, int>(h, wsid));
+    capchecks.insert(std::pair<HWND, WELL_KNOWN_SID_TYPE>(h, wsid));
   };
   func(IDP_INTERNETCLIENT, WinCapabilityInternetClientSid);
   func(IDP_INTERNETCLIENTSERVER, WinCapabilityInternetClientServerSid);
@@ -193,6 +193,7 @@ bool ExecuteAppcontainer(const std::wstring &cmdline) {
       cas.push_back((WELL_KNOWN_SID_TYPE)c.second);
     }
   }
+
   priv::AppContainerContext ctx;
   if (!ctx.InitializeWithCapabilities(cas.data(), (int)cas.size())) {
     return false;
@@ -268,14 +269,14 @@ INT_PTR WINAPI ApplicationProc(HWND hWndDlg, UINT message, WPARAM wParam,
     case IDB_COMMAND_TARGET: {
       std::wstring cmd;
       if (PrivexecDiscoverWindow(hWndDlg, cmd, L"Privexec: Open Execute",
-                                  kExecute)) {
+                                 kExecute)) {
         SetWindowTextW(GetDlgItem(hWndDlg, IDC_COMMAND_COMBOX), cmd.c_str());
       }
     } break;
     case IDB_APPCONTAINER_BUTTON: {
       std::wstring manifest;
-      if (PrivexecDiscoverWindow(
-              hWndDlg, manifest, L"Privexec: Open AppManifest", kAppmanifest)) {
+      if (PrivexecDiscoverWindow(hWndDlg, manifest,
+                                 L"Privexec: Open AppManifest", kAppmanifest)) {
         SetWindowTextW(GetDlgItem(hWndDlg, IDE_APPCONTAINER_APPMANIFEST),
                        manifest.c_str());
         UpdateCapabilities(hWndDlg, manifest);
@@ -294,6 +295,7 @@ INT_PTR WINAPI ApplicationProc(HWND hWndDlg, UINT message, WPARAM wParam,
 
       auto N =
           SendMessage(GetDlgItem(hWndDlg, IDC_USER_COMBOX), CB_GETCURSEL, 0, 0);
+      ::EnableWindow(GetDlgItem(hWndDlg, IDB_EXECUTE_BUTTON), FALSE);
       if (N == kAppContainer) {
         if (!ExecuteAppcontainer(cmd)) {
           priv::ErrorMessage err(GetLastError());
@@ -308,7 +310,7 @@ INT_PTR WINAPI ApplicationProc(HWND hWndDlg, UINT message, WPARAM wParam,
                       MB_OK | MB_ICONERROR);
         }
       }
-
+      ::EnableWindow(GetDlgItem(hWndDlg, IDB_EXECUTE_BUTTON), TRUE);
     } break;
     case IDB_EXIT_BUTTON:
       DestroyWindow(hWndDlg);
