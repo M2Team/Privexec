@@ -202,7 +202,7 @@ bool CreateAppContainerProcess(LPWSTR pszComline, DWORD &dwProcessId,
                                const std::wstring &appmanifest) {
   AppContainerContext ctx;
   if (appmanifest.empty()) {
-    if (ctx.Initialize()) {
+    if (!ctx.Initialize()) {
       return false;
     }
   } else {
