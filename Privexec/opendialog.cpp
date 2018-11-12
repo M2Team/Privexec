@@ -36,7 +36,7 @@ void ReportErrorMessage(LPCWSTR pszFunction, HRESULT hr) {
                TD_ERROR_ICON, &nB);
   }
 }
-bool PriveexecDiscoverWindow(HWND hParent, std::wstring &filename,
+bool PrivexecDiscoverWindow(HWND hParent, std::wstring &filename,
                              const wchar_t *pszWindowTitle, int type) {
   HRESULT hr = S_OK;
   IFileOpenDialog *pWindow = nullptr;

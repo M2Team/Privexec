@@ -267,14 +267,14 @@ INT_PTR WINAPI ApplicationProc(HWND hWndDlg, UINT message, WPARAM wParam,
     } break;
     case IDB_COMMAND_TARGET: {
       std::wstring cmd;
-      if (PriveexecDiscoverWindow(hWndDlg, cmd, L"Privexec: Open Execute",
+      if (PrivexecDiscoverWindow(hWndDlg, cmd, L"Privexec: Open Execute",
                                   kExecute)) {
         SetWindowTextW(GetDlgItem(hWndDlg, IDC_COMMAND_COMBOX), cmd.c_str());
       }
     } break;
     case IDB_APPCONTAINER_BUTTON: {
       std::wstring manifest;
-      if (PriveexecDiscoverWindow(
+      if (PrivexecDiscoverWindow(
               hWndDlg, manifest, L"Privexec: Open AppManifest", kAppmanifest)) {
         SetWindowTextW(GetDlgItem(hWndDlg, IDE_APPCONTAINER_APPMANIFEST),
                        manifest.c_str());
