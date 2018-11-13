@@ -53,7 +53,7 @@ static const Entry<WELL_KNOWN_SID_TYPE> capabilitiesList[] = {
     Entry<WELL_KNOWN_SID_TYPE>(u8"picturesLibrary",
                                WinCapabilityPicturesLibrarySid),
     Entry<WELL_KNOWN_SID_TYPE>(u8"videosLibrary",
-                               WinCapabilityPicturesLibrarySid),
+                               WinCapabilityVideosLibrarySid),
     Entry<WELL_KNOWN_SID_TYPE>(u8"musicLibrary", WinCapabilityMusicLibrarySid),
     Entry<WELL_KNOWN_SID_TYPE>(u8"enterpriseAuthentication",
                                WinCapabilityEnterpriseAuthenticationSid),
