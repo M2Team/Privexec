@@ -59,6 +59,8 @@ wsudo:
 
 Privexec is a GUI client, Your can run as administrator (no administrator), System and TrustedInstaller require administrator!!!
 
+Command and Process startup directory support `ExpandEnvironmentString`.
+
 wsudo is a console command client
 
 **wsudo usage:**

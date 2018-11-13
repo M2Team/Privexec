@@ -246,6 +246,7 @@ INT_PTR WINAPI ApplicationProc(HWND hWndDlg, UINT message, WPARAM wParam,
                  L"AppxManifest.xml or Package.appxmanifest");
     EnableWindow(GetDlgItem(hWndDlg, IDE_APPCONTAINER_APPMANIFEST),
                  FALSE); // Disable AppContainer SID
+    EnableWindow(GetDlgItem(hWndDlg, IDB_APPCONTAINER_BUTTON), FALSE);
     InitializeCapabilities(hWndDlg);
     ChangeCapabilitiesVisible(false);
     return 0;
@@ -276,12 +277,14 @@ INT_PTR WINAPI ApplicationProc(HWND hWndDlg, UINT message, WPARAM wParam,
                              0, 0);
         if (N == kAppContainer) {
           EnableWindow(GetDlgItem(hWndDlg, IDE_APPCONTAINER_APPMANIFEST), TRUE);
+          EnableWindow(GetDlgItem(hWndDlg, IDB_APPCONTAINER_BUTTON), TRUE);
           SetWindowTextW(GetDlgItem(hWndDlg, IDE_APPCONTAINER_APPMANIFEST),
                          L"");
           ChangeCapabilitiesVisible(true);
         } else {
           EnableWindow(GetDlgItem(hWndDlg, IDE_APPCONTAINER_APPMANIFEST),
                        FALSE);
+          EnableWindow(GetDlgItem(hWndDlg, IDB_APPCONTAINER_BUTTON), FALSE);
           SetWindowTextW(GetDlgItem(hWndDlg, IDE_APPCONTAINER_APPMANIFEST),
                          L"AppxManifest.xml or Package.appxmanifest");
           ChangeCapabilitiesVisible(false);
