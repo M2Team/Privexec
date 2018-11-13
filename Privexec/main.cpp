@@ -324,9 +324,6 @@ INT_PTR WINAPI ApplicationProc(HWND hWndDlg, UINT message, WPARAM wParam,
       ///
       auto hPWD = GetDlgItem(hWndDlg, IDE_APPSTARTUP);
       Length = GetWindowTextLengthW(hPWD);
-      if (Length == 0) {
-        return 0;
-      }
       folder.resize(Length + 1);
       GetWindowTextW(hPWD, &folder[0], Length + 1); //// Null T
       folder.resize(Length);
