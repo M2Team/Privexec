@@ -12,6 +12,13 @@
 #endif
 
 namespace priv {
+
+struct error_code {
+  std::wstring message;
+  long ec{S_OK};
+  bool operator()() { return ec == S_OK; }
+};
+
 class process {
 public:
   template <typename... Args> process(std::wstring_view app, Args... args) {
@@ -37,12 +44,21 @@ public:
   std::wstring &cwd() { return cwd_; }
   const std::wstring &cwd() const { return cwd_; }
   DWORD pid() const { return pid_; }
+  bool execute(error_code &ec, int level);
 
 private:
   DWORD pid_;
   std::wstring cmd_;
   std::wstring cwd_;
 };
+
+class appcontainer {
+public:
+private:
+};
+
 } // namespace priv
+
+#include "details/process.ipp"
 
 #endif
