@@ -4,7 +4,7 @@
 #include "processfwd.hpp"
 
 namespace priv {
-bool process::execute(error_code &ec, int level) {
+bool process::execute( int level) {
   //
   return false;
 }

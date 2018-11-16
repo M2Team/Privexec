@@ -5,6 +5,7 @@
 #include <Userenv.h>
 #include <functional>
 #include <ShlObj.h>
+#include "pugixml/pugixml.hpp"
 #include "processfwd.hpp"
 
 namespace priv {
@@ -70,6 +71,24 @@ inline bool capabilitiesadd(widcontainer &caps, const char *key) {
   return true;
 }
 
+// Lookup Package.Capabilities.rescap:Capability
+// Or Package.Capabilities.Capability
+inline bool WellKnownFromAppmanifest(const std::wstring &file,
+                                     widcontainer &sids) {
+  pugi::xml_document doc;
+  if (!doc.load_file(file.c_str())) {
+    return false;
+  }
+  auto elem = doc.child("Package").child("Capabilities");
+  for (auto it : elem.children("Capability")) {
+    capabilitiesadd(sids, it.attribute("Name").as_string());
+  }
+  for (auto it : elem.children("rescap:Capability")) {
+    capabilitiesadd(sids, it.attribute("Name").as_string());
+  }
+  return true;
+}
+
 bool appcontainer::initialize(const wid_t *begin, const wid_t *end) {
   if (!ca.empty()) {
     return false;
@@ -108,15 +127,37 @@ bool appcontainer::initialize(const wid_t *begin, const wid_t *end) {
   }
   return true;
 }
+bool appcontainer::initialize() {
+  wid_t wslist[] = {
+      WinCapabilityInternetClientSid,
+      WinCapabilityInternetClientServerSid,
+      WinCapabilityPrivateNetworkClientServerSid,
+      WinCapabilityPicturesLibrarySid,
+      WinCapabilityVideosLibrarySid,
+      WinCapabilityMusicLibrarySid,
+      WinCapabilityDocumentsLibrarySid,
+      WinCapabilitySharedUserCertificatesSid,
+      WinCapabilityEnterpriseAuthenticationSid,
+      WinCapabilityRemovableStorageSid,
+  };
+  return initialize(wslist, wslist + _countof(wslist));
+}
 bool appcontainer::initialize(const std::wstring &appxml) {
-  //
+  widcontainer sids;
+  if (WellKnownFromAppmanifest(appxml, sids)) {
+    return false;
+  }
+  return initialize(sids.data(), sids.data() + sids.size());
+}
+
+bool appcontainer::initializessid(const std::wstring &ssid) {
+  if (ConvertStringSidToSidW(ssid.c_str(), &appcontainersid) != TRUE) {
+    return false;
+  }
   return true;
 }
-bool appcontainer::initializessid(const std::wstring &ssid) {
-  // unimpl
-  return false;
-}
-bool appcontainer::execute(error_code &ec, int level) {
+
+bool appcontainer::execute() {
   //
   return true;
 }
