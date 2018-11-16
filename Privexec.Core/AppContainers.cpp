@@ -108,7 +108,7 @@ bool AppContainerContext::InitializeWithCapabilities(WELL_KNOWN_SID_TYPE *knarr,
       continue;
     }
     if (::IsWellKnownSid(sid_, knarr[i]) != TRUE) {
-      HeapFree(GetProcessHeap(), 0, knarr);
+      HeapFree(GetProcessHeap(), 0, sid_);
       continue;
     }
     SID_AND_ATTRIBUTES attr;
