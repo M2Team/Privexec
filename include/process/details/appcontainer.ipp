@@ -38,30 +38,23 @@ https://docs.microsoft.com/en-us/windows/desktop/SecAuthZ/well-known-sids
 */
 
 inline bool capabilitiesadd(widcontainer &caps, const char *key) {
-  static const Entry<WELL_KNOWN_SID_TYPE> capabilitiesList[] = {
-      Entry<WELL_KNOWN_SID_TYPE>(u8"internetClient",
-                                 WinCapabilityInternetClientSid),
-      Entry<WELL_KNOWN_SID_TYPE>(u8"internetClientServer",
-                                 WinCapabilityInternetClientServerSid),
-      Entry<WELL_KNOWN_SID_TYPE>(u8"privateNetworkClientServer",
-                                 WinCapabilityPrivateNetworkClientServerSid),
-      Entry<WELL_KNOWN_SID_TYPE>(u8"documentsLibrary",
-                                 WinCapabilityDocumentsLibrarySid),
-      Entry<WELL_KNOWN_SID_TYPE>(u8"picturesLibrary",
-                                 WinCapabilityPicturesLibrarySid),
-      Entry<WELL_KNOWN_SID_TYPE>(u8"videosLibrary",
-                                 WinCapabilityVideosLibrarySid),
-      Entry<WELL_KNOWN_SID_TYPE>(u8"musicLibrary",
-                                 WinCapabilityMusicLibrarySid),
-      Entry<WELL_KNOWN_SID_TYPE>(u8"enterpriseAuthentication",
-                                 WinCapabilityEnterpriseAuthenticationSid),
-      Entry<WELL_KNOWN_SID_TYPE>(u8"sharedUserCertificates",
-                                 WinCapabilitySharedUserCertificatesSid),
-      Entry<WELL_KNOWN_SID_TYPE>(u8"removableStorage",
-                                 WinCapabilityRemovableStorageSid),
-      Entry<WELL_KNOWN_SID_TYPE>(u8"appointments",
-                                 WinCapabilityAppointmentsSid),
-      Entry<WELL_KNOWN_SID_TYPE>(u8"contacts", WinCapabilityContactsSid),
+  static const Entry<wid_t> capabilitiesList[] = {
+      Entry<wid_t>(u8"internetClient", WinCapabilityInternetClientSid),
+      Entry<wid_t>(u8"internetClientServer",
+                   WinCapabilityInternetClientServerSid),
+      Entry<wid_t>(u8"privateNetworkClientServer",
+                   WinCapabilityPrivateNetworkClientServerSid),
+      Entry<wid_t>(u8"documentsLibrary", WinCapabilityDocumentsLibrarySid),
+      Entry<wid_t>(u8"picturesLibrary", WinCapabilityPicturesLibrarySid),
+      Entry<wid_t>(u8"videosLibrary", WinCapabilityVideosLibrarySid),
+      Entry<wid_t>(u8"musicLibrary", WinCapabilityMusicLibrarySid),
+      Entry<wid_t>(u8"enterpriseAuthentication",
+                   WinCapabilityEnterpriseAuthenticationSid),
+      Entry<wid_t>(u8"sharedUserCertificates",
+                   WinCapabilitySharedUserCertificatesSid),
+      Entry<wid_t>(u8"removableStorage", WinCapabilityRemovableStorageSid),
+      Entry<wid_t>(u8"appointments", WinCapabilityAppointmentsSid),
+      Entry<wid_t>(u8"contacts", WinCapabilityContactsSid),
   };
   const auto &e =
       std::find(std::begin(capabilitiesList), std::end(capabilitiesList), key);
@@ -157,8 +150,59 @@ bool appcontainer::initializessid(const std::wstring &ssid) {
   return true;
 }
 
+struct AttributeList {
+public:
+  using type_traits = LPPROC_THREAD_ATTRIBUTE_LIST;
+  AttributeList() = default;
+  ~AttributeList() {
+    if (p != nullptr) {
+      DeleteProcThreadAttributeList(p);
+    }
+  }
+  type_traits New(size_t sz) {
+    p = reinterpret_cast<type_traits>(HeapAlloc(GetProcessHeap(), 0, sz));
+    return p;
+  }
+
+private:
+  type_traits p{nullptr};
+};
+
 bool appcontainer::execute() {
-  //
+  PROCESS_INFORMATION pi;
+  STARTUPINFOEX siex = {sizeof(STARTUPINFOEX)};
+  siex.StartupInfo.cb = sizeof(siex);
+  SIZE_T cbAttributeListSize = 0;
+  InitializeProcThreadAttributeList(NULL, 3, 0, &cbAttributeListSize);
+  AttributeList al;
+  siex.lpAttributeList = al.New(cbAttributeListSize);
+  if (InitializeProcThreadAttributeList(siex.lpAttributeList, 3, 0,
+                                        &cbAttributeListSize) != TRUE) {
+    return false;
+  }
+  SECURITY_CAPABILITIES sc;
+  sc.AppContainerSid = appcontainersid;
+  sc.Capabilities = (ca.empty() ? NULL : ca.data());
+  sc.CapabilityCount = static_cast<DWORD>(ca.size());
+  sc.Reserved = 0;
+  if (UpdateProcThreadAttribute(siex.lpAttributeList, 0,
+                                PROC_THREAD_ATTRIBUTE_SECURITY_CAPABILITIES,
+                                &sc, sizeof(sc), NULL, NULL) != FALSE) {
+    // DeleteProcThreadAttributeList(siex.lpAttributeList);
+    return false;
+  }
+
+  if (CreateProcessW(nullptr, &cmd_[0], nullptr, nullptr, FALSE,
+                     EXTENDED_STARTUPINFO_PRESENT | CREATE_UNICODE_ENVIRONMENT,
+                     nullptr, (cwd_.empty() ? nullptr : &cwd_[0]),
+                     reinterpret_cast<STARTUPINFOW *>(&siex), &pi) != TRUE) {
+    // DeleteProcThreadAttributeList(siex.lpAttributeList);
+    return false;
+  }
+  pid_ = pi.dwProcessId;
+  CloseHandle(pi.hThread);
+  CloseHandle(pi.hProcess);
+  // DeleteProcThreadAttributeList(siex.lpAttributeList);
   return true;
 }
 } // namespace priv

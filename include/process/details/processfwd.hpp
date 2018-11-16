@@ -15,11 +15,6 @@
 
 namespace priv {
 
-struct error_code {
-  std::wstring message;
-  long ec{S_OK};
-  bool operator()() { return ec == S_OK; }
-};
 
 class process {
 public:
@@ -59,7 +54,7 @@ private:
   std::wstring cwd_;
   std::wstring kmessage;
 };
-
+// SECURITY_CAPABILITY_INTERNET_EXPLORER
 using wid_t = WELL_KNOWN_SID_TYPE;
 using widcontainer = std::vector<wid_t>;
 class appcontainer {
