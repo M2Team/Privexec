@@ -89,12 +89,13 @@ public:
   // known level
   bool execute();
   bool noelevatedexec();
-  bool trustedexec();
-  bool exelevatedexec();
+  bool tiexec();
+  bool evatedexec();
   bool lowlevelexec();
   bool systemexec();
 
 private:
+  bool execwithtoken(HANDLE hToken);
   DWORD pid_;
   std::wstring cmd_;
   std::wstring cwd_;

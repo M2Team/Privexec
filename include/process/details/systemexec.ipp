@@ -7,7 +7,7 @@
 
 namespace priv {
 
-inline HANDLE OpenSystemProcessToken() {
+inline HANDLE opensystemtoken() {
   PWTS_PROCESS_INFO pInfo;
   DWORD count;
   DWORD dwSessionId;
