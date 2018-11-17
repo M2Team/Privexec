@@ -6,7 +6,7 @@
 #include <unordered_map>
 #include <string>
 #include <process/process.hpp>
-#include "../Privexec.Console/Privexec.Console.hpp"
+#include <console/console.hpp>
 #include <version.h>
 
 class Arguments {
@@ -85,15 +85,14 @@ bool CreateProcessInternal(int level, int Argc, wchar_t **Argv) {
     argb.append(Argv[i]);
   }
   priv::process p(argb.str());
-  console::Print(console::fc::Yellow, L"Command: %s\n", argb.str());
+  priv::Print(priv::fc::Yellow, L"Command: %s\n", argb.str());
   if (p.execute(level)) {
-    console::Print(console::fc::Green, L"new process is running: %d\n",
-                   p.pid());
+    priv::Print(priv::fc::Green, L"new process is running: %d\n", p.pid());
     return true;
   }
   auto ec = priv::error_code::lasterror();
-  console::Print(console::fc::Red, L"create process  last error %d  (%s): %s\n",
-                 ec.code, p.message().c_str(), ec.message);
+  priv::Print(priv::fc::Red, L"create process  last error %d  (%s): %s\n",
+              ec.code, p.message().c_str(), ec.message);
   return false;
 }
 
@@ -156,18 +155,17 @@ Example:
 )";
 
 int wmain(int argc, const wchar_t *argv[]) {
-  console::EnableVTMode();
   if (argc <= 1) {
-    console::Print(console::fc::Red, L"usage: wsudo args\n");
+    priv::Print(priv::fc::Red, L"usage: wsudo args\n");
     return 1;
   }
   auto Arg = argv[1];
   if (IsArg(Arg, L"-v", L"--version")) {
-    console::Print(console::fc::Cyan, L"wsudo %s\n", PRIVEXEC_BUILD_VERSION);
+    priv::Print(priv::fc::Cyan, L"wsudo %s\n", PRIVEXEC_BUILD_VERSION);
     return 0;
   }
   if (IsArg(Arg, L"-h", L"--help")) {
-    console::Print(console::fc::Cyan, L"wsudo \x2665 %s", kUsage);
+    priv::Print(priv::fc::Cyan, L"wsudo \x2665 %s", kUsage);
     return 0;
   }
   int index = 1;
@@ -177,7 +175,7 @@ int wmain(int argc, const wchar_t *argv[]) {
   if (IsArg(Arg, L"--user", 6, &Argoff)) {
     if (!Argoff) {
       if (argc < 3) {
-        console::Print(console::fc::Red, L"Invalid Argument: %s\n", Arg);
+        priv::Print(priv::fc::Red, L"Invalid Argument: %s\n", Arg);
         return 1;
       }
       Argoff = argv[2];
@@ -188,7 +186,7 @@ int wmain(int argc, const wchar_t *argv[]) {
   } else if (IsArg(Arg, L"-u", 2, &Argoff)) {
     if (!Argoff) {
       if (argc < 3) {
-        console::Print(console::fc::Red, L"Invalid Argument: %s\n", Arg);
+        priv::Print(priv::fc::Red, L"Invalid Argument: %s\n", Arg);
         return 1;
       }
       Argoff = argv[2];
@@ -197,19 +195,18 @@ int wmain(int argc, const wchar_t *argv[]) {
       index = 2;
     }
   } else if (Arg[0] == L'-') {
-    console::Print(console::fc::Red, L"Invalid Argument: %s\n", Arg);
+    priv::Print(priv::fc::Red, L"Invalid Argument: %s\n", Arg);
     return 1;
   }
   if (Argoff) {
     level = SearchUser(Argoff);
     if (level == -1) {
-      console::Print(console::fc::Red, L"Invalid Argument: %s\n", Argoff);
+      priv::Print(priv::fc::Red, L"Invalid Argument: %s\n", Argoff);
       return 1;
     }
   }
   if (argc == index) {
-    console::Print(console::fc::Red, L"Invalid Argument: %s\n",
-                   GetCommandLineW());
+    priv::Print(priv::fc::Red, L"Invalid Argument: %s\n", GetCommandLineW());
     return 1;
   }
   if (!CreateProcessInternal(level, argc - index,
