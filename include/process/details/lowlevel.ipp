@@ -13,16 +13,19 @@ bool process::lowlevelexec() {
   PSID pIntegritySid = NULL;
   TOKEN_MANDATORY_LABEL TIL = {0};
   if (!OpenProcessToken(GetCurrentProcess(), MAXIMUM_ALLOWED, &hToken)) {
+    kmessage = L"lowlevelexec/>OpenProcessToken";
     return false;
   }
   if (!DuplicateTokenEx(hToken, MAXIMUM_ALLOWED, NULL, SecurityImpersonation,
                         TokenPrimary, &hNewToken)) {
+    kmessage = L"lowlevelexec/>DuplicateTokenEx";
     CloseHandle(hToken);
     return false;
   }
   if (!ConvertStringSidToSidW(szIntegritySid, &pIntegritySid)) {
     CloseHandle(hToken);
     CloseHandle(hNewToken);
+    kmessage = L"lowlevelexec/>ConvertStringSidToSidW";
     return false;
   }
 
@@ -37,6 +40,7 @@ bool process::lowlevelexec() {
   if (!SetTokenInformation(hNewToken, TokenIntegrityLevel, &TIL,
                            sizeof(TOKEN_MANDATORY_LABEL) +
                                GetLengthSid(pIntegritySid))) {
+    kmessage = L"lowlevelexec/>SetTokenInformation";
     return false;
   }
   return execwithtoken(hNewToken);

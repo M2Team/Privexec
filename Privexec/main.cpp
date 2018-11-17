@@ -12,7 +12,6 @@
 #include <json.hpp>
 #include <version.h>
 
-
 inline std::wstring utf8towide(std::string_view str) {
   std::wstring wstr;
   auto N =
@@ -129,7 +128,8 @@ bool InitializeCombobox(HWND hCombox) {
   return true;
 }
 
-bool Execute(int cur, const std::wstring &cmdline, const std::wstring &pwd) {
+std::optional<std::wstring> Execute(int cur, const std::wstring &cmdline,
+                                    const std::wstring &pwd) {
   auto iter = Aliascmd.find(cmdline);
   std::wstring xcmd(PATHCCH_MAX_CCH, L'\0');
   DWORD N = 0;
@@ -142,14 +142,15 @@ bool Execute(int cur, const std::wstring &cmdline, const std::wstring &pwd) {
 
   xcmd.resize(N - 1);
   if (cur >= users.size()) {
-    return false;
+    return std::make_optional<std::wstring>(L"cur Overflow");
   }
   priv::process p(xcmd);
   p.cwd().assign(PWDExpand(pwd));
-  return p.execute(users[cur].first);
+  if (p.execute(users[cur].first)) {
+    return std::nullopt;
+  }
+  return std::make_optional<std::wstring>(p.message());
 }
-
-
 
 std::unordered_map<HWND, WELL_KNOWN_SID_TYPE> capchecks;
 
@@ -347,8 +348,10 @@ INT_PTR WINAPI ApplicationProc(HWND hWndDlg, UINT message, WPARAM wParam,
                       MB_OK | MB_ICONERROR);
         }
       } else {
-        if (!Execute((int)N, cmd, folder)) {
+        auto opt = Execute((int)N, cmd, folder);
+        if (opt) {
           auto ec = priv::error_code::lasterror();
+          ec.message.append(L" (").append(*opt).append(L")");
           MessageBoxW(hWndDlg, ec.message.c_str(),
                       L"Privexec create process failed", MB_OK | MB_ICONERROR);
         }

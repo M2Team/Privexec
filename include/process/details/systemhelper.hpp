@@ -44,7 +44,6 @@ inline bool LookupSystemProcessID(DWORD &pid) {
       return true;
     }
   }
-  fprintf(stderr, "unable found any system process\n");
   ::WTSFreeMemory(ppi);
   return false;
 }
