@@ -4,10 +4,16 @@
 #include "processfwd.hpp"
 
 namespace priv {
-bool process::execute( int level) {
+// execute only
+bool process::execute() {
+  //
+  return true;
+}
+bool process::execute(int level) {
   //
   return false;
 }
+
 } // namespace priv
 
 #endif

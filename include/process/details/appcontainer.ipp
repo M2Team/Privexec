@@ -5,6 +5,7 @@
 #include <Userenv.h>
 #include <functional>
 #include <ShlObj.h>
+#include <memory>
 #include "pugixml/pugixml.hpp"
 #include "processfwd.hpp"
 
@@ -150,32 +151,18 @@ bool appcontainer::initializessid(const std::wstring &ssid) {
   return true;
 }
 
-struct AttributeList {
-public:
-  using type_traits = LPPROC_THREAD_ATTRIBUTE_LIST;
-  AttributeList() = default;
-  ~AttributeList() {
-    if (p != nullptr) {
-      DeleteProcThreadAttributeList(p);
-    }
-  }
-  type_traits New(size_t sz) {
-    p = reinterpret_cast<type_traits>(HeapAlloc(GetProcessHeap(), 0, sz));
-    return p;
-  }
-
-private:
-  type_traits p{nullptr};
-};
-
+// PAWapper is
+using PAttribute = LPPROC_THREAD_ATTRIBUTE_LIST;
 bool appcontainer::execute() {
   PROCESS_INFORMATION pi;
   STARTUPINFOEX siex = {sizeof(STARTUPINFOEX)};
   siex.StartupInfo.cb = sizeof(siex);
   SIZE_T cbAttributeListSize = 0;
   InitializeProcThreadAttributeList(NULL, 3, 0, &cbAttributeListSize);
-  AttributeList al;
-  siex.lpAttributeList = al.New(cbAttributeListSize);
+  siex.lpAttributeList = reinterpret_cast<PAttribute>(
+      HeapAlloc(GetProcessHeap(), 0, cbAttributeListSize));
+  auto act =
+      finally([&] { DeleteProcThreadAttributeList(siex.lpAttributeList); });
   if (InitializeProcThreadAttributeList(siex.lpAttributeList, 3, 0,
                                         &cbAttributeListSize) != TRUE) {
     return false;
@@ -188,21 +175,18 @@ bool appcontainer::execute() {
   if (UpdateProcThreadAttribute(siex.lpAttributeList, 0,
                                 PROC_THREAD_ATTRIBUTE_SECURITY_CAPABILITIES,
                                 &sc, sizeof(sc), NULL, NULL) != FALSE) {
-    // DeleteProcThreadAttributeList(siex.lpAttributeList);
     return false;
   }
 
   if (CreateProcessW(nullptr, &cmd_[0], nullptr, nullptr, FALSE,
                      EXTENDED_STARTUPINFO_PRESENT | CREATE_UNICODE_ENVIRONMENT,
-                     nullptr, (cwd_.empty() ? nullptr : &cwd_[0]),
+                     nullptr, Castwstr(cwd_),
                      reinterpret_cast<STARTUPINFOW *>(&siex), &pi) != TRUE) {
-    // DeleteProcThreadAttributeList(siex.lpAttributeList);
     return false;
   }
   pid_ = pi.dwProcessId;
   CloseHandle(pi.hThread);
   CloseHandle(pi.hProcess);
-  // DeleteProcThreadAttributeList(siex.lpAttributeList);
   return true;
 }
 } // namespace priv

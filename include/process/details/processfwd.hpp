@@ -15,6 +15,45 @@
 
 namespace priv {
 
+// final_act
+// https://github.com/Microsoft/GSL/blob/ebe7ebfd855a95eb93783164ffb342dbd85cbc27/include/gsl/gsl_util#L85-L89
+template <class F> class final_act {
+public:
+  explicit final_act(F f) noexcept : f_(std::move(f)), invoke_(true) {}
+
+  final_act(final_act &&other) noexcept
+      : f_(std::move(other.f_)), invoke_(other.invoke_) {
+    other.invoke_ = false;
+  }
+
+  final_act(const final_act &) = delete;
+  final_act &operator=(const final_act &) = delete;
+
+  ~final_act() noexcept {
+    if (invoke_)
+      f_();
+  }
+
+private:
+  F f_;
+  bool invoke_;
+};
+
+// finally() - convenience function to generate a final_act
+template <class F> inline final_act<F> finally(const F &f) noexcept {
+  return final_act<F>(f);
+}
+
+template <class F> inline final_act<F> finally(F &&f) noexcept {
+  return final_act<F>(std::forward<F>(f));
+}
+
+template <typename T> const wchar_t *Castwstr(const T &t) {
+  if (t.empty()) {
+    return nullptr;
+  }
+  return t.data();
+}
 
 class process {
 public:
@@ -47,6 +86,13 @@ public:
   DWORD pid() const { return pid_; }
   //
   bool execute(int level);
+  // known level
+  bool execute();
+  bool noelevatedexec();
+  bool trustedexec();
+  bool exelevatedexec();
+  bool lowlevelexec();
+  bool systemexec();
 
 private:
   DWORD pid_;
@@ -114,6 +160,49 @@ private:
   PSID appcontainersid{nullptr};
   capabilities_t ca;
 };
+
+/*++
+Routine Description: This routine returns TRUE if the caller's
+process is a member of the Administrators local group. Caller is NOT
+expected to be impersonating anyone and is expected to be able to
+open its own process and process token.
+Arguments: None.
+Return Value:
+TRUE - Caller has Administrators local group.
+FALSE - Caller does not have Administrators local group. --
+*/
+inline bool IsUserAdministratorsGroup() {
+  SID_IDENTIFIER_AUTHORITY NtAuthority = SECURITY_NT_AUTHORITY;
+  PSID AdministratorsGroup;
+  if (!AllocateAndInitializeSid(&NtAuthority, 2, SECURITY_BUILTIN_DOMAIN_RID,
+                                DOMAIN_ALIAS_RID_ADMINS, 0, 0, 0, 0, 0, 0,
+                                &AdministratorsGroup)) {
+    return false;
+  }
+  BOOL b = FALSE;
+  if (!CheckTokenMembership(NULL, AdministratorsGroup, &b)) {
+    b = FALSE;
+  }
+  FreeSid(AdministratorsGroup);
+  return b == TRUE;
+}
+
+inline bool GetCurrentSessionId(DWORD &dwSessionId) {
+  HANDLE hToken = INVALID_HANDLE_VALUE;
+  if (!OpenProcessToken(GetCurrentProcess(), MAXIMUM_ALLOWED, &hToken)) {
+    return false;
+  }
+  DWORD Length = 0;
+  if (!GetTokenInformation(hToken, TokenSessionId, &dwSessionId, sizeof(DWORD),
+                           &Length)) {
+    CloseHandle(hToken);
+    return false;
+  }
+  CloseHandle(hToken);
+  return true;
+}
+
+///
 bool WellKnownFromAppmanifest(const std::wstring &file, widcontainer &sids);
 } // namespace priv
 
