@@ -61,15 +61,30 @@ bool process::evatedexec() {
 }
 
 // Exe with token
-bool process::execwithtoken(HANDLE hToken) {
+bool process::execwithtoken(HANDLE hToken, bool desktop) {
   STARTUPINFO si;
   PROCESS_INFORMATION pi;
   ZeroMemory(&si, sizeof(si));
   si.cb = sizeof(si);
   ZeroMemory(&pi, sizeof(pi));
-  si.lpDesktop = L"WinSta0\\Default";
-  if (CreateProcessAsUserW(hToken, nullptr, &cmd_[0], nullptr, nullptr, FALSE,
-                           0, nullptr, Castwstr(cwd_), &si, &pi) != TRUE) {
+  if (desktop) {
+    si.lpDesktop = L"WinSta0\\Default";
+  }
+  LPVOID lpEnvironment = nullptr;
+  HANDLE hProcessToken = nullptr;
+  if (OpenProcessToken(GetCurrentProcess(), MAXIMUM_ALLOWED, &hProcessToken)) {
+    CreateEnvironmentBlock(&lpEnvironment, hProcessToken, TRUE);
+    CloseHandle(hProcessToken);
+  }
+  auto deleter = finally([&] {
+    if (lpEnvironment != nullptr) {
+      DestroyEnvironmentBlock(lpEnvironment);
+    }
+  });
+  if (CreateProcessAsUserW(
+          hToken, nullptr, &cmd_[0], nullptr, nullptr, FALSE,
+          (lpEnvironment == nullptr) ? 0 : CREATE_UNICODE_ENVIRONMENT,
+          lpEnvironment, Castwstr(cwd_), &si, &pi) != TRUE) {
     return false;
   }
   pid_ = pi.dwProcessId;

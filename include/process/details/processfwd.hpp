@@ -95,7 +95,7 @@ public:
   bool systemexec();
 
 private:
-  bool execwithtoken(HANDLE hToken);
+  bool execwithtoken(HANDLE hToken, bool desktop = false);
   DWORD pid_;
   std::wstring cmd_;
   std::wstring cwd_;

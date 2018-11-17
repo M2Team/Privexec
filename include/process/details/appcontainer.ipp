@@ -177,10 +177,20 @@ bool appcontainer::execute() {
                                 &sc, sizeof(sc), NULL, NULL) != FALSE) {
     return false;
   }
-
+  LPVOID lpEnvironment = nullptr;
+  HANDLE hProcessToken = nullptr;
+  if (OpenProcessToken(GetCurrentProcess(), MAXIMUM_ALLOWED, &hProcessToken)) {
+    CreateEnvironmentBlock(&lpEnvironment, hProcessToken, TRUE);
+    CloseHandle(hProcessToken);
+  }
+  auto deleter = finally([&] {
+    if (lpEnvironment != nullptr) {
+      DestroyEnvironmentBlock(lpEnvironment);
+    }
+  });
   if (CreateProcessW(nullptr, &cmd_[0], nullptr, nullptr, FALSE,
                      EXTENDED_STARTUPINFO_PRESENT | CREATE_UNICODE_ENVIRONMENT,
-                     nullptr, Castwstr(cwd_),
+                     lpEnvironment, Castwstr(cwd_),
                      reinterpret_cast<STARTUPINFOW *>(&siex), &pi) != TRUE) {
     return false;
   }
