@@ -55,6 +55,15 @@ template <typename T> const wchar_t *Castwstr(const T &t) {
   return t.data();
 }
 
+enum ProcessExecuteLevel {
+  ProcessAppContainer = 0,
+  ProcessMandatoryIntegrityControl,
+  ProcessNoElevated,
+  ProcessElevated,
+  ProcessSystem,
+  ProcessTrustedInstaller
+};
+
 class process {
 public:
   template <typename... Args> process(std::wstring_view app, Args... args) {
@@ -90,7 +99,7 @@ public:
   bool execute();
   bool noelevatedexec();
   bool tiexec();
-  bool evatedexec();
+  bool elevatedexec();
   bool lowlevelexec();
   bool systemexec();
 

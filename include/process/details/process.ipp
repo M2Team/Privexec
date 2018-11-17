@@ -24,7 +24,7 @@ bool process::execute() {
   return true;
 }
 
-bool process::evatedexec() {
+bool process::elevatedexec() {
   if (IsUserAdministratorsGroup()) {
     return execute();
   }
@@ -94,7 +94,29 @@ bool process::execwithtoken(HANDLE hToken, bool desktop) {
 }
 
 bool process::execute(int level) {
-  //
+  switch (level) {
+  case ProcessAppContainer: {
+    appcontainer ac(cmd_);
+    if (!ac.initialize()) {
+      return false;
+    }
+    ac.cwd() = cwd_;
+    return ac.execute();
+  }
+    return true;
+  case ProcessMandatoryIntegrityControl:
+    return lowlevelexec();
+  case ProcessNoElevated:
+    return noelevatedexec();
+  case ProcessElevated:
+    return elevatedexec();
+  case ProcessSystem:
+    return systemexec();
+  case ProcessTrustedInstaller:
+    return tiexec();
+  default:
+    break;
+  }
   return false;
 }
 
