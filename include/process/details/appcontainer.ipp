@@ -161,8 +161,10 @@ bool appcontainer::execute() {
   InitializeProcThreadAttributeList(NULL, 3, 0, &cbAttributeListSize);
   siex.lpAttributeList = reinterpret_cast<PAttribute>(
       HeapAlloc(GetProcessHeap(), 0, cbAttributeListSize));
-  auto act =
-      finally([&] { DeleteProcThreadAttributeList(siex.lpAttributeList); });
+  auto act = finally([&] {
+    // delete when func exit.
+    DeleteProcThreadAttributeList(siex.lpAttributeList);
+  });
   if (InitializeProcThreadAttributeList(siex.lpAttributeList, 3, 0,
                                         &cbAttributeListSize) != TRUE) {
     return false;

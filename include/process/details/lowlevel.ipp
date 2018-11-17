@@ -28,21 +28,18 @@ bool process::lowlevelexec() {
 
   TIL.Label.Attributes = SE_GROUP_INTEGRITY;
   TIL.Label.Sid = pIntegritySid;
-
+  auto deleter = finally([&] {
+    CloseHandle(hToken);
+    CloseHandle(hNewToken);
+    LocalFree(pIntegritySid);
+  });
   // Set process integrity levels
   if (!SetTokenInformation(hNewToken, TokenIntegrityLevel, &TIL,
                            sizeof(TOKEN_MANDATORY_LABEL) +
                                GetLengthSid(pIntegritySid))) {
-    CloseHandle(hToken);
-    CloseHandle(hNewToken);
-    LocalFree(pIntegritySid);
     return false;
   }
-  auto rl = execwithtoken(hNewToken);
-  CloseHandle(hToken);
-  CloseHandle(hNewToken);
-  LocalFree(pIntegritySid);
-  return rl;
+  return execwithtoken(hNewToken);
 }
 } // namespace priv
 
