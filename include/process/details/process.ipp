@@ -101,7 +101,11 @@ bool process::execute(int level) {
       return false;
     }
     ac.cwd() = cwd_;
-    return ac.execute();
+    if (!ac.execute()) {
+      return false;
+    }
+    pid_ = ac.pid();
+    return true;
   }
     return true;
   case ProcessMandatoryIntegrityControl:
