@@ -2,10 +2,7 @@
 #ifndef PRIVEXEC_TRUSTEDEXEC_HPP
 #define PRIVEXEC_TRUSTEDEXEC_HPP
 #include "processfwd.hpp"
-#include <cassert>
-#include <cstdio>
-#include <cstdlib>
-#include <WtsApi32.h>
+#include "systemhelper.hpp"
 
 namespace priv {
 class TrustedInstallerProxy {
@@ -109,12 +106,92 @@ private:
   SERVICE_STATUS_PROCESS ssp;
 };
 
+inline bool EnableAllTokenPrivileges(_In_ HANDLE hExistingToken,
+                                     _In_ bool bEnable) {
+  PTOKEN_PRIVILEGES privs = nullptr;
+  DWORD Length = 0;
+  GetTokenInformation(hExistingToken, TokenPrivileges, nullptr, 0, &Length);
+  if (GetLastError() != ERROR_INSUFFICIENT_BUFFER) {
+    return false;
+  }
+  auto privs = (PTOKEN_PRIVILEGES)HeapAlloc(GetProcessHeap(), 0, Length);
+  if (privs == nullptr) {
+    return false;
+  }
+  auto pfree = finally([privs] { HeapFree(GetProcessHeap(), 0, privs); });
+  if (GetTokenInformation(hExistingToken, TokenPrivileges, privs, Length,
+                          &Length) != TRUE) {
+    return false;
+  }
+  auto end = privs->Privileges + privs->PrivilegeCount;
+  for (auto it = privs->Privileges; it != end; it++) {
+    it->Attributes = (DWORD)(bEnable ? SE_PRIVILEGE_ENABLED : 0);
+  }
+  return (AdjustTokenPrivileges(hExistingToken, FALSE, privs, 0, nullptr,
+                                nullptr) == TRUE);
+}
+
+inline bool
+DuplicateProcessTokenEx(_In_ DWORD dwProcessID, _In_ DWORD dwDesiredAccess,
+                        _In_opt_ LPSECURITY_ATTRIBUTES lpTokenAttributes,
+                        _In_ SECURITY_IMPERSONATION_LEVEL ImpersonationLevel,
+                        _In_ TOKEN_TYPE TokenType, _Outptr_ PHANDLE phToken) {
+  HANDLE hProcess = nullptr;
+  HANDLE hToken = INVALID_HANDLE_VALUE;
+  if ((hProcess = OpenProcess(MAXIMUM_ALLOWED, FALSE, dwProcessID)) ==
+      nullptr) {
+    return false;
+  }
+  if (!OpenProcessToken(hProcess, MAXIMUM_ALLOWED, &hToken)) {
+    CloseHandle(hProcess);
+    return false;
+  }
+  auto result = DuplicateTokenEx(hToken, dwDesiredAccess, lpTokenAttributes,
+                                 ImpersonationLevel, TokenType, phToken);
+  CloseHandle(hProcess);
+  CloseHandle(hToken);
+  return (result == TRUE);
+}
+
+inline bool ImpersonateSystem() {
+  DWORD pid = 0;
+  if (!LookupSystemProcessID(pid)) {
+    return false;
+  }
+  HANDLE hToken = nullptr;
+  if (!DuplicateProcessTokenEx(pid, MAXIMUM_ALLOWED, nullptr,
+                               SecurityImpersonation, TokenImpersonation,
+                               &hToken)) {
+    return false;
+  }
+  if (EnableAllTokenPrivileges(hToken, true)) {
+    auto result = SetThreadToken(nullptr, hToken);
+    CloseHandle(hToken);
+    return result == TRUE;
+  }
+  return false;
+}
+
 bool process::tiexec() {
   if (!IsUserAdministratorsGroup()) {
     SetLastError(ERROR_ACCESS_DENIED);
     return false;
   }
-  return true;
+  TrustedInstallerProxy tip;
+  HANDLE hToken = INVALID_HANDLE_VALUE;
+  if (!tip.DuplicateTiToken(&hToken)) {
+    return false;
+  }
+  auto deleter = finally([hToken] { CloseHandle(hToken); });
+  DWORD dwSessionId;
+  if (!GetCurrentSessionId(dwSessionId)) {
+    return false;
+  }
+  if (SetTokenInformation(hToken, TokenSessionId, (PVOID)&dwSessionId,
+                          sizeof(DWORD)) != TRUE) {
+    return false;
+  }
+  return execwithtoken(hToken, true);
 }
 
 } // namespace priv

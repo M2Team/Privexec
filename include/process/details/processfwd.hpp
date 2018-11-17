@@ -197,20 +197,6 @@ inline bool IsUserAdministratorsGroup() {
   return b == TRUE;
 }
 
-inline bool GetCurrentSessionId(DWORD &dwSessionId) {
-  HANDLE hToken = INVALID_HANDLE_VALUE;
-  if (!OpenProcessToken(GetCurrentProcess(), MAXIMUM_ALLOWED, &hToken)) {
-    return false;
-  }
-  DWORD Length = 0;
-  if (!GetTokenInformation(hToken, TokenSessionId, &dwSessionId, sizeof(DWORD),
-                           &Length)) {
-    CloseHandle(hToken);
-    return false;
-  }
-  CloseHandle(hToken);
-  return true;
-}
 
 ///
 bool WellKnownFromAppmanifest(const std::wstring &file, widcontainer &sids);
