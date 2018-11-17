@@ -4,6 +4,7 @@
 #include "processfwd.hpp"
 #include <shellapi.h>
 #include <Shlwapi.h>
+#include <PathCch.h>
 #include <string>
 
 namespace priv {
@@ -51,7 +52,18 @@ bool process::elevatedexec() {
   info.hwnd = NULL;
   info.nShow = SW_SHOWNORMAL;
   info.fMask = SEE_MASK_DEFAULT | SEE_MASK_NOCLOSEPROCESS;
-  info.lpDirectory = nullptr;
+  LPCWSTR lpDirectory = nullptr;
+  if (cwd_.empty()) {
+    cwd_.resize(PATHCCH_MAX_CCH, 0);
+    auto N = GetCurrentDirectoryW(PATHCCH_MAX_CCH, &cwd_[0]);
+    if (N > 0) {
+      cmd_.resize(N);
+      info.lpDirectory = cwd_.data();
+    }
+  } else {
+    info.lpDirectory = cwd_.data();
+  }
+
   if (ShellExecuteExW(&info) != TRUE) {
     return false;
   }
@@ -73,12 +85,12 @@ bool process::execwithtoken(HANDLE hToken, bool desktop) {
   LPVOID lpEnvironment = nullptr;
   HANDLE hProcessToken = nullptr;
   if (OpenProcessToken(GetCurrentProcess(), MAXIMUM_ALLOWED, &hProcessToken)) {
-    CreateEnvironmentBlock(&lpEnvironment, hProcessToken, TRUE);
+    ::CreateEnvironmentBlock(&lpEnvironment, hProcessToken, TRUE);
     CloseHandle(hProcessToken);
   }
   auto deleter = finally([&] {
     if (lpEnvironment != nullptr) {
-      DestroyEnvironmentBlock(lpEnvironment);
+      ::DestroyEnvironmentBlock(lpEnvironment);
     }
   });
   if (CreateProcessAsUserW(

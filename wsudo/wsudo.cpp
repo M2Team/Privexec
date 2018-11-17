@@ -5,10 +5,9 @@
 #include <iostream>
 #include <unordered_map>
 #include <string>
-
+#include <process/process.hpp>
 #include "../Privexec.Console/Privexec.Console.hpp"
-#include "../Privexec.Core/Privexec.Core.hpp"
-#include "../inc/version.h"
+#include <version.h>
 
 class Arguments {
 public:
@@ -85,17 +84,16 @@ bool CreateProcessInternal(int level, int Argc, wchar_t **Argv) {
   for (int i = 1; i < Argc; i++) {
     argb.append(Argv[i]);
   }
-  DWORD dwProcessId;
+  priv::process p(argb.str());
   console::Print(console::fc::Yellow, L"Command: %s\n", argb.str());
-  if (priv::PrivCreateProcess(level, const_cast<LPWSTR>(argb.str().data()),
-                              dwProcessId, nullptr)) {
+  if (p.execute(level)) {
     console::Print(console::fc::Green, L"new process is running: %d\n",
-                   dwProcessId);
+                   p.pid());
     return true;
   }
-  priv::ErrorMessage err(GetLastError());
-  console::Print(console::fc::Red, L"create process failed: %s\n",
-                 err.message());
+  auto ec = priv::error_code::lasterror();
+  console::Print(console::fc::Red, L"create process  last error %d  (%s): %s\n",
+                 ec.code, p.message().c_str(), ec.message);
   return false;
 }
 
@@ -127,9 +125,12 @@ inline bool IsArg(const wchar_t *candidate, const wchar_t *longname, size_t n,
 
 int SearchUser(const wchar_t *user) {
   std::unordered_map<std::wstring, int> users = {
-      {L"a", kAppContainer}, {L"m", kMandatoryIntegrityControl},
-      {L"u", kUACElevated},  {L"A", kAdministrator},
-      {L"s", kSystem},       {L"t", kTrustedInstaller}};
+      {L"a", priv::ProcessAppContainer},
+      {L"m", priv::ProcessMandatoryIntegrityControl},
+      {L"u", priv::ProcessNoElevated},
+      {L"A", priv::ProcessElevated},
+      {L"s", priv::ProcessSystem},
+      {L"t", priv::ProcessTrustedInstaller}};
   auto iter = users.find(user);
   if (iter != users.end()) {
     return iter->second;
@@ -171,7 +172,7 @@ int wmain(int argc, const wchar_t *argv[]) {
   }
   int index = 1;
   auto Argv = argv + 1;
-  int level = kUACElevated;
+  int level = priv::ProcessNoElevated;
   const wchar_t *Argoff = nullptr;
   if (IsArg(Arg, L"--user", 6, &Argoff)) {
     if (!Argoff) {

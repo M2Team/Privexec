@@ -8,9 +8,10 @@
 #include <string_view>
 #include <unordered_map>
 /// include json.hpp
-#include "../Privexec.Core/Privexec.Core.hpp"
-#include "../inc/version.h"
-#include "json.hpp"
+#include <process/process.hpp>
+#include <json.hpp>
+#include <version.h>
+
 
 inline std::wstring utf8towide(std::string_view str) {
   std::wstring wstr;
@@ -56,47 +57,6 @@ HINSTANCE g_hInst = nullptr;
 std::vector<std::pair<int, const wchar_t *>> users;
 std::unordered_map<std::wstring, std::wstring> Aliascmd;
 
-bool InitializeCombobox(HWND hCombox) {
-  int usersindex = 0;
-  users.push_back(std::make_pair(kAppContainer, L"App Container"));
-  users.push_back(std::make_pair(kMandatoryIntegrityControl,
-                                 L"Mandatory Integrity Control"));
-  users.push_back(std::make_pair(kUACElevated, L"UAC Elevated"));
-  users.push_back(std::make_pair(kAdministrator, L"Administrator"));
-  usersindex = (int)(users.size() - 1);
-  if (priv::IsUserAdministratorsGroup()) {
-    users.push_back(std::make_pair(kSystem, L"System"));
-    users.push_back(std::make_pair(kTrustedInstaller, L"TrustedInstaller"));
-  }
-  for (const auto &i : users) {
-    ::SendMessageW(hCombox, CB_ADDSTRING, 0, (LPARAM)i.second);
-  }
-  ::SendMessageW(hCombox, CB_SETCURSEL, (WPARAM)usersindex, 0);
-  return true;
-}
-
-bool Execute(int cur, const std::wstring &cmdline, const std::wstring &pwd) {
-  auto iter = Aliascmd.find(cmdline);
-
-  std::wstring xcmd(PATHCCH_MAX_CCH, L'\0');
-  DWORD N = 0;
-  if (iter != Aliascmd.end()) {
-    N = ExpandEnvironmentStringsW(iter->second.data(), &xcmd[0],
-                                  PATHCCH_MAX_CCH);
-  } else {
-    N = ExpandEnvironmentStringsW(cmdline.data(), &xcmd[0], PATHCCH_MAX_CCH);
-  }
-
-  xcmd.resize(N - 1);
-  if (cur >= users.size()) {
-    return false;
-  }
-  auto xpwd = PWDExpand(pwd);
-  DWORD dwProcessId;
-  return priv::PrivCreateProcess(users[cur].first, &xcmd[0], dwProcessId,
-                                 xpwd.empty() ? nullptr : &xpwd[0]);
-}
-
 bool PathAppImageCombineExists(std::wstring &file, const wchar_t *cmd) {
   if (PathFileExistsW(L"Privexec.json")) {
     file.assign(L"Privexec.json");
@@ -105,11 +65,11 @@ bool PathAppImageCombineExists(std::wstring &file, const wchar_t *cmd) {
   file.resize(PATHCCH_MAX_CCH, L'\0');
   auto pszFile = &file[0];
   auto N = GetModuleFileNameW(nullptr, pszFile, PATHCCH_MAX_CCH);
-  if (PathCchRemoveExtension(pszFile, N + 8) != S_OK) {
+  if (PathCchRemoveExtension(pszFile, (size_t)N + 8) != S_OK) {
     return false;
   }
 
-  if (PathCchAddExtension(pszFile, N + 8, L".json") != S_OK) {
+  if (PathCchAddExtension(pszFile, (size_t)N + 8, L".json") != S_OK) {
     return false;
   }
   auto k = wcslen(pszFile);
@@ -149,6 +109,47 @@ bool InitializePrivApp(HWND hWnd) {
   }
   return true;
 }
+bool InitializeCombobox(HWND hCombox) {
+  int usersindex = 0;
+  users.push_back(std::make_pair(priv::ProcessAppContainer, L"App Container"));
+  users.push_back(std::make_pair(priv::ProcessMandatoryIntegrityControl,
+                                 L"Mandatory Integrity Control"));
+  users.push_back(std::make_pair(priv::ProcessNoElevated, L"UAC Elevated"));
+  users.push_back(std::make_pair(priv::ProcessElevated, L"Administrator"));
+  usersindex = (int)(users.size() - 1);
+  if (priv::IsUserAdministratorsGroup()) {
+    users.push_back(std::make_pair(priv::ProcessSystem, L"System"));
+    users.push_back(
+        std::make_pair(priv::ProcessTrustedInstaller, L"TrustedInstaller"));
+  }
+  for (const auto &i : users) {
+    ::SendMessageW(hCombox, CB_ADDSTRING, 0, (LPARAM)i.second);
+  }
+  ::SendMessageW(hCombox, CB_SETCURSEL, (WPARAM)usersindex, 0);
+  return true;
+}
+
+bool Execute(int cur, const std::wstring &cmdline, const std::wstring &pwd) {
+  auto iter = Aliascmd.find(cmdline);
+  std::wstring xcmd(PATHCCH_MAX_CCH, L'\0');
+  DWORD N = 0;
+  if (iter != Aliascmd.end()) {
+    N = ExpandEnvironmentStringsW(iter->second.data(), &xcmd[0],
+                                  PATHCCH_MAX_CCH);
+  } else {
+    N = ExpandEnvironmentStringsW(cmdline.data(), &xcmd[0], PATHCCH_MAX_CCH);
+  }
+
+  xcmd.resize(N - 1);
+  if (cur >= users.size()) {
+    return false;
+  }
+  priv::process p(xcmd);
+  p.cwd().assign(PWDExpand(pwd));
+  return p.execute(users[cur].first);
+}
+
+
 
 std::unordered_map<HWND, WELL_KNOWN_SID_TYPE> capchecks;
 
@@ -196,7 +197,8 @@ bool UpdateCapabilities(HWND hParent, const std::wstring &file) {
   return true;
 }
 
-bool ExecuteAppcontainer(const std::wstring &cmdline, const std::wstring &pwd) {
+std::optional<std::wstring> ExecuteAppcontainer(const std::wstring &cmdline,
+                                                const std::wstring &pwd) {
   auto iter = Aliascmd.find(cmdline);
   std::wstring xcmd(PATHCCH_MAX_CCH, L'\0');
   DWORD N = 0;
@@ -214,14 +216,15 @@ bool ExecuteAppcontainer(const std::wstring &cmdline, const std::wstring &pwd) {
       cas.push_back((WELL_KNOWN_SID_TYPE)c.second);
     }
   }
-
-  priv::AppContainerContext ctx;
-  if (!ctx.InitializeWithCapabilities(cas.data(), (int)cas.size())) {
-    return false;
+  priv::appcontainer p(xcmd);
+  if (!p.initialize(cas.data(), cas.data() + cas.size())) {
+    return std::make_optional<std::wstring>(p.message());
   }
-  auto xpwd = PWDExpand(pwd);
-  DWORD dwProcessId;
-  return ctx.Execute(&xcmd[0], dwProcessId, xpwd.empty() ? nullptr : &xpwd[0]);
+  p.cwd().assign(PWDExpand(pwd));
+  if (p.execute()) {
+    return std::nullopt;
+  }
+  return std::make_optional<std::wstring>(p.message());
 }
 
 INT_PTR WINAPI ApplicationProc(HWND hWndDlg, UINT message, WPARAM wParam,
@@ -275,7 +278,7 @@ INT_PTR WINAPI ApplicationProc(HWND hWndDlg, UINT message, WPARAM wParam,
       if (wmEvent == CBN_SELCHANGE) {
         auto N = SendMessage(GetDlgItem(hWndDlg, IDC_USER_COMBOX), CB_GETCURSEL,
                              0, 0);
-        if (N == kAppContainer) {
+        if (N == priv::ProcessAppContainer) {
           EnableWindow(GetDlgItem(hWndDlg, IDE_APPCONTAINER_APPMANIFEST), TRUE);
           EnableWindow(GetDlgItem(hWndDlg, IDB_APPCONTAINER_BUTTON), TRUE);
           SetWindowTextW(GetDlgItem(hWndDlg, IDE_APPCONTAINER_APPMANIFEST),
@@ -318,34 +321,36 @@ INT_PTR WINAPI ApplicationProc(HWND hWndDlg, UINT message, WPARAM wParam,
       std::wstring folder;
       auto hCombox = GetDlgItem(hWndDlg, IDC_COMMAND_COMBOX);
       auto Length = GetWindowTextLengthW(hCombox);
-      if (Length == 0) {
+      if (Length <= 0) {
         return 0;
       }
-      cmd.resize(Length + 1);
+      cmd.resize((size_t)Length + 1);
       GetWindowTextW(hCombox, &cmd[0], Length + 1); //// Null T
       cmd.resize(Length);
       ///
       auto hPWD = GetDlgItem(hWndDlg, IDE_APPSTARTUP);
       Length = GetWindowTextLengthW(hPWD);
-      folder.resize(Length + 1);
+      folder.resize((size_t)Length + 1);
       GetWindowTextW(hPWD, &folder[0], Length + 1); //// Null T
-      folder.resize(Length);
+      folder.resize((size_t)Length);
 
       auto N =
           SendMessage(GetDlgItem(hWndDlg, IDC_USER_COMBOX), CB_GETCURSEL, 0, 0);
       ::EnableWindow(GetDlgItem(hWndDlg, IDB_EXECUTE_BUTTON), FALSE);
-      if (N == kAppContainer) {
-        if (!ExecuteAppcontainer(cmd, folder)) {
-          priv::ErrorMessage err(GetLastError());
-          MessageBoxW(hWndDlg, err.message(),
+      if (N == priv::ProcessAppContainer) {
+        auto opt = ExecuteAppcontainer(cmd, folder);
+        if (opt) {
+          auto ec = priv::error_code::lasterror();
+          ec.message.append(L" (").append(*opt).append(L")");
+          MessageBoxW(hWndDlg, ec.message.c_str(),
                       L"Privexec create appconatiner process failed",
                       MB_OK | MB_ICONERROR);
         }
       } else {
         if (!Execute((int)N, cmd, folder)) {
-          priv::ErrorMessage err(GetLastError());
-          MessageBoxW(hWndDlg, err.message(), L"Privexec create process failed",
-                      MB_OK | MB_ICONERROR);
+          auto ec = priv::error_code::lasterror();
+          MessageBoxW(hWndDlg, ec.message.c_str(),
+                      L"Privexec create process failed", MB_OK | MB_ICONERROR);
         }
       }
       ::EnableWindow(GetDlgItem(hWndDlg, IDB_EXECUTE_BUTTON), TRUE);

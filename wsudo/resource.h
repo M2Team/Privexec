@@ -4,7 +4,7 @@
 
 // 新对象的下一组默认值
 //
-#include "..\inc\version.h"
+#include "..\include\version.h"
 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS

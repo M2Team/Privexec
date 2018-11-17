@@ -17,36 +17,39 @@ inline HANDLE OpenSystemProcessToken() {
   HANDLE hToken = INVALID_HANDLE_VALUE;
   auto hProcess = ::OpenProcess(MAXIMUM_ALLOWED, FALSE, pid);
   if (hProcess == INVALID_HANDLE_VALUE) {
-    return false;
+    fprintf(stderr, "cannot open system process handle, pid %d\n", pid);
+    return INVALID_HANDLE_VALUE;
   }
-  ::OpenProcessToken(hProcess, MAXIMUM_ALLOWED, &hExistingToken);
-  ::CloseHandle(hProcess);
-  if (hExistingToken != nullptr) {
-    DuplicateTokenEx(hExistingToken, MAXIMUM_ALLOWED, nullptr,
-                     SecurityIdentification, TokenPrimary, &hToken);
-    CloseHandle(hExistingToken);
+  auto hpdeleter = finally([&] { CloseHandle(hProcess); });
+  if (OpenProcessToken(hProcess, MAXIMUM_ALLOWED, &hExistingToken) != TRUE) {
+    fprintf(stderr, "cannot open system process token pid: %d\n", pid);
+    return INVALID_HANDLE_VALUE;
+  }
+  auto htdeleter = finally([&] { CloseHandle(hExistingToken); });
+  if (DuplicateTokenEx(hExistingToken, MAXIMUM_ALLOWED, nullptr,
+                       SecurityIdentification, TokenPrimary, &hToken) != TRUE) {
+    return INVALID_HANDLE_VALUE;
   }
   return hToken;
 }
 
-BOOL SetPrivilege(HANDLE hToken, PCTSTR lpszPrivilege, bool bEnablePrivilege) {
+BOOL SetPrivilege(HANDLE hToken, LPCWSTR lpszPrivilege, bool bEnablePrivilege) {
   TOKEN_PRIVILEGES tp;
   LUID luid;
 
-  if (!::LookupPrivilegeValue(nullptr, lpszPrivilege, &luid))
+  if (!::LookupPrivilegeValue(nullptr, lpszPrivilege, &luid)) {
+    fprintf(stderr, "SetPrivilege LookupPrivilegeValue\n");
     return FALSE;
+  }
 
   tp.PrivilegeCount = 1;
   tp.Privileges[0].Luid = luid;
-  if (bEnablePrivilege)
-    tp.Privileges[0].Attributes = SE_PRIVILEGE_ENABLED;
-  else
-    tp.Privileges[0].Attributes = 0;
-
+  tp.Privileges[0].Attributes = bEnablePrivilege ? SE_PRIVILEGE_ENABLED : 0;
   // Enable the privilege or disable all privileges.
 
   if (!::AdjustTokenPrivileges(hToken, FALSE, &tp, sizeof(TOKEN_PRIVILEGES),
                                nullptr, nullptr)) {
+    fprintf(stderr, "SetPrivilege AdjustTokenPrivileges\n");
     return FALSE;
   }
 
@@ -88,7 +91,7 @@ bool process::systemexec() {
   }
   auto hToken = OpenSystemProcessToken();
   if (hToken == INVALID_HANDLE_VALUE) {
-    SetLastError(ERROR_ACCESS_DENIED);
+    // SetLastError(ERROR_ACCESS_DENIED);
     fprintf(stderr, "OpenSystemProcessToken failed: Access denied (are you "
                     "running elevated?)\n");
     return false;
@@ -105,7 +108,7 @@ bool process::systemexec() {
                        TOKEN_DUPLICATE | TOKEN_IMPERSONATE | TOKEN_QUERY |
                            TOKEN_ASSIGN_PRIMARY | TOKEN_ADJUST_PRIVILEGES,
                        nullptr, SecurityImpersonation, TokenImpersonation,
-                       &hDupToken)) {
+                       &hDupToken) != TRUE) {
     return false;
   }
   if (DuplicateTokenEx(hToken, TOKEN_ALL_ACCESS, nullptr, SecurityImpersonation,

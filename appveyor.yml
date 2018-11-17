@@ -1,4 +1,4 @@
-version: 1.2.0.{build}
+version: 2.0.0.{build}
 image: Visual Studio 2017
 configuration: Release
 platform: x64
@@ -8,7 +8,7 @@ build:
   verbosity: minimal
 before_build:
 - ps: >-
-    Write-Output "#define APPVEYOR_BUILD_NUMBER $env:APPVEYOR_BUILD_NUMBER`r`n#define APPVEYOR_BUILD_VERSION L`"$env:APPVEYOR_BUILD_VERSION (appveyor)`" `r`n">$env:APPVEYOR_BUILD_FOLDER\inc\config.h
+    Write-Output "#define APPVEYOR_BUILD_NUMBER $env:APPVEYOR_BUILD_NUMBER`r`n#define APPVEYOR_BUILD_VERSION L`"$env:APPVEYOR_BUILD_VERSION (appveyor)`" `r`n">$env:APPVEYOR_BUILD_FOLDER\include\config.h
 after_build:
 - ps: >-
     if ($env:PLATFORM -eq "x64") {

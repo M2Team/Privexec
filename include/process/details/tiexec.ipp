@@ -108,7 +108,6 @@ private:
 
 inline bool EnableAllTokenPrivileges(_In_ HANDLE hExistingToken,
                                      _In_ bool bEnable) {
-  PTOKEN_PRIVILEGES privs = nullptr;
   DWORD Length = 0;
   GetTokenInformation(hExistingToken, TokenPrivileges, nullptr, 0, &Length);
   if (GetLastError() != ERROR_INSUFFICIENT_BUFFER) {
@@ -118,7 +117,7 @@ inline bool EnableAllTokenPrivileges(_In_ HANDLE hExistingToken,
   if (privs == nullptr) {
     return false;
   }
-  auto pfree = finally([privs] { HeapFree(GetProcessHeap(), 0, privs); });
+  auto pfree = finally([&] { HeapFree(GetProcessHeap(), 0, privs); });
   if (GetTokenInformation(hExistingToken, TokenPrivileges, privs, Length,
                           &Length) != TRUE) {
     return false;
@@ -174,7 +173,12 @@ inline bool ImpersonateSystem() {
 
 bool process::tiexec() {
   if (!IsUserAdministratorsGroup()) {
+    fprintf(stderr, "current process's user not administrator\n");
     SetLastError(ERROR_ACCESS_DENIED);
+    return false;
+  }
+  if (!ImpersonateSystem()) {
+    fprintf(stderr, "cannot impersonate system\n");
     return false;
   }
   TrustedInstallerProxy tip;
