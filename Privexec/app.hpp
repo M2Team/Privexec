@@ -8,10 +8,16 @@
 #endif
 #include <Windows.h>
 #endif
+#include <vector>
 #include <unordered_map>
 
 namespace priv {
-using vcombox = std::unordered_map<HWND, int>;
+
+struct applevel_t {
+  int level{0};
+};
+
+using vcombox = std::vector<applevel_t>;
 using alias_t = std::unordered_map<std::wstring, std::wstring>;
 
 class App {
@@ -28,10 +34,21 @@ public:
   INT_PTR MessageHandler(UINT message, WPARAM wParam, LPARAM lParam);
 
 private:
+  bool applevelmatch(int level) {
+    auto index = SendMessageW(hBox, CB_GETCURSEL, 0, 0);
+    if (index > box.size() || index < 0) {
+      return false;
+    }
+    if (box[index].level == level) {
+      return true;
+    }
+    return false;
+  }
   bool initialize(HWND window);
   bool aliasinit(); // initialize alias
   HINSTANCE hInst{nullptr};
   HWND hWnd{nullptr};
+  HWND hBox{nullptr};
   vcombox box;
   alias_t alias;
 };
