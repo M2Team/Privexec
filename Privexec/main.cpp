@@ -110,10 +110,10 @@ bool InitializePrivApp(HWND hWnd) {
 }
 bool InitializeCombobox(HWND hCombox) {
   int usersindex = 0;
-  users.push_back(std::make_pair(priv::ProcessAppContainer, L"App Container"));
+  users.push_back(std::make_pair(priv::ProcessAppContainer, L"AppContainer"));
   users.push_back(std::make_pair(priv::ProcessMandatoryIntegrityControl,
                                  L"Mandatory Integrity Control"));
-  users.push_back(std::make_pair(priv::ProcessNoElevated, L"UAC Elevated"));
+  users.push_back(std::make_pair(priv::ProcessNoElevated, L"UAC No Elevated"));
   users.push_back(std::make_pair(priv::ProcessElevated, L"Administrator"));
   usersindex = (int)(users.size() - 1);
   if (priv::IsUserAdministratorsGroup()) {
