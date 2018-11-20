@@ -44,6 +44,16 @@
         "xtr1common": "cpp",
         "xutility": "cpp",
         "array": "cpp",
-        "charconv": "cpp"
+        "charconv": "cpp",
+        "algorithm": "cpp",
+        "clocale": "cpp",
+        "forward_list": "cpp",
+        "fstream": "cpp",
+        "functional": "cpp",
+        "iterator": "cpp",
+        "map": "cpp",
+        "numeric": "cpp",
+        "valarray": "cpp",
+        "xtree": "cpp"
     }
 }
