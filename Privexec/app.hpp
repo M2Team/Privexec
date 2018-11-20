@@ -19,7 +19,8 @@ struct applevel_t {
 
 using vcombox = std::vector<applevel_t>;
 using alias_t = std::unordered_map<std::wstring, std::wstring>;
-
+using wid_t=WELL_KNOWN_SID_TYPE;
+using capchecks_t=std::unordered_map<HWND,wid_t>;
 class App {
 public:
   App() = default;
@@ -50,6 +51,7 @@ private:
   HWND hWnd{nullptr};
   HWND hBox{nullptr};
   vcombox box;
+  capchecks_t checks;
   alias_t alias;
 };
 } // namespace priv
