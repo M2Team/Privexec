@@ -56,6 +56,7 @@ template <typename T> const wchar_t *Castwstr(const T &t) {
 }
 
 enum ProcessExecuteLevel {
+  ProcessNone = -1,
   ProcessAppContainer = 0,
   ProcessMandatoryIntegrityControl,
   ProcessNoElevated,
@@ -196,7 +197,6 @@ inline bool IsUserAdministratorsGroup() {
   FreeSid(AdministratorsGroup);
   return b == TRUE;
 }
-
 
 ///
 bool WellKnownFromAppmanifest(const std::wstring &file, widcontainer &sids);
