@@ -17,7 +17,7 @@ using vcombox = std::vector<applevel_t>;
 using alias_t = std::unordered_map<std::wstring, std::wstring>;
 using wid_t = WELL_KNOWN_SID_TYPE;
 using capchecks_t = std::unordered_map<HWND, wid_t>;
-
+bool AppAliasInitialize(HWND hbox, priv::alias_t &alias);
 struct applevel_t {
   int level{0};
 };
@@ -83,7 +83,6 @@ private:
   }
 
   bool Initialize(HWND window);
-  bool AliasInitialize(); // initialize alias
   bool InitializeCapabilities();
   bool SelChanged();
   bool UpdateCapabilities(const std::wstring &file);
