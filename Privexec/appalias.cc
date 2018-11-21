@@ -48,7 +48,7 @@ inline std::wstring utf8towide(std::string_view str) {
   return wstr;
 }
 
-bool AppAlias(HWND hbox, priv::alias_t &alias) {
+bool AppAliasInitialize(HWND hbox, priv::alias_t &alias) {
   std::wstring file;
   if (!PathAppImageCombineExists(file, L"Privexec.json")) {
     return false;

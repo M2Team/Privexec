@@ -15,7 +15,6 @@
 
 #include "resource.h"
 
-
 namespace priv {
 
 // expand env
@@ -47,11 +46,6 @@ INT_PTR WINAPI App::WindowProc(HWND hWnd, UINT message, WPARAM wParam,
     return app->MessageHandler(message, wParam, lParam);
   }
   return FALSE;
-}
-
-bool App::AliasInitialize() {
-  //
-  return true;
 }
 
 bool App::InitializeCapabilities() {
@@ -104,6 +98,8 @@ bool App::Initialize(HWND window) {
   combox.hBox = GetDlgItem(hWnd, IDC_USER_COMBOX);
   cmd.hInput = GetDlgItem(hWnd, IDC_COMMAND_COMBOX);
   cmd.hButton = GetDlgItem(hWnd, IDB_COMMAND_TARGET);
+  AppAliasInitialize(cmd.hInput, alias); // Initialize app alias
+  ///
   cwd.hInput = GetDlgItem(hWnd, IDE_APPSTARTUP);
   cwd.hButton = GetDlgItem(hWnd, IDB_APPSTARTUP);
   appx.hInput = GetDlgItem(hWnd, IDE_APPCONTAINER_APPMANIFEST);
