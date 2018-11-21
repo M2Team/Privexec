@@ -22,6 +22,11 @@ struct applevel_t {
   int level{0};
 };
 
+struct Combobox {
+  HWND hBox{nullptr};
+  int Index() const { return SendMessage(hBox, CB_GETCURSEL, 0, 0); }
+};
+
 struct Element {
   HWND hInput{nullptr};
   HWND hButton{nullptr};
@@ -59,8 +64,15 @@ public:
   INT_PTR MessageHandler(UINT message, WPARAM wParam, LPARAM lParam);
 
 private:
+  int AppIndex() const {
+    auto index = combox.Index();
+    if (index >= box.size() || index < 0) {
+      return -1;
+    }
+    return box[index].level;
+  }
   bool IsMatchedApplevel(int level) {
-    auto index = SendMessageW(hBox, CB_GETCURSEL, 0, 0);
+    auto index = combox.Index();
     if (index >= box.size() || index < 0) {
       return false;
     }
@@ -69,13 +81,18 @@ private:
     }
     return false;
   }
+
   bool Initialize(HWND window);
   bool AliasInitialize(); // initialize alias
   bool InitializeCapabilities();
+  bool SelChanged();
   bool UpdateCapabilities(const std::wstring &file);
+  std::wstring ResolveCMD();
+  std::wstring ResolveCWD();
+  bool AppExecute();
   HINSTANCE hInst{nullptr};
   HWND hWnd{nullptr};
-  HWND hBox{nullptr};
+  Combobox combox;
   Element cmd;
   Element cwd;
   Element appx;
