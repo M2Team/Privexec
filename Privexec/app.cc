@@ -1,11 +1,10 @@
 ///
 #include <process/process.hpp>
-#include <windows.h>
+#include "app.hpp" // included windows.h
 #include <Windowsx.h>
 // C RunTime Header Files
-#include <stdlib.h>
+#include <cstdlib>
 #include <malloc.h>
-#include <memory.h>
 #include <tchar.h>
 #include <CommCtrl.h>
 #include <commdlg.h>
@@ -13,8 +12,9 @@
 #include <Shlwapi.h>
 #include <PathCch.h>
 #include <string>
-#include "app.hpp"
+
 #include "resource.h"
+
 
 namespace priv {
 
@@ -202,11 +202,11 @@ INT_PTR App::MessageHandler(UINT message, WPARAM wParam, LPARAM lParam) {
         SelChanged();
       }
       return TRUE;
-    case IDB_COMMAND_TARGET:
+    case IDB_COMMAND_TARGET: /// lookup command
       return TRUE;
-    case IDB_APPSTARTUP:
+    case IDB_APPSTARTUP: // select startup dir
       return TRUE;
-    case IDB_APPCONTAINER_BUTTON:
+    case IDB_APPCONTAINER_BUTTON: // select appmanifest file
       return TRUE;
     case IDB_EXECUTE_BUTTON: {
       auto hExecute = reinterpret_cast<HWND>(lParam);
@@ -216,6 +216,7 @@ INT_PTR App::MessageHandler(UINT message, WPARAM wParam, LPARAM lParam) {
     }
       return TRUE;
     case IDB_EXIT_BUTTON:
+      DestroyWindow(hWnd);
       return TRUE;
     default:
       return FALSE;
