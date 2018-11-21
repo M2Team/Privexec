@@ -37,7 +37,7 @@ public:
 private:
   bool applevelmatch(int level) {
     auto index = SendMessageW(hBox, CB_GETCURSEL, 0, 0);
-    if (index > box.size() || index < 0) {
+    if (index >= box.size() || index < 0) {
       return false;
     }
     if (box[index].level == level) {
