@@ -49,23 +49,22 @@ INT_PTR WINAPI App::WindowProc(HWND hWnd, UINT message, WPARAM wParam,
 }
 
 bool App::InitializeCapabilities() {
-  auto func = [&](int id, wid_t wsid) {
-    auto h = GetDlgItem(hWnd, id);
-    checks.insert(std::pair<HWND, wid_t>(h, wsid));
-  };
-  func(IDP_INTERNETCLIENT, WinCapabilityInternetClientSid);
-  func(IDP_INTERNETCLIENTSERVER, WinCapabilityInternetClientServerSid);
-  func(IDP_PRIVATENETWORKCLIENTSERVER,
-       WinCapabilityPrivateNetworkClientServerSid);
-  func(IDP_DOCUMENTSLIBRARY, WinCapabilityDocumentsLibrarySid);
-  func(IDP_PICTURESLIBRARY, WinCapabilityPicturesLibrarySid);
-  func(IDP_VIDEOSLIBRARY, WinCapabilityVideosLibrarySid);
-  func(IDP_MUSICLIBRARY, WinCapabilityMusicLibrarySid);
-  func(IDP_ENTERPRISEAUTHENTICATION, WinCapabilityEnterpriseAuthenticationSid);
-  func(IDP_SHAREDUSERCERTIFICATES, WinCapabilitySharedUserCertificatesSid);
-  func(IDP_REMOVABLESTORAGE, WinCapabilityRemovableStorageSid);
-  func(IDP_APPOINTMENTS, WinCapabilityAppointmentsSid);
-  func(IDP_CONTACTS, WinCapabilityContactsSid);
+  appcas.Add(hWnd, IDP_INTERNETCLIENT, WinCapabilityInternetClientSid);
+  appcas.Add(hWnd, IDP_INTERNETCLIENTSERVER,
+             WinCapabilityInternetClientServerSid);
+  appcas.Add(hWnd, IDP_PRIVATENETWORKCLIENTSERVER,
+             WinCapabilityPrivateNetworkClientServerSid);
+  appcas.Add(hWnd, IDP_DOCUMENTSLIBRARY, WinCapabilityDocumentsLibrarySid);
+  appcas.Add(hWnd, IDP_PICTURESLIBRARY, WinCapabilityPicturesLibrarySid);
+  appcas.Add(hWnd, IDP_VIDEOSLIBRARY, WinCapabilityVideosLibrarySid);
+  appcas.Add(hWnd, IDP_MUSICLIBRARY, WinCapabilityMusicLibrarySid);
+  appcas.Add(hWnd, IDP_ENTERPRISEAUTHENTICATION,
+             WinCapabilityEnterpriseAuthenticationSid);
+  appcas.Add(hWnd, IDP_SHAREDUSERCERTIFICATES,
+             WinCapabilitySharedUserCertificatesSid);
+  appcas.Add(hWnd, IDP_REMOVABLESTORAGE, WinCapabilityRemovableStorageSid);
+  appcas.Add(hWnd, IDP_APPOINTMENTS, WinCapabilityAppointmentsSid);
+  appcas.Add(hWnd, IDP_CONTACTS, WinCapabilityContactsSid);
   return true;
 }
 
@@ -74,13 +73,7 @@ bool App::UpdateCapabilities(const std::wstring &file) {
   if (!priv::WellKnownFromAppmanifest(file, cas)) {
     return false;
   }
-  for (auto &c : checks) {
-    if (std::find(cas.begin(), cas.end(), c.second) != cas.end()) {
-      Button_SetCheck(c.first, TRUE);
-    } else {
-      Button_SetCheck(c.first, FALSE);
-    }
-  }
+  appcas.Update(cas);
   return true;
 }
 
@@ -88,14 +81,29 @@ bool App::Initialize(HWND window) {
   hWnd = window;
   HICON icon = LoadIconW(hInst, MAKEINTRESOURCEW(IDI_APPLICATION_ICON));
   SendMessage(hWnd, WM_SETICON, ICON_BIG, (LPARAM)icon);
-  if (priv::IsUserAdministratorsGroup()) {
+  auto elevated = priv::IsUserAdministratorsGroup();
+  if (elevated) {
     // Update title when app run as admin
     WCHAR title[256];
     auto N = GetWindowTextW(hWnd, title, ARRAYSIZE(title));
     wcscat_s(title, L" [Administrator]");
     SetWindowTextW(hWnd, title);
   }
-  combox.hBox = GetDlgItem(hWnd, IDC_USER_COMBOX);
+  box = GetDlgItem(hWnd, IDC_USER_COMBOX);
+
+  box.Append(priv::ProcessAppContainer, L"AppContainer");
+  box.Append(priv::ProcessMandatoryIntegrityControl,
+             L"Mandatory Integrity Control");
+  if (elevated) {
+    box.Append(priv::ProcessNoElevated, L"No Elevated (UAC)", true);
+    box.Append(priv::ProcessElevated, L"Administrator");
+    box.Append(priv::ProcessSystem, L"System");
+    box.Append(priv::ProcessTrustedInstaller, L"TrustedInstaller");
+  } else {
+    box.Append(priv::ProcessNoElevated, L"No Elevated (UAC)");
+    box.Append(priv::ProcessElevated, L"Administrator", true);
+  }
+
   cmd.hInput = GetDlgItem(hWnd, IDC_COMMAND_COMBOX);
   cmd.hButton = GetDlgItem(hWnd, IDB_COMMAND_TARGET);
   AppAliasInitialize(cmd.hInput, alias); // Initialize app alias
@@ -110,7 +118,7 @@ bool App::Initialize(HWND window) {
 }
 
 bool App::SelChanged() {
-  if (IsMatchedApplevel(priv::ProcessAppContainer)) {
+  if (box.IsMatch(priv::ProcessAppContainer)) {
     appx.Update(L"");
     appx.Visible(TRUE);
   } else {
@@ -147,17 +155,12 @@ std::wstring App::ResolveCWD() {
 }
 
 bool App::AppExecute() {
-  auto appindex = AppIndex();
+  auto appindex = box.AppIndex();
   auto cmd_ = ResolveCMD();
   auto cwd_ = ResolveCWD(); // app startup directory
   if (appindex == priv::ProcessAppContainer) {
     //// TODO app container.
-    std::vector<wid_t> cas;
-    for (auto &c : checks) {
-      if (Button_GetCheck(c.first) == BST_CHECKED) {
-        cas.push_back((wid_t)c.second);
-      }
-    }
+    auto cas = appcas.Capabilities();
     priv::appcontainer p(cmd_);
     p.cwd().assign(cwd_);
     if (!p.initialize(cas.data(), cas.data() + cas.size()) || !p.execute()) {
