@@ -121,9 +121,11 @@ bool App::SelChanged() {
   if (box.IsMatch(priv::ProcessAppContainer)) {
     appx.Update(L"");
     appx.Visible(TRUE);
+    appcas.Visible(TRUE);
   } else {
     appx.Update(L"AppxManifest.xml or Package.appxmanifest");
     appx.Visible(FALSE);
+    appcas.Visible(FALSE);
   }
   return true;
 }
