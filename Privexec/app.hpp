@@ -9,6 +9,7 @@
 #include <Windows.h>
 #endif
 #include <Windowsx.h>
+#include <PathCch.h>
 #include <vector>
 #include <unordered_map>
 
@@ -25,10 +26,10 @@ struct Appbox {
   }
   int Index() const {
     // get current appbox index.
-    return SendMessage(hBox, CB_GETCURSEL, 0, 0);
+    return (int)SendMessage(hBox, CB_GETCURSEL, 0, 0);
   }
   size_t Append(int al, const wchar_t *text, bool sel = false) {
-    auto rl = ::SendMessageW(hBox, CB_INSERTSTRING, 1, (LPARAM)text);
+    auto rl = ::SendMessageW(hBox, CB_ADDSTRING, 1, (LPARAM)text);
     if (rl == CB_ERR || rl == CB_ERRSPACE) {
       return als.size();
     }
@@ -76,7 +77,7 @@ struct Element {
     s.resize(l);
     return s;
   }
-  void Update(std::wstring text) {
+  void Update(const std::wstring &text) {
     // update hInput (commbox or edit text)
     ::SetWindowTextW(hInput, text.data());
   }
@@ -133,6 +134,9 @@ private:
   bool UpdateCapabilities(const std::wstring &file);
   std::wstring ResolveCMD();
   std::wstring ResolveCWD();
+  bool AppLookupExecute();
+  bool AppLookupManifest();
+  bool AppLookupCWD();
   bool AppExecute();
   HINSTANCE hInst{nullptr};
   HWND hWnd{nullptr};
@@ -140,8 +144,6 @@ private:
   Element cmd;
   Element cwd;
   Element appx;
-  // HWND hExecute{nullptr};
-  // HWND hExit{nullptr};
   AppCapabilities appcas;
   alias_t alias;
 };
