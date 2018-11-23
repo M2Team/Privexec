@@ -164,6 +164,9 @@ bool App::AppExecute() {
   auto appindex = box.AppIndex();
   auto cmd_ = ResolveCMD();
   auto cwd_ = ResolveCWD(); // app startup directory
+  constexpr const wchar_t *ei =
+      L"Ask for help with this issue. \nVisit: <a "
+      L"href=\"https://github.com/M2Team/Privexec/issues\">Privexec Issues</a>";
   if (appindex == priv::ProcessAppContainer) {
     //// TODO app container.
     auto cas = appcas.Capabilities();
@@ -176,11 +179,7 @@ bool App::AppExecute() {
       }
       utils::PrivMessageBox(hWnd,
                             L"Privexec create appconatiner process failed",
-                            ec.message.c_str(),
-                            L"For more information about this tool.\nVisit: "
-                            L"<a href=\"https://github.com/M2Team/Privexec/"
-                            L"issues\">Privexec Issues</a>",
-                            utils::kFatalWindow);
+                            ec.message.c_str(), ei, utils::kFatalWindow);
       return false;
     }
     return true;
@@ -189,16 +188,16 @@ bool App::AppExecute() {
   priv::process p(cmd_);
   p.cwd().assign(cwd_);
   if (!p.execute(appindex)) {
+    if (appindex == priv::ProcessElevated &&
+        !priv::IsUserAdministratorsGroup()) {
+      return false;
+    }
     auto ec = priv::error_code::lasterror();
     if (!p.message().empty()) {
       ec.message.append(L" (").append(p.message()).append(L")");
     }
     utils::PrivMessageBox(hWnd, L"Privexec create process failed",
-                          ec.message.c_str(),
-                          L"For more information about this tool.\nVisit: "
-                          L"<a href=\"https://github.com/M2Team/Privexec/"
-                          L"issues\">Privexec Issues</a>",
-                          utils::kFatalWindow);
+                          ec.message.c_str(), ei, utils::kFatalWindow);
     return false;
   }
   return true;
@@ -241,6 +240,10 @@ bool App::AppLookupCWD() {
 }
 
 INT_PTR App::MessageHandler(UINT message, WPARAM wParam, LPARAM lParam) {
+  constexpr const wchar_t *appurl =
+      L"For more information about this tool. \nVisit: <a "
+      L"href=\"https://github.com/M2Team/Privexec\">Privexec</a>\nVisit: <a "
+      L"href=\"https://forcemz.net/\">forcemz.net</a>";
   switch (message) {
   case WM_CTLCOLORDLG:
   case WM_CTLCOLORSTATIC:
@@ -253,9 +256,7 @@ INT_PTR App::MessageHandler(UINT message, WPARAM wParam, LPARAM lParam) {
           L"Prerelease:"
           L" " PRIVEXEC_BUILD_VERSION L"\nCopyright \xA9 2018, Force "
           L"Charlie. All Rights Reserved.",
-          L"For more information about this tool.\nVisit: <a "
-          L"href=\"https://forcemz.net/\">forcemz.net</a>",
-          utils::kAboutWindow);
+          appurl, utils::kAboutWindow);
       break;
     default:
       break;
