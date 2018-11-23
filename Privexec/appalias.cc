@@ -1,4 +1,5 @@
 /////////////
+#include <json.hpp>
 #ifndef _WINDOWS_
 #ifndef WIN32_LEAN_AND_MEAN
 #define WIN32_LEAN_AND_MEAN //
@@ -9,7 +10,6 @@
 #include <PathCch.h>
 #include <string>
 #include <fstream>
-#include <json.hpp>
 #include "app.hpp"
 
 /// PathAppImageCombineExists
@@ -48,6 +48,7 @@ inline std::wstring utf8towide(std::string_view str) {
   return wstr;
 }
 
+namespace priv {
 bool AppAliasInitialize(HWND hbox, priv::alias_t &alias) {
   std::wstring file;
   if (!PathAppImageCombineExists(file, L"Privexec.json")) {
@@ -70,3 +71,4 @@ bool AppAliasInitialize(HWND hbox, priv::alias_t &alias) {
   }
   return true;
 }
+} // namespace priv

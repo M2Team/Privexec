@@ -15,21 +15,27 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="main.cpp">
+    <ClCompile Include="main.cc">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="taskdialog.cpp">
+    <ClCompile Include="app.cc">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="opendialog.cpp">
+    <ClCompile Include="appalias.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="apputils.cc">
       <Filter>源文件</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Precompiled.h">
+    <ClInclude Include="resource.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="resource.h">
+    <ClInclude Include="app.hpp">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="apputils.hpp">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>

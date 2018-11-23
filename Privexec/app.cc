@@ -12,7 +12,7 @@
 #include <Shlwapi.h>
 #include <PathCch.h>
 #include <string>
-
+#include "apputils.hpp"
 #include "resource.h"
 
 namespace priv {
@@ -31,8 +31,9 @@ inline std::wstring ExpandEnv(const std::wstring &s) {
 
 int App::run(HINSTANCE hInstance) {
   hInst = hInstance;
-  return DialogBoxParamW(hInstance, MAKEINTRESOURCE(IDD_APPLICATION_DIALOG),
-                         NULL, App::WindowProc, reinterpret_cast<LPARAM>(this));
+  return (int)DialogBoxParamW(hInstance,
+                              MAKEINTRESOURCE(IDD_APPLICATION_DIALOG), NULL,
+                              App::WindowProc, reinterpret_cast<LPARAM>(this));
 }
 
 INT_PTR WINAPI App::WindowProc(HWND hWnd, UINT message, WPARAM wParam,
@@ -103,7 +104,9 @@ bool App::Initialize(HWND window) {
     box.Append(priv::ProcessNoElevated, L"No Elevated (UAC)");
     box.Append(priv::ProcessElevated, L"Administrator", true);
   }
-
+  HMENU hSystemMenu = ::GetSystemMenu(hWnd, FALSE);
+  InsertMenuW(hSystemMenu, SC_CLOSE, MF_ENABLED, IDM_PRIVEXEC_ABOUT,
+              L"About Privexec\tAlt+F1");
   cmd.hInput = GetDlgItem(hWnd, IDC_COMMAND_COMBOX);
   cmd.hButton = GetDlgItem(hWnd, IDB_COMMAND_TARGET);
   AppAliasInitialize(cmd.hInput, alias); // Initialize app alias
@@ -112,6 +115,7 @@ bool App::Initialize(HWND window) {
   cwd.hButton = GetDlgItem(hWnd, IDB_APPSTARTUP);
   appx.hInput = GetDlgItem(hWnd, IDE_APPCONTAINER_APPMANIFEST);
   appx.hButton = GetDlgItem(hWnd, IDB_APPCONTAINER_BUTTON);
+  InitializeCapabilities();
   SelChanged(); /// disable appcontainer.
 
   return true;
@@ -167,10 +171,16 @@ bool App::AppExecute() {
     p.cwd().assign(cwd_);
     if (!p.initialize(cas.data(), cas.data() + cas.size()) || !p.execute()) {
       auto ec = priv::error_code::lasterror();
-      ec.message.append(L" (").append(p.message()).append(L")");
-      MessageBoxW(hWnd, ec.message.c_str(),
-                  L"Privexec create appconatiner process failed",
-                  MB_OK | MB_ICONERROR);
+      if (!p.message().empty()) {
+        ec.message.append(L" (").append(p.message()).append(L")");
+      }
+      utils::PrivMessageBox(hWnd,
+                            L"Privexec create appconatiner process failed",
+                            ec.message.c_str(),
+                            L"For more information about this tool.\nVisit: "
+                            L"<a href=\"https://github.com/M2Team/Privexec/"
+                            L"issues\">Privexec Issues</a>",
+                            utils::kFatalWindow);
       return false;
     }
     return true;
@@ -180,12 +190,54 @@ bool App::AppExecute() {
   p.cwd().assign(cwd_);
   if (!p.execute(appindex)) {
     auto ec = priv::error_code::lasterror();
-    ec.message.append(L" (").append(p.message()).append(L")");
-    MessageBoxW(hWnd, ec.message.c_str(), L"Privexec create process failed",
-                MB_OK | MB_ICONERROR);
+    if (!p.message().empty()) {
+      ec.message.append(L" (").append(p.message()).append(L")");
+    }
+    utils::PrivMessageBox(hWnd, L"Privexec create process failed",
+                          ec.message.c_str(),
+                          L"For more information about this tool.\nVisit: "
+                          L"<a href=\"https://github.com/M2Team/Privexec/"
+                          L"issues\">Privexec Issues</a>",
+                          utils::kFatalWindow);
     return false;
   }
   return true;
+}
+
+bool App::AppLookupExecute() {
+  const utils::filter_t filters[] = {
+      {L"Windows Execute(*.exe;*.com;*.bat)", L"*.exe;*.com;*.bat"},
+      {L"All Files (*.*)", L"*.*"}};
+  auto exe =
+      utils::PrivFilePicker(hWnd, L"Privexec: Select Execute", filters, 2);
+  if (exe) {
+    cmd.Update(*exe);
+    return true;
+  }
+  return false;
+}
+
+bool App::AppLookupManifest() {
+  const utils::filter_t filters[] = {
+      {L"Windows Appxmanifest (*.appxmanifest;*.xml)", L"*.appxmanifest;*.xml"},
+      {L"All Files (*.*)", L"*.*"}};
+  auto xml =
+      utils::PrivFilePicker(hWnd, L"Privexec: Select AppManifest", filters, 2);
+  if (xml) {
+    appx.Update(*xml);
+    UpdateCapabilities(*xml);
+    return true;
+  }
+  return false;
+}
+bool App::AppLookupCWD() {
+  auto folder =
+      utils::PrivFolderPicker(hWnd, L"Privexec: Select App Launcher Folder");
+  if (folder) {
+    cwd.Update(*folder);
+    return true;
+  }
+  return false;
 }
 
 INT_PTR App::MessageHandler(UINT message, WPARAM wParam, LPARAM lParam) {
@@ -194,6 +246,20 @@ INT_PTR App::MessageHandler(UINT message, WPARAM wParam, LPARAM lParam) {
   case WM_CTLCOLORSTATIC:
     return (INT_PTR)CreateSolidBrush(RGB(255, 255, 255));
   case WM_SYSCOMMAND:
+    switch (LOWORD(wParam)) {
+    case IDM_PRIVEXEC_ABOUT:
+      utils::PrivMessageBox(
+          hWnd, L"About Privexec",
+          L"Prerelease:"
+          L" " PRIVEXEC_BUILD_VERSION L"\nCopyright \xA9 2018, Force "
+          L"Charlie. All Rights Reserved.",
+          L"For more information about this tool.\nVisit: <a "
+          L"href=\"https://forcemz.net/\">forcemz.net</a>",
+          utils::kAboutWindow);
+      break;
+    default:
+      break;
+    }
     break;
   case WM_COMMAND: {
     // WM_COMMAND
@@ -204,10 +270,13 @@ INT_PTR App::MessageHandler(UINT message, WPARAM wParam, LPARAM lParam) {
       }
       return TRUE;
     case IDB_COMMAND_TARGET: /// lookup command
+      AppLookupExecute();
       return TRUE;
     case IDB_APPSTARTUP: // select startup dir
+      AppLookupCWD();
       return TRUE;
     case IDB_APPCONTAINER_BUTTON: // select appmanifest file
+      AppLookupManifest();
       return TRUE;
     case IDB_EXECUTE_BUTTON: {
       auto hExecute = reinterpret_cast<HWND>(lParam);

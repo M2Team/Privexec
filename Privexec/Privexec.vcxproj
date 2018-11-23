@@ -151,12 +151,14 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="opendialog.cpp" />
-    <ClCompile Include="taskdialog.cpp" />
-    <ClCompile Include="main.cpp" />
+    <ClCompile Include="app.cc" />
+    <ClCompile Include="appalias.cc" />
+    <ClCompile Include="apputils.cc" />
+    <ClCompile Include="main.cc" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Precompiled.h" />
+    <ClInclude Include="app.hpp" />
+    <ClInclude Include="apputils.hpp" />
     <ClInclude Include="resource.h" />
   </ItemGroup>
   <ItemGroup>

@@ -52,18 +52,7 @@ bool process::elevatedexec() {
   info.hwnd = NULL;
   info.nShow = SW_SHOWNORMAL;
   info.fMask = SEE_MASK_DEFAULT | SEE_MASK_NOCLOSEPROCESS;
-  LPCWSTR lpDirectory = nullptr;
-  if (cwd_.empty()) {
-    cwd_.resize(PATHCCH_MAX_CCH, 0);
-    auto N = GetCurrentDirectoryW(PATHCCH_MAX_CCH, &cwd_[0]);
-    if (N > 0) {
-      cmd_.resize(N);
-      info.lpDirectory = cwd_.data();
-    }
-  } else {
-    info.lpDirectory = cwd_.data();
-  }
-
+  info.lpDirectory = Castwstr(cwd_);
   if (ShellExecuteExW(&info) != TRUE) {
     return false;
   }
