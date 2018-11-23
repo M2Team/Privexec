@@ -85,17 +85,17 @@ inline bool WellKnownFromAppmanifest(const std::wstring &file,
 
 bool appcontainer::initialize(const wid_t *begin, const wid_t *end) {
   if (!ca.empty()) {
-    kmessage.assign(L"capabilities is initialized\n");
+    kmessage.assign(L"capabilities is initialized");
     return false;
   }
   if (begin == nullptr || end == nullptr) {
-    kmessage.assign(L"capabilities well known sid is empty\n");
+    kmessage.assign(L"capabilities well known sid is empty");
     return false;
   }
   for (auto it = begin; it != end; it++) {
     PSID psid = HeapAlloc(GetProcessHeap(), 0, SECURITY_MAX_SID_SIZE);
     if (psid == nullptr) {
-      kmessage.assign(L"alloc psid failed\n");
+      kmessage.assign(L"alloc psid failed");
       return false;
     }
     DWORD sidlistsize = SECURITY_MAX_SID_SIZE;
@@ -117,7 +117,7 @@ bool appcontainer::initialize(const wid_t *begin, const wid_t *end) {
   if (CreateAppContainerProfile(appid, appid, appid,
                                 (ca.empty() ? NULL : ca.data()),
                                 (DWORD)ca.size(), &appcontainersid) != S_OK) {
-    kmessage.assign(L"CreateAppContainerProfile\n");
+    kmessage.assign(L"CreateAppContainerProfile");
     return false;
   }
   return true;
@@ -168,7 +168,7 @@ bool appcontainer::execute() {
   });
   if (InitializeProcThreadAttributeList(siex.lpAttributeList, 3, 0,
                                         &cbAttributeListSize) != TRUE) {
-    kmessage.assign(L"InitializeProcThreadAttributeList\n");
+    kmessage.assign(L"InitializeProcThreadAttributeList");
     return false;
   }
   SECURITY_CAPABILITIES sc;
@@ -179,14 +179,14 @@ bool appcontainer::execute() {
   if (UpdateProcThreadAttribute(siex.lpAttributeList, 0,
                                 PROC_THREAD_ATTRIBUTE_SECURITY_CAPABILITIES,
                                 &sc, sizeof(sc), NULL, NULL) != TRUE) {
-    kmessage.assign(L"UpdateProcThreadAttribute\n");
+    kmessage.assign(L"UpdateProcThreadAttribute");
     return false;
   }
   if (CreateProcessW(nullptr, &cmd_[0], nullptr, nullptr, FALSE,
                      EXTENDED_STARTUPINFO_PRESENT | CREATE_UNICODE_ENVIRONMENT,
                      nullptr, Castwstr(cwd_),
                      reinterpret_cast<STARTUPINFOW *>(&siex), &pi) != TRUE) {
-    kmessage.assign(L"CreateProcessW\n");
+    kmessage.assign(L"CreateProcessW");
     return false;
   }
   pid_ = pi.dwProcessId;
