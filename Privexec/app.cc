@@ -4,13 +4,10 @@
 #include <Windowsx.h>
 // C RunTime Header Files
 #include <cstdlib>
-#include <malloc.h>
-#include <tchar.h>
 #include <CommCtrl.h>
 #include <commdlg.h>
 #include <objbase.h>
 #include <Shlwapi.h>
-#include <PathCch.h>
 #include <string>
 #include "apputils.hpp"
 #include "resource.h"
