@@ -12,20 +12,24 @@ If you want add a alias to Privexec, Please modify Privexec.json on your Privexe
 {
     "Alias": [
         {
-            "Name": "Edit Hosts",
-            "Command": "Notepad %windir%\\System32\\Drivers\\etc\\hosts"
+            "Desc": "Edit Hosts",
+            "Alias": "edithosts",
+            "Target": "Notepad %windir%\\System32\\Drivers\\etc\\hosts"
         },
         {
-            "Name": "PowerShell",
-            "Command": "powershell"
+            "Desc": "PowerShell",
+            "Alias": "pwsh",
+            "Target": "powershell"
         },
         {
-            "Name": "PowerShell ISE",
-            "Command": "powershell_ise"
+            "Desc": "PowerShell ISE",
+            "Alias": "pwshise",
+            "Target": "powershell_ise"
         },
         {
-            "Name": "Windows Debugger",
-            "Command": "\"%ProgramFiles(x86)%\\Windows Kits\\10\\Debuggers\\x64\\windbg.exe\""
+            "Desc": "Windows Debugger",
+            "Alias": "windbg",
+            "Target": "\"%ProgramFiles(x86)%\\Windows Kits\\10\\Debuggers\\x64\\windbg.exe\""
         }
     ]
 }
@@ -68,19 +72,34 @@ wsudo is a console command client
 ```txt
 wsudo ♥ run the program with the specified permissions
 usage: wsudo command args....
-  -v|--version   print version and exit
-  -h|--help      print help information and exit
-  -u|--user      run as user (optional), support '-u=X' or '-u X'
-users:
-   a   AppContainer
-   m   Mandatory Integrity Control
-   u   UAC No Elevated (default)
-   A   Administrator
-   s   System
-   t   TrustedInstaller
+   -v|--version    print version and exit
+   -h|--help       print help information and exit
+   -u|--user       run as user (optional), support '-uX', '-u X', '--user=X', '--user X'
+                   Supported user categories (Ignore case):
+                   AppContainer  MIC
+                   NoElevated    Administrator
+                   System        TrustedInstaller
+
+   -V|--verbose    Make the operation more talkative
+   -x|--appx       AppContainer AppManifest file path
+   -c|--cwd        Use a working directory to launch the process.
+   --disable-alias Disable Privexec alias, By default, if Privexec exists alias, use it.
+
+Select user can use the following flags:
+   -a          AppContainer
+   -M          Mandatory Integrity Control
+   -U          No Elevated(UAC)
+   -A          Administrator
+   -S          System
+   -T          TrustedInstaller
 Example:
-   wsudo --user=A "%SYSTEMROOT%/System32/WindowsPowerShell/v1.0/powershell.exe" -NoProfile
-   wsudo -u=t cmd
+   wsudo -A "%SYSTEMROOT%/System32/WindowsPowerShell/v1.0/powershell.exe" -NoProfile
+   wsudo -T cmd
+
+Buitin 'alias' command:
+   wsudo alias add ehs "notepad %SYSTEMROOT%/System32/drivers/etc/hosts" "Edit Hosts"
+   wsudo alias delete ehs
+
 
 ```
 
