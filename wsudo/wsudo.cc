@@ -276,9 +276,10 @@ int AppExecute(wsudo::AppMode &am) {
   if (am.level == priv::ProcessAppContainer && !am.appx.empty()) {
     priv::appcontainer p(cmdline);
     if (!am.cwd.empty()) {
-      p.cwd().assign(am.cwd);
+      p.cwd() = ExpandEnv(am.cwd.data());
     }
-    if (!p.initialize(am.appx.data()) || p.execute()) {
+    auto appx = ExpandEnv(am.appx.data());
+    if (!p.initialize(appx) || p.execute()) {
       auto ec = priv::error_code::lasterror();
       if (p.message().empty()) {
         priv::Print(priv::fc::Red,
@@ -295,7 +296,7 @@ int AppExecute(wsudo::AppMode &am) {
   }
   priv::process p(cmdline);
   if (!am.cwd.empty()) {
-    p.cwd().assign(am.cwd);
+    p.cwd() = ExpandEnv(am.cwd.data());
   }
   priv::Print(priv::fc::Yellow, L"Command: %s\n", cmdline);
   if (p.execute(am.level)) {
