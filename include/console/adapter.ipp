@@ -28,7 +28,7 @@ inline bool enablevtmode() {
   return true;
 }
 
-adapter::adapter() {
+inline adapter::adapter() {
   hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
   if (hConsole == INVALID_HANDLE_VALUE) {
     at = AdapterFile;
@@ -60,13 +60,13 @@ inline std::string wchar2utf8(const wchar_t *buf, size_t len) {
 }
 
 // NOTICE, we support write file as UTF-8. GBK? not support it.
-ssize_t adapter::writefile(int color, const wchar_t *data, size_t len) {
+inline ssize_t adapter::writefile(int color, const wchar_t *data, size_t len) {
   auto buf = wchar2utf8(data, len);
   //// write UTF8 to output
   return fwrite(buf.data(), 1, buf.size(), out);
 }
 
-ssize_t adapter::writeoldconsole(int color, const wchar_t *data, size_t len) {
+inline ssize_t adapter::writeoldconsole(int color, const wchar_t *data, size_t len) {
   CONSOLE_SCREEN_BUFFER_INFO csbi;
   GetConsoleScreenBufferInfo(hConsole, &csbi);
   WORD oldColor = csbi.wAttributes;
@@ -158,14 +158,14 @@ inline bool TerminalsConvertColor(int color, TerminalsColorTable &co) {
   return true;
 }
 
-int adapter::WriteConsoleInternal(const wchar_t *buffer, size_t len) {
+inline int adapter::WriteConsoleInternal(const wchar_t *buffer, size_t len) {
   DWORD dwWrite = 0;
   if (WriteConsoleW(hConsole, buffer, (DWORD)len, &dwWrite, nullptr)) {
     return static_cast<int>(dwWrite);
   }
   return 0;
 }
-ssize_t adapter::writeconsole(int color, const wchar_t *data, size_t len) {
+inline ssize_t adapter::writeconsole(int color, const wchar_t *data, size_t len) {
   TerminalsColorTable co;
   if (!TerminalsConvertColor(color, co)) {
     return writeoldconsole(color, data, len);
@@ -182,7 +182,7 @@ ssize_t adapter::writeconsole(int color, const wchar_t *data, size_t len) {
   return N;
 }
 
-ssize_t adapter::writetty(int color, const wchar_t *data, size_t len) {
+inline ssize_t adapter::writetty(int color, const wchar_t *data, size_t len) {
   TerminalsColorTable co;
   auto str = wchar2utf8(data, len);
   if (!TerminalsConvertColor(color, co)) {

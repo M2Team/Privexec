@@ -19,17 +19,13 @@ bool PathAppImageCombineExists(std::wstring &path, const wchar_t *file) {
     return true;
   }
   path.resize(PATHCCH_MAX_CCH, L'\0');
-  auto pszFile = &path[0];
-  auto N = GetModuleFileNameW(nullptr, pszFile, PATHCCH_MAX_CCH);
-  if (PathCchRemoveExtension(pszFile, (size_t)N + 8) != S_OK) {
-    return false;
+  auto N = GetModuleFileNameW(nullptr, &path[0], PATHCCH_MAX_CCH);
+  path.resize(N);
+  auto pos = path.rfind(L'\\');
+  if (pos != std::wstring::npos) {
+    path.resize(pos);
   }
-
-  if (PathCchAddExtension(pszFile, (size_t)N + 8, L".json") != S_OK) {
-    return false;
-  }
-  auto k = wcslen(pszFile);
-  path.resize(k);
+  path.append(L"\\").append(file);
   if (PathFileExistsW(path.data())) {
     return true;
   }
@@ -60,10 +56,10 @@ bool AppAliasInitialize(HWND hbox, priv::alias_t &alias) {
     auto json = nlohmann::json::parse(fs);
     auto cmds = json["Alias"];
     for (auto &cmd : cmds) {
-      auto name = utf8towide(cmd["Name"].get<std::string>());
-      auto command = utf8towide(cmd["Command"].get<std::string>());
-      alias.insert(std::make_pair(name, command));
-      ::SendMessage(hbox, CB_ADDSTRING, 0, (LPARAM)name.data());
+      auto desc = utf8towide(cmd["Desc"].get<std::string>());
+      auto target = utf8towide(cmd["Target"].get<std::string>());
+      alias.insert(std::make_pair(desc, target));
+      ::SendMessage(hbox, CB_ADDSTRING, 0, (LPARAM)desc.data());
     }
   } catch (const std::exception &e) {
     OutputDebugStringA(e.what());

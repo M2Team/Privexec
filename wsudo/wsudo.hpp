@@ -4,6 +4,7 @@
 #include <cstring>
 #include <string>
 #include <vector>
+#include <optional>
 #include <string_view>
 #include <process/process.hpp>
 
@@ -11,7 +12,7 @@ namespace wsudo {
 
 enum AppModeResult {
   AppFatal = -1, // Fatal
-  AppNode = 0,
+  AppNone = 0,
   AppHelp,
   AppVersion
 };
@@ -31,53 +32,45 @@ inline bool Match(const wchar_t *arg, const wchar_t *s1, const wchar_t *s2,
 
 inline bool MatchEx(const wchar_t *arg, const wchar_t *s, const wchar_t *l,
                     std::wstring_view &value) {
+  value = L"";
   auto al = wcslen(arg);
   auto sl = wcslen(s);
   if (sl <= al && wcsncmp(arg, s, sl) == 0) {
     if (sl == al) {
       return true;
     }
-    value = arg + al; /// -uappcontainer , -csomedir
+    value = arg + sl; /// -uappcontainer , -csomedir
     return true;
   }
-
   auto ll = wcslen(l);
-
+  if (ll <= al && wcsncmp(arg, l, ll) == 0) {
+    if (sl == ll) {
+      return true;
+    }
+    /// --user=appcontainer
+    if (arg[ll] != L'=' || ll + 1 >= al) {
+      return false;
+    }
+    value = arg + ll + 1;
+    return true;
+  }
   return false;
 }
 
 struct AppMode {
+  std::wstring message;
   std::vector<std::wstring_view> args;
   std::wstring_view cwd;              // --cwd -c
+  std::wstring_view appx;             // --appx -x
   int level{priv::ProcessNoElevated}; // -u --user
-  bool disablealias{true};            // --disable-alias
-  int ParseArgv(int argc, wchar_t **argv);
-};
+  bool verbose{false};                // --verbose -V
+  bool disablealias{false};           // --disable-alias
 
-//
-inline int AppMode::ParseArgv(int argc, wchar_t **argv) {
-  int i = 1;
-  for (; i < argc; i++) {
-    auto arg = argv[i];
-    if (arg[0] != '-') {
-      break;
-    }
-    if (Match(arg, L"-?", L"-h", L"--help")) {
-      return AppHelp;
-    }
-    if (Match(arg, L"-v", L"--version")) {
-      return AppVersion;
-    }
-    if (Match(arg, L"--disable-alias")) {
-      disablealias = true;
-      continue;
-    }
-  }
-  for (; i < argc; i++) {
-    args.push_back(argv[i]);
-  }
-  return 0;
-}
+  bool IsAppLevel(const wchar_t *arg);
+  bool IsAppLevelKey(std::wstring_view k);
+  int ParseArgv(int argc, wchar_t **argv);
+  void Verbose();
+};
 
 } // namespace wsudo
 

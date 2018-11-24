@@ -1,218 +1,342 @@
 ////
-#define WIN32_LEAN_AND_MEAN // Exclude rarely-used stuff from Windows headers
-// Windows Header Files:
-#include <windows.h>
-#include <iostream>
-#include <unordered_map>
-#include <string_view>
 #include <string>
-#include <process/process.hpp>
 #include <console/console.hpp>
 #include <version.h>
+#include "wsudo.hpp"
+#include "wsudoalias.hpp"
 
-class Arguments {
-public:
-  Arguments() : argv_(4096, L'\0') {}
-  Arguments &assign(const wchar_t *app) {
-    std::wstring realcmd(0x8000, L'\0');
-    //// N include terminating null character
-    auto N = ExpandEnvironmentStringsW(app, &realcmd[0], 0x8000);
-    realcmd.resize(N - 1);
-    std::wstring buf;
-    bool needwarp = false;
-    for (auto c : realcmd) {
-      switch (c) {
-      case L'"':
-        buf.push_back(L'\\');
-        buf.push_back(L'"');
-        break;
-      case L'\t':
-        needwarp = true;
-        break;
-      case L' ':
-        needwarp = true;
-      default:
-        buf.push_back(c);
-        break;
-      }
-    }
-    if (needwarp) {
-      argv_.assign(L"\"").append(buf).push_back(L'"');
-    } else {
-      argv_.assign(std::move(buf));
-    }
-    return *this;
-  }
-  Arguments &append(const wchar_t *cmd) {
-    std::wstring buf;
-    bool needwarp = false;
-    auto xlen = wcslen(cmd);
-    if (xlen == 0) {
-      argv_.append(L" \"\"");
-      return *this;
-    }
-    auto end = cmd + xlen;
-    for (auto iter = cmd; iter != end; iter++) {
-      switch (*iter) {
-      case L'"':
-        buf.push_back(L'\\');
-        buf.push_back(L'"');
-        break;
-      case L' ':
-      case L'\t':
-        needwarp = true;
-      default:
-        buf.push_back(*iter);
-        break;
-      }
-    }
-    if (needwarp) {
-      argv_.append(L" \"").append(buf).push_back(L'"');
-    } else {
-      argv_.append(L" ").append(buf);
-    }
-    return *this;
-  }
-  const std::wstring &str() { return argv_; }
+namespace wsudo {
 
-private:
-  std::wstring argv_;
-};
-
-bool CreateProcessInternal(int level, int Argc, wchar_t **Argv) {
-  Arguments argb;
-  argb.assign(Argv[0]);
-  for (int i = 1; i < Argc; i++) {
-    argb.append(Argv[i]);
-  }
-  priv::process p(argb.str());
-  priv::Print(priv::fc::Yellow, L"Command: %s\n", argb.str());
-  if (p.execute(level)) {
-    priv::Print(priv::fc::Green, L"new process is running: %d\n", p.pid());
-    return true;
-  }
-  auto ec = priv::error_code::lasterror();
-  priv::Print(priv::fc::Red, L"create process  last error %d  (%s): %s\n",
-              ec.code, p.message().c_str(), ec.message);
-  return false;
-}
-
-inline bool IsArg(const wchar_t *candidate, const wchar_t *longname) {
-  return (wcscmp(candidate, longname) == 0);
-}
-
-inline bool IsArg(const wchar_t *candidate, const wchar_t *shortname,
-                  const wchar_t *longname) {
-  return (wcscmp(candidate, shortname) == 0 ||
-          (longname != nullptr && wcscmp(candidate, longname) == 0));
-}
-
-inline bool IsArg(const wchar_t *candidate, const wchar_t *longname, size_t n,
-                  const wchar_t **off) {
-  auto l = wcslen(candidate);
-  if (l < n)
+//     -a          AppContainer
+//    -M          Mandatory Integrity Control
+//    -U          No Elevated(UAC)
+//    -A          Administrator
+//    -S          System
+//    -T          TrustedInstaller
+inline bool AppMode::IsAppLevel(const wchar_t *arg) {
+  auto l = wcslen(arg);
+  if (l != 2) {
     return false;
-  if (wcsncmp(candidate, longname, n) == 0) {
-    if (l > n && candidate[n] == '=') {
-      *off = candidate + n + 1;
-    } else {
-      *off = nullptr;
-    }
-    return true;
   }
+  switch (arg[1]) {
+  case L'a':
+    level = priv::ProcessAppContainer;
+    break;
+  case L'M':
+    level = priv::ProcessMandatoryIntegrityControl;
+    break;
+  case L'U':
+    level = priv::ProcessNoElevated;
+    break;
+  case L'A':
+    level = priv::ProcessElevated;
+    break;
+  case L'S':
+    level = priv::ProcessSystem;
+    break;
+  case L'T':
+    level = priv::ProcessTrustedInstaller;
+    break;
+  default:
+    return false;
+  }
+  return true;
+}
+
+bool AppMode::IsAppLevelKey(std::wstring_view k) {
+  static struct {
+    const wchar_t *s;
+    int level;
+  } userlevels[] = {
+      //
+      {L"appcontainer", priv::ProcessAppContainer},
+      {L"mic", priv::ProcessMandatoryIntegrityControl},
+      {L"noelevated", priv::ProcessNoElevated},
+      {L"administrator", priv::ProcessElevated},
+      {L"system", priv::ProcessSystem},
+      {L"trustedinstaller", priv::ProcessTrustedInstaller}
+      //
+  };
+  for (const auto &u : userlevels) {
+    auto l = wcslen(u.s);
+    if (l == k.size() && _wcsnicmp(u.s, k.data(), l) == 0) {
+      level = u.level;
+      return true;
+    }
+  }
+  message.assign(L"unsupport user level '")
+      .append(k.data(), k.size())
+      .append(L"'");
   return false;
 }
+// ParseArgv
+int AppMode::ParseArgv(int argc, wchar_t **argv) {
+  int i = 1;
+  // std::wstring_view ua, cwd, appx;
+  auto MatchInternal =
+      [&](const wchar_t *arg, const wchar_t *s,
+          const wchar_t *l) -> std::optional<std::wstring_view> {
+    std::wstring_view v;
+    if (!MatchEx(arg, s, l, v)) {
+      // ok.
+      return std::nullopt;
+    }
+    if (!v.empty()) {
+      return std::make_optional<std::wstring_view>(v);
+    }
+    if (i + 1 < argc) {
+      return std::make_optional<std::wstring_view>(argv[++i]);
+    }
+    message.assign(L"Flag '").append(arg).append(L"' missing  argument");
+    return std::nullopt;
+  };
 
-int SearchUser(const wchar_t *user) {
-  std::unordered_map<std::wstring, int> users = {
-      {L"a", priv::ProcessAppContainer},
-      {L"m", priv::ProcessMandatoryIntegrityControl},
-      {L"u", priv::ProcessNoElevated},
-      {L"A", priv::ProcessElevated},
-      {L"s", priv::ProcessSystem},
-      {L"t", priv::ProcessTrustedInstaller}};
-  auto iter = users.find(user);
-  if (iter != users.end()) {
-    return iter->second;
+  for (; i < argc; i++) {
+    auto arg = argv[i];
+    if (arg[0] != '-') {
+      break;
+    }
+    if (Match(arg, L"-?", L"-h", L"--help")) {
+      return AppHelp;
+    }
+    if (Match(arg, L"-v", L"--version")) {
+      return AppVersion;
+    }
+    if (Match(arg, L"-V", L"--verbose")) {
+      verbose = true;
+      continue;
+    }
+    if (Match(arg, L"--disable-alias")) {
+      disablealias = true;
+      continue;
+    }
+    auto ul = MatchInternal(arg, L"-u", L"--user");
+    if (ul) {
+      if (!IsAppLevelKey(*ul)) {
+        return AppFatal;
+      }
+      continue;
+    }
+    if (!message.empty()) {
+      return AppFatal;
+    }
+    auto cwd_ = MatchInternal(arg, L"-c", L"--cwd");
+    if (cwd_) {
+      cwd = *cwd_;
+      continue;
+    }
+    if (!message.empty()) {
+      return AppFatal;
+    }
+    auto ax = MatchInternal(arg, L"-x", L"--appx");
+    if (ax) {
+      appx = *ax;
+      continue;
+    }
+    if (!message.empty()) {
+      return AppFatal;
+    }
+    // AppLevel
+    if (IsAppLevel(arg)) {
+      continue;
+    }
+    message.assign(L"invalid argument '").append(arg).append(L"'");
+    return AppFatal;
   }
-  return -1;
+  for (; i < argc; i++) {
+    args.push_back(argv[i]);
+  }
+  return AppNone;
 }
 
-const wchar_t *kUsage = LR"(run the program with the specified permissions
-usage: wsudo command args....
-  -v|--version   print version and exit
-  -h|--help      print help information and exit
-  -u|--user      run as user (optional), support '-u=X' or '-u X'
-users:
-   a   AppContainer
-   m   Mandatory Integrity Control
-   u   UAC No Elevated (default)
-   A   Administrator
-   s   System
-   t   TrustedInstaller
-Example:
-   wsudo --user=A "%SYSTEMROOT%/System32/WindowsPowerShell/v1.0/powershell.exe" -NoProfile
-   wsudo -u=t cmd
-)";
+const wchar_t *AppSLevel(int l) {
+  static struct {
+    const wchar_t *s;
+    int level;
+  } userlevels[] = {
+      //
+      {L"AppContainer", priv::ProcessAppContainer},
+      {L"Mandatory Integrity Control", priv::ProcessMandatoryIntegrityControl},
+      {L"NoElevated", priv::ProcessNoElevated},
+      {L"Administrator", priv::ProcessElevated},
+      {L"System", priv::ProcessSystem},
+      {L"TrustedInstaller", priv::ProcessTrustedInstaller}
+      //
+  };
+  for (const auto &u : userlevels) {
+    if (u.level == l) {
+      return u.s;
+    }
+  }
+  return L"Unkown";
+}
 
-int wmain(int argc, const wchar_t *argv[]) {
-  if (argc <= 1) {
-    priv::Print(priv::fc::Red, L"usage: wsudo command args...\n");
-    return 1;
+void AppMode::Verbose() {
+  if (!verbose) {
+    return;
   }
-  auto Arg = argv[1];
-  if (IsArg(Arg, L"-v", L"--version")) {
-    priv::Print(priv::fc::Cyan, L"wsudo %s\n", PRIVEXEC_BUILD_VERSION);
-    return 0;
+  if (!cwd.empty()) {
+    priv::Print(priv::fc::Yellow, L"* App cwd: %s\n", cwd.data());
   }
-  if (IsArg(Arg, L"-h", L"--help")) {
-    priv::Print(priv::fc::Cyan, L"wsudo \x2665 %s", kUsage);
-    return 0;
+  if (!appx.empty()) {
+    priv::Print(priv::fc::Yellow, L"* App AppContainer Manifest: %s\n",
+                appx.data());
   }
-  int index = 1;
-  auto Argv = argv + 1;
-  int level = priv::ProcessNoElevated;
-  const wchar_t *Argoff = nullptr;
-  if (IsArg(Arg, L"--user", 6, &Argoff)) {
-    if (!Argoff) {
-      if (argc < 3) {
-        priv::Print(priv::fc::Red, L"Invalid Argument: %s\n", Arg);
-        return 1;
+  priv::Print(priv::fc::Yellow, L"* App Launcher level: %s\n",
+              AppSLevel(level));
+  if (disablealias) {
+    priv::Print(priv::fc::Yellow, L"* App Alias is disabled\n");
+  }
+}
+} // namespace wsudo
+
+void Version() {
+  priv::Print(priv::fc::Cyan, L"wsudo %s\n", PRIVEXEC_BUILD_VERSION);
+}
+
+void Usage(bool err = false) {
+  constexpr const wchar_t *kUsage =
+      LR"(run the program with the specified permissions
+usage: wsudo command args....
+   -v|--version    print version and exit
+   -h|--help       print help information and exit
+   -u|--user       run as user (optional), support '-uX', '-u X', '--user=X', '--user X'
+                   Supported user categories (Ignore case):
+                   AppContainer  MIC 
+                   NoElevated    Administrator 
+                   System        TrustedInstaller
+
+   -V|--verbose    Make the operation more talkative
+   -x|--appx       AppContainer AppManifest file path
+   -c|--cwd        Use a working directory to launch the process.
+   --disable-alias Disable Privexec alias, By default, if Privexec exists alias, use it.
+
+Select user can use the following flags:
+   -a          AppContainer
+   -M          Mandatory Integrity Control
+   -U          No Elevated(UAC)
+   -A          Administrator
+   -S          System
+   -T          TrustedInstaller
+Example:
+   wsudo -A "%SYSTEMROOT%/System32/WindowsPowerShell/v1.0/powershell.exe" -NoProfile
+   wsudo -T cmd
+
+Buitin 'alias' command:
+   wsudo alias add ehs "notepad %SYSTEMROOT%/System32/drivers/etc/hosts" "Edit Hosts"
+   wsudo alias delete ehs
+
+)";
+  priv::Print(err ? priv::fc::Red : priv::fc::Cyan, L"wsudo \x2665 %s\n",
+              kUsage);
+}
+
+// expand env
+inline std::wstring ExpandEnv(const std::wstring &s) {
+  auto len = ExpandEnvironmentStringsW(s.data(), nullptr, 0);
+  if (len <= 0) {
+    return s;
+  }
+  std::wstring s2(len + 1, L'\0');
+  auto N = ExpandEnvironmentStringsW(s.data(), &s2[0], len + 1);
+  s2.resize(N - 1);
+  return s2;
+}
+
+int AppExecute(wsudo::AppMode &am) {
+  std::wstring cmd(am.args[0]);
+  if (!am.disablealias) {
+    wsudo::AliasEngine ae;
+    if (ae.Initialize()) {
+      auto al = ae.Target(cmd);
+      if (al) {
+        if (am.verbose) {
+          priv::Print(priv::fc::Yellow, L"* App alias '%s' expand to '%s'\n",
+                      cmd, *al);
+        }
+        cmd.assign(*al);
       }
-      Argoff = argv[2];
-      index = 3;
-    } else {
-      index = 2;
     }
-  } else if (IsArg(Arg, L"-u", 2, &Argoff)) {
-    if (!Argoff) {
-      if (argc < 3) {
-        priv::Print(priv::fc::Red, L"Invalid Argument: %s\n", Arg);
-        return 1;
-      }
-      Argoff = argv[2];
-      index = 3;
-    } else {
-      index = 2;
-    }
-  } else if (Arg[0] == L'-') {
-    priv::Print(priv::fc::Red, L"Invalid Argument: %s\n", Arg);
-    return 1;
   }
-  if (Argoff) {
-    level = SearchUser(Argoff);
-    if (level == -1) {
-      priv::Print(priv::fc::Red, L"Invalid Argument: %s\n", Argoff);
+  auto cmdline = ExpandEnv(cmd);
+  for (auto it = am.args.begin() + 1; it != am.args.end(); it++) {
+    if (it->empty()) {
+      cmdline.append(L" \"\"");
+      continue;
+    }
+    if (it->find(L' ') != std::wstring_view::npos && it->front() != L'"') {
+      cmdline.append(L" \"").append(it->data(), it->size()).append(L"\"");
+    } else {
+      cmdline.append(L" ").append(it->data(), it->size());
+    }
+  }
+  if (am.verbose) {
+    priv::Print(priv::fc::Yellow, L"* App real command '%s'\n", cmdline);
+  }
+  if (am.level == priv::ProcessAppContainer && !am.appx.empty()) {
+    priv::appcontainer p(cmdline);
+    if (!am.cwd.empty()) {
+      p.cwd().assign(am.cwd);
+    }
+    if (!p.initialize(am.appx.data()) || p.execute()) {
+      auto ec = priv::error_code::lasterror();
+      if (p.message().empty()) {
+        priv::Print(priv::fc::Red,
+                    L"create appconatiner process  last error %d : %s\n",
+                    ec.code, ec.message);
+      } else {
+        priv::Print(priv::fc::Red,
+                    L"create appconatiner process  last error %d  (%s): %s\n",
+                    ec.code, p.message(), ec.message);
+      }
       return 1;
     }
+    return 0;
   }
-  if (argc == index) {
-    priv::Print(priv::fc::Red, L"Invalid Argument: %s\n", GetCommandLineW());
+  priv::process p(cmdline);
+  if (!am.cwd.empty()) {
+    p.cwd().assign(am.cwd);
+  }
+  priv::Print(priv::fc::Yellow, L"Command: %s\n", cmdline);
+  if (p.execute(am.level)) {
+    priv::Print(priv::fc::Green, L"new process is running: %d\n", p.pid());
+    return 0;
+  }
+  auto ec = priv::error_code::lasterror();
+  if (p.message().empty()) {
+    priv::Print(priv::fc::Red, L"create process  last error %d : %s\n", ec.code,
+                ec.message);
+  } else {
+    priv::Print(priv::fc::Red, L"create process  last error %d  (%s): %s\n",
+                ec.code, p.message(), ec.message);
+  }
+  return 1;
+}
+
+int wmain(int argc, wchar_t **argv) {
+  wsudo::AppMode am;
+  switch (am.ParseArgv(argc, argv)) {
+  case wsudo::AppFatal:
+    priv::Print(priv::fc::Red, L"wsudo parse argv failed: %s\n", am.message);
+    return 1;
+  case wsudo::AppHelp:
+    Usage();
+    return 0;
+  case wsudo::AppVersion:
+    Version();
+    return 0;
+  default:
+    break;
+  }
+  if (am.args.empty()) {
+    priv::Print(priv::fc::Red, L"wsudo missing command %s see usage:\n",
+                am.message);
+    Usage(true);
     return 1;
   }
-  if (!CreateProcessInternal(level, argc - index,
-                             const_cast<wchar_t **>(argv + index))) {
-    return 1;
+  if (am.args[0] == L"alias") {
+    return wsudo::AliasSubcmd(am.args, am.verbose);
   }
-  return 0;
+  am.Verbose();
+  return AppExecute(am);
 }
