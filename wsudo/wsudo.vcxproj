@@ -151,16 +151,15 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="wsudo.cpp" />
+    <ClCompile Include="wsudo.cc" />
+    <ClCompile Include="wsudoalias.cc" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="resource.h" />
+    <ClInclude Include="wsudoalias.hpp" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="wsudo.rc" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="wsudo.json" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

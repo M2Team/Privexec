@@ -1,8 +1,0 @@
-{
-  "Alias": [
-    {
-      "Name": "edithost",
-      "Command": "notepad %windir%\\System32\\Drivers\\etc\\hosts"
-    }
-  ]
-}

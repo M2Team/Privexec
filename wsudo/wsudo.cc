@@ -4,6 +4,7 @@
 #include <windows.h>
 #include <iostream>
 #include <unordered_map>
+#include <string_view>
 #include <string>
 #include <process/process.hpp>
 #include <console/console.hpp>
@@ -137,7 +138,7 @@ int SearchUser(const wchar_t *user) {
   return -1;
 }
 
-const wchar_t *kUsage = LR"(execute some app
+const wchar_t *kUsage = LR"(run the program with the specified permissions
 usage: wsudo command args....
   -v|--version   print version and exit
   -h|--help      print help information and exit
@@ -156,7 +157,7 @@ Example:
 
 int wmain(int argc, const wchar_t *argv[]) {
   if (argc <= 1) {
-    priv::Print(priv::fc::Red, L"usage: wsudo args\n");
+    priv::Print(priv::fc::Red, L"usage: wsudo command args...\n");
     return 1;
   }
   auto Arg = argv[1];

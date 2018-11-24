@@ -15,12 +15,10 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="wsudo.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
-  </ItemGroup>
-  <ItemGroup>
     <ClInclude Include="resource.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="wsudoalias.hpp">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>
@@ -30,8 +28,11 @@
     </ResourceCompile>
   </ItemGroup>
   <ItemGroup>
-    <None Include="wsudo.json">
-      <Filter>资源文件</Filter>
-    </None>
+    <ClCompile Include="wsudo.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="wsudoalias.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>

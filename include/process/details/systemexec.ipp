@@ -37,7 +37,7 @@ BOOL SetPrivilege(HANDLE hToken, LPCWSTR lpszPrivilege, bool bEnablePrivilege) {
   TOKEN_PRIVILEGES tp;
   LUID luid;
 
-  if (!::LookupPrivilegeValue(nullptr, lpszPrivilege, &luid)) {
+  if (!::LookupPrivilegeValueW(nullptr, lpszPrivilege, &luid)) {
     fprintf(stderr, "SetPrivilege LookupPrivilegeValue\n");
     return FALSE;
   }

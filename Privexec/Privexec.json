@@ -2,18 +2,22 @@
     "Alias": [
         {
             "Name": "Edit Hosts",
+            "Key": "edithosts",
             "Command": "Notepad %windir%\\System32\\Drivers\\etc\\hosts"
         },
         {
             "Name": "PowerShell",
+            "Key": "pwsh",
             "Command": "powershell"
         },
         {
             "Name": "PowerShell ISE",
+            "Key": "pwshise",
             "Command": "powershell_ise"
         },
         {
             "Name": "Windows Debugger",
+            "Key": "windbg",
             "Command": "\"%ProgramFiles(x86)%\\Windows Kits\\10\\Debuggers\\x64\\windbg.exe\""
         }
     ]

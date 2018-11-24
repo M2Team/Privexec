@@ -2,7 +2,7 @@
 
 [![Build status](https://ci.appveyor.com/api/projects/status/2cbd4pceqbldlixx/branch/master?svg=true)](https://ci.appveyor.com/project/fcharlie/privexec/branch/master)
 
-Execute some command
+Run the program with the specified permission level
 
 ## Alias
 
@@ -66,7 +66,7 @@ wsudo is a console command client
 **wsudo usage:**
 
 ```txt
-wsudo ♥ execute some app
+wsudo ♥ run the program with the specified permissions
 usage: wsudo command args....
   -v|--version   print version and exit
   -h|--help      print help information and exit
@@ -81,6 +81,7 @@ users:
 Example:
    wsudo --user=A "%SYSTEMROOT%/System32/WindowsPowerShell/v1.0/powershell.exe" -NoProfile
    wsudo -u=t cmd
+
 ```
 
 ## Download

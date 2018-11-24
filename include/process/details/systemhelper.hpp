@@ -23,7 +23,7 @@ inline bool GetCurrentSessionId(DWORD &dwSessionId) {
 }
 
 inline bool LookupSystemProcessID(DWORD &pid) {
-  PWTS_PROCESS_INFO ppi;
+  PWTS_PROCESS_INFOW ppi;
   DWORD count;
   DWORD dwSessionId = 0;
   if (!GetCurrentSessionId(dwSessionId)) {
