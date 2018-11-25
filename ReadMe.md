@@ -81,6 +81,7 @@ usage: wsudo command args....
                        System        TrustedInstaller
 
    -n|--new-console    Starts a separate window to run a specified program or command.
+   -w|--wait           Start application and wait for it to terminate.
    -V|--verbose        Make the operation more talkative
    -x|--appx           AppContainer AppManifest file path
    -c|--cwd            Use a working directory to launch the process.
@@ -100,6 +101,7 @@ Example:
 Buitin 'alias' command:
    wsudo alias add ehs "notepad %SYSTEMROOT%/System32/drivers/etc/hosts" "Edit Hosts"
    wsudo alias delete ehs
+
 
 ```
 

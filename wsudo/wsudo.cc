@@ -107,6 +107,10 @@ int AppMode::ParseArgv(int argc, wchar_t **argv) {
       verbose = true;
       continue;
     }
+    if (Match(arg, L"-w", L"--wait")) {
+      wait = true;
+      continue;
+    }
     if (Match(arg, L"-n", L"--new-console")) {
       newconsole = true;
       continue;
@@ -212,6 +216,7 @@ usage: wsudo command args....
                        System        TrustedInstaller
 
    -n|--new-console    Starts a separate window to run a specified program or command.
+   -w|--wait           Start application and wait for it to terminate.
    -V|--verbose        Make the operation more talkative
    -x|--appx           AppContainer AppManifest file path
    -c|--cwd            Use a working directory to launch the process.
@@ -256,7 +261,7 @@ bool AppExecuteSubsystemIsConsole(const std::wstring &cmd, bool verbose) {
         if (i < 2) {
           return false;
         }
-        xcmd.assign(cmd.data() + 1, i - 2);
+        xcmd.assign(cmd.data() + 1, i - 1);
       }
     }
   } else {
@@ -324,10 +329,15 @@ int AppExecute(wsudo::AppMode &am) {
   }
   auto cmdline = ExpandEnv(cmd);
   auto isconsole = AppExecuteSubsystemIsConsole(cmdline, am.verbose);
+  auto elevated = priv::IsUserAdministratorsGroup();
+  bool newconsole = am.newconsole;
+  if (elevated && am.level == priv::ProcessNoElevated ||
+      (!elevated && am.level == priv::ProcessElevated)) {
+    newconsole = isconsole;
+  }
   if (am.verbose && isconsole) {
     priv::Print(priv::fc::Yellow, L"* App subsystem is console, %s\n",
-                am.newconsole ? L"create new console"
-                              : L"share the same console");
+                newconsole ? L"create new console" : L"share the same console");
   }
   for (auto it = am.args.begin() + 1; it != am.args.end(); it++) {
     if (it->empty()) {
@@ -349,7 +359,7 @@ int AppExecute(wsudo::AppMode &am) {
       p.cwd() = ExpandEnv(am.cwd.data());
     }
     auto appx = ExpandEnv(am.appx.data());
-    p.newconsole(am.newconsole);
+    p.newconsole(newconsole);
     if (!p.initialize(appx) || !p.execute()) {
       auto ec = priv::error_code::lasterror();
       if (p.message().empty()) {
@@ -363,7 +373,7 @@ int AppExecute(wsudo::AppMode &am) {
       }
       return 1;
     }
-    if (!am.newconsole) {
+    if (!newconsole && isconsole || am.wait) {
       return AppWait(p.pid());
     }
     return 0;
@@ -377,14 +387,10 @@ int AppExecute(wsudo::AppMode &am) {
   priv::Print(priv::fc::Yellow, L"Command: %s\n", cmdline);
   if (p.execute(am.level)) {
     priv::Print(priv::fc::Green, L"new process is running: %d\n", p.pid());
-    if (am.newconsole) {
-      return 0;
+    if (!newconsole && isconsole || am.wait) {
+      return AppWait(p.pid());
     }
-    if (am.level == priv::ProcessElevated &&
-        !priv::IsUserAdministratorsGroup()) {
-      return 0;
-    }
-    return AppWait(p.pid());
+    return 0;
   }
   auto ec = priv::error_code::lasterror();
   if (p.message().empty()) {
