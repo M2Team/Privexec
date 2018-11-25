@@ -2,6 +2,7 @@
 #include <string>
 #include <console/console.hpp>
 #include <version.h>
+#include <pe.hpp>
 #include "wsudo.hpp"
 #include "wsudoalias.hpp"
 
@@ -247,6 +248,38 @@ inline std::wstring ExpandEnv(const std::wstring &s) {
   return s2;
 }
 
+bool AppExecuteSubsystemIsConsole(const std::wstring &cmd, bool verbose) {
+  std::wstring xcmd;
+  if (cmd.front() == L'"') {
+    for (size_t i = 1; i < cmd.size(); i++) {
+      if (cmd[i] == L'"' && cmd[i - 1] != L'\\') {
+        if (i < 2) {
+          return false;
+        }
+        xcmd.assign(cmd.data() + 1, i - 2);
+      }
+    }
+  } else {
+    auto pos = cmd.find(' ');
+    if (pos == std::wstring::npos) {
+      xcmd = cmd;
+    } else {
+      xcmd = cmd.substr(0, pos);
+    }
+  }
+  if (verbose) {
+    priv::Print(priv::fc::Yellow, L"* App real argv0 '%s'\n", xcmd);
+  }
+  std::wstring exe;
+  if (!priv::FindExecutableImageEx(xcmd, exe)) {
+    return false;
+  }
+  if (verbose) {
+    priv::Print(priv::fc::Yellow, L"* App real path '%s'\n", exe);
+  }
+  return priv::PESubsystemIsConsole(exe);
+}
+
 int AppExecute(wsudo::AppMode &am) {
   std::wstring cmd(am.args[0]);
   if (!am.disablealias) {
@@ -263,6 +296,10 @@ int AppExecute(wsudo::AppMode &am) {
     }
   }
   auto cmdline = ExpandEnv(cmd);
+  auto isconsole = AppExecuteSubsystemIsConsole(cmdline, am.verbose);
+  if (am.verbose && isconsole) {
+    priv::Print(priv::fc::Yellow, L"* App subsystem is console\n");
+  }
   for (auto it = am.args.begin() + 1; it != am.args.end(); it++) {
     if (it->empty()) {
       cmdline.append(L" \"\"");
