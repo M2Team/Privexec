@@ -111,6 +111,13 @@ Buitin 'alias' command:
 
 ```
 
+## WSUDO Details
+
+wsudo support `--new-console` when a PE subsystem is `WINDOWS CUI`, wsudo will wait child process exit, unless wsudo(administrator) start `NoElevated` process or wsudo(No Elevated) start `Elevated` process.
+
+If your add `-wait`, wsudo will wait process include `GUI/Console` process, Unless process start use `TaskAPI`.
+
+
 ## Download
 
 Download CI Build:
