@@ -281,6 +281,9 @@ bool AppExecuteSubsystemIsConsole(const std::wstring &cmd, bool verbose) {
 }
 
 int AppWait(DWORD pid) {
+  if (pid == 0) {
+    return 0;
+  }
   auto hProcess =
       OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION | SYNCHRONIZE, FALSE, pid);
   if (hProcess == INVALID_HANDLE_VALUE) {
@@ -394,6 +397,16 @@ int AppExecute(wsudo::AppMode &am) {
   return 1;
 }
 
+class DotComInitialize {
+public:
+  DotComInitialize() {
+    if (FAILED(CoInitialize(NULL))) {
+      throw std::runtime_error("CoInitialize failed");
+    }
+  }
+  ~DotComInitialize() { CoUninitialize(); }
+};
+
 int wmain(int argc, wchar_t **argv) {
   wsudo::AppMode am;
   switch (am.ParseArgv(argc, argv)) {
@@ -419,5 +432,6 @@ int wmain(int argc, wchar_t **argv) {
     return wsudo::AliasSubcmd(am.args, am.verbose);
   }
   am.Verbose();
+  DotComInitialize dotcom;
   return AppExecute(am);
 }

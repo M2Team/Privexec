@@ -111,7 +111,7 @@ public:
 
 private:
   bool execwithtoken(HANDLE hToken, bool desktop = false);
-  DWORD pid_;
+  DWORD pid_{0};
   std::wstring cmd_;
   std::wstring cwd_;
   std::wstring kmessage;

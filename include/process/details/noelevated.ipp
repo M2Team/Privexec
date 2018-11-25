@@ -121,7 +121,6 @@ bool process::noelevatedexec() {
   if (pszargs) {
     iExecAction->put_Arguments(_bstr_t(pszargs));
   }
-
   return (iTaskFolder->RegisterTaskDefinition(
               _bstr_t(pszTaskName), iTask, TASK_CREATE_OR_UPDATE, _variant_t(),
               _variant_t(), TASK_LOGON_INTERACTIVE_TOKEN, _variant_t(L""),
