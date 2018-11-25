@@ -72,6 +72,7 @@ struct AppMode {
   void Verbose();
 };
 
+
 } // namespace wsudo
 
 #endif

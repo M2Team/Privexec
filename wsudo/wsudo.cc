@@ -280,6 +280,30 @@ bool AppExecuteSubsystemIsConsole(const std::wstring &cmd, bool verbose) {
   return priv::PESubsystemIsConsole(exe);
 }
 
+int AppWait(DWORD pid) {
+  auto hProcess =
+      OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION | SYNCHRONIZE, FALSE, pid);
+  if (hProcess == INVALID_HANDLE_VALUE) {
+    auto ec = priv::error_code::lasterror();
+    priv::Print(priv::fc::Red, L"unable open process '%s'\n", ec.message);
+    return -1;
+  }
+  if (WaitForSingleObject(hProcess, INFINITE) == WAIT_FAILED) {
+    auto ec = priv::error_code::lasterror();
+    priv::Print(priv::fc::Red, L"unable wait process '%s'\n", ec.message);
+    CloseHandle(hProcess);
+    return -1;
+  }
+  DWORD exitcode = 0;
+  if (GetExitCodeProcess(hProcess, &exitcode) != TRUE) {
+    auto ec = priv::error_code::lasterror();
+    priv::Print(priv::fc::Red, L"unable get process exit code '%s'\n",
+                ec.message);
+  }
+  CloseHandle(hProcess);
+  return static_cast<int>(exitcode);
+}
+
 int AppExecute(wsudo::AppMode &am) {
   std::wstring cmd(am.args[0]);
   if (!am.disablealias) {
@@ -298,7 +322,9 @@ int AppExecute(wsudo::AppMode &am) {
   auto cmdline = ExpandEnv(cmd);
   auto isconsole = AppExecuteSubsystemIsConsole(cmdline, am.verbose);
   if (am.verbose && isconsole) {
-    priv::Print(priv::fc::Yellow, L"* App subsystem is console\n");
+    priv::Print(priv::fc::Yellow, L"* App subsystem is console, %s\n",
+                am.newconsole ? L"create new console"
+                              : L"share the same console");
   }
   for (auto it = am.args.begin() + 1; it != am.args.end(); it++) {
     if (it->empty()) {
@@ -321,7 +347,7 @@ int AppExecute(wsudo::AppMode &am) {
     }
     auto appx = ExpandEnv(am.appx.data());
     p.newconsole(am.newconsole);
-    if (!p.initialize(appx) || p.execute()) {
+    if (!p.initialize(appx) || !p.execute()) {
       auto ec = priv::error_code::lasterror();
       if (p.message().empty()) {
         priv::Print(priv::fc::Red,
@@ -334,8 +360,12 @@ int AppExecute(wsudo::AppMode &am) {
       }
       return 1;
     }
+    if (!am.newconsole) {
+      return AppWait(p.pid());
+    }
     return 0;
   }
+
   priv::process p(cmdline);
   p.newconsole(am.newconsole);
   if (!am.cwd.empty()) {
@@ -344,7 +374,14 @@ int AppExecute(wsudo::AppMode &am) {
   priv::Print(priv::fc::Yellow, L"Command: %s\n", cmdline);
   if (p.execute(am.level)) {
     priv::Print(priv::fc::Green, L"new process is running: %d\n", p.pid());
-    return 0;
+    if (am.newconsole) {
+      return 0;
+    }
+    if (am.level == priv::ProcessElevated &&
+        !priv::IsUserAdministratorsGroup()) {
+      return 0;
+    }
+    return AppWait(p.pid());
   }
   auto ec = priv::error_code::lasterror();
   if (p.message().empty()) {
