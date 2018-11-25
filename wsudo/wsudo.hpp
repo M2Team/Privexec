@@ -65,7 +65,7 @@ struct AppMode {
   int level{priv::ProcessNoElevated}; // -u --user
   bool verbose{false};                // --verbose -V
   bool disablealias{false};           // --disable-alias
-
+  bool newconsole{false};             // -n --new-console
   bool IsAppLevel(const wchar_t *arg);
   bool IsAppLevelKey(std::wstring_view k);
   int ParseArgv(int argc, wchar_t **argv);

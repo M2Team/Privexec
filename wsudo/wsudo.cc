@@ -106,6 +106,10 @@ int AppMode::ParseArgv(int argc, wchar_t **argv) {
       verbose = true;
       continue;
     }
+    if (Match(arg, L"-n", L"--new-console")) {
+      newconsole = true;
+      continue;
+    }
     if (Match(arg, L"--disable-alias")) {
       disablealias = true;
       continue;
@@ -198,18 +202,19 @@ void Usage(bool err = false) {
   constexpr const wchar_t *kUsage =
       LR"(run the program with the specified permissions
 usage: wsudo command args....
-   -v|--version    print version and exit
-   -h|--help       print help information and exit
-   -u|--user       run as user (optional), support '-uX', '-u X', '--user=X', '--user X'
-                   Supported user categories (Ignore case):
-                   AppContainer  MIC 
-                   NoElevated    Administrator 
-                   System        TrustedInstaller
+   -v|--version        print version and exit
+   -h|--help           print help information and exit
+   -u|--user           run as user (optional), support '-uX', '-u X', '--user=X', '--user X'
+                       Supported user categories (Ignore case):
+                       AppContainer  MIC 
+                       NoElevated    Administrator 
+                       System        TrustedInstaller
 
-   -V|--verbose    Make the operation more talkative
-   -x|--appx       AppContainer AppManifest file path
-   -c|--cwd        Use a working directory to launch the process.
-   --disable-alias Disable Privexec alias, By default, if Privexec exists alias, use it.
+   -n|--new-console    Starts a separate window to run a specified program or command.
+   -V|--verbose        Make the operation more talkative
+   -x|--appx           AppContainer AppManifest file path
+   -c|--cwd            Use a working directory to launch the process.
+   --disable-alias     Disable Privexec alias, By default, if Privexec exists alias, use it.
 
 Select user can use the following flags:
    -a          AppContainer
@@ -225,7 +230,6 @@ Example:
 Buitin 'alias' command:
    wsudo alias add ehs "notepad %SYSTEMROOT%/System32/drivers/etc/hosts" "Edit Hosts"
    wsudo alias delete ehs
-
 )";
   priv::Print(err ? priv::fc::Red : priv::fc::Cyan, L"wsudo \x2665 %s\n",
               kUsage);
@@ -279,6 +283,7 @@ int AppExecute(wsudo::AppMode &am) {
       p.cwd() = ExpandEnv(am.cwd.data());
     }
     auto appx = ExpandEnv(am.appx.data());
+    p.newconsole(am.newconsole);
     if (!p.initialize(appx) || p.execute()) {
       auto ec = priv::error_code::lasterror();
       if (p.message().empty()) {
@@ -295,6 +300,7 @@ int AppExecute(wsudo::AppMode &am) {
     return 0;
   }
   priv::process p(cmdline);
+  p.newconsole(am.newconsole);
   if (!am.cwd.empty()) {
     p.cwd() = ExpandEnv(am.cwd.data());
   }

@@ -72,18 +72,19 @@ wsudo is a console command client
 ```txt
 wsudo ♥ run the program with the specified permissions
 usage: wsudo command args....
-   -v|--version    print version and exit
-   -h|--help       print help information and exit
-   -u|--user       run as user (optional), support '-uX', '-u X', '--user=X', '--user X'
-                   Supported user categories (Ignore case):
-                   AppContainer  MIC
-                   NoElevated    Administrator
-                   System        TrustedInstaller
+   -v|--version        print version and exit
+   -h|--help           print help information and exit
+   -u|--user           run as user (optional), support '-uX', '-u X', '--user=X', '--user X'
+                       Supported user categories (Ignore case):
+                       AppContainer  MIC
+                       NoElevated    Administrator
+                       System        TrustedInstaller
 
-   -V|--verbose    Make the operation more talkative
-   -x|--appx       AppContainer AppManifest file path
-   -c|--cwd        Use a working directory to launch the process.
-   --disable-alias Disable Privexec alias, By default, if Privexec exists alias, use it.
+   -n|--new-console    Starts a separate window to run a specified program or command.
+   -V|--verbose        Make the operation more talkative
+   -x|--appx           AppContainer AppManifest file path
+   -c|--cwd            Use a working directory to launch the process.
+   --disable-alias     Disable Privexec alias, By default, if Privexec exists alias, use it.
 
 Select user can use the following flags:
    -a          AppContainer
@@ -99,7 +100,6 @@ Example:
 Buitin 'alias' command:
    wsudo alias add ehs "notepad %SYSTEMROOT%/System32/drivers/etc/hosts" "Edit Hosts"
    wsudo alias delete ehs
-
 
 ```
 

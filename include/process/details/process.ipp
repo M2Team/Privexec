@@ -15,8 +15,12 @@ bool process::execute() {
   si.cb = sizeof(si);
   PROCESS_INFORMATION pi;
   ZeroMemory(&pi, sizeof(pi));
-  if (CreateProcessW(nullptr, &cmd_[0], nullptr, nullptr, FALSE, 0, nullptr,
-                     Castwstr(cwd_), &si, &pi) != TRUE) {
+  DWORD createflags = CREATE_UNICODE_ENVIRONMENT;
+  if (nc) {
+    createflags |= CREATE_NEW_CONSOLE;
+  }
+  if (CreateProcessW(nullptr, &cmd_[0], nullptr, nullptr, FALSE, createflags,
+                     nullptr, Castwstr(cwd_), &si, &pi) != TRUE) {
     return false;
   }
   pid_ = pi.dwProcessId;
@@ -82,10 +86,16 @@ bool process::execwithtoken(HANDLE hToken, bool desktop) {
       ::DestroyEnvironmentBlock(lpEnvironment);
     }
   });
-  if (CreateProcessAsUserW(
-          hToken, nullptr, &cmd_[0], nullptr, nullptr, FALSE,
-          (lpEnvironment == nullptr) ? 0 : CREATE_UNICODE_ENVIRONMENT,
-          lpEnvironment, Castwstr(cwd_), &si, &pi) != TRUE) {
+  DWORD createflags = 0;
+  if (lpEnvironment = nullptr) {
+    createflags |= CREATE_UNICODE_ENVIRONMENT;
+  }
+  if (nc) {
+    createflags |= CREATE_NEW_CONSOLE;
+  }
+  if (CreateProcessAsUserW(hToken, nullptr, &cmd_[0], nullptr, nullptr, FALSE,
+                           createflags, lpEnvironment, Castwstr(cwd_), &si,
+                           &pi) != TRUE) {
     return false;
   }
   pid_ = pi.dwProcessId;

@@ -182,8 +182,11 @@ bool appcontainer::execute() {
     kmessage.assign(L"UpdateProcThreadAttribute");
     return false;
   }
-  if (CreateProcessW(nullptr, &cmd_[0], nullptr, nullptr, FALSE,
-                     EXTENDED_STARTUPINFO_PRESENT | CREATE_UNICODE_ENVIRONMENT,
+  DWORD createflags = EXTENDED_STARTUPINFO_PRESENT | CREATE_UNICODE_ENVIRONMENT;
+  if (nc) {
+    createflags |= CREATE_NEW_CONSOLE;
+  }
+  if (CreateProcessW(nullptr, &cmd_[0], nullptr, nullptr, FALSE, createflags,
                      nullptr, Castwstr(cwd_),
                      reinterpret_cast<STARTUPINFOW *>(&siex), &pi) != TRUE) {
     kmessage.assign(L"CreateProcessW");

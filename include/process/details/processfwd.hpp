@@ -103,6 +103,11 @@ public:
   bool elevatedexec();
   bool lowlevelexec();
   bool systemexec();
+  //
+  bool newconsole(bool nc_) {
+    nc = nc_;
+    return nc;
+  }
 
 private:
   bool execwithtoken(HANDLE hToken, bool desktop = false);
@@ -110,6 +115,7 @@ private:
   std::wstring cmd_;
   std::wstring cwd_;
   std::wstring kmessage;
+  bool nc{false};
 };
 // SECURITY_CAPABILITY_INTERNET_EXPLORER
 using wid_t = WELL_KNOWN_SID_TYPE;
@@ -163,6 +169,12 @@ public:
   bool initializessid(const std::wstring &ssid);
   bool execute();
 
+  //
+  bool newconsole(bool nc_) {
+    nc = nc_;
+    return nc;
+  }
+
 private:
   DWORD pid_{0};
   std::wstring cmd_;
@@ -170,6 +182,7 @@ private:
   std::wstring kmessage;
   PSID appcontainersid{nullptr};
   capabilities_t ca;
+  bool nc{false};
 };
 
 /*++
