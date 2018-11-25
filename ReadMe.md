@@ -51,11 +51,17 @@ AppContainer:
 
 ![appcoantiner](images/appcontainer.png)
 
-wsudo:
+**wsudo**:
+
+wsudo run under CMD:
 
 ![wsudo](images/wsudo.png)
 
+wsudo run under Git for Windows Bash:
+
 ![wsudo2](images/wsudo2.png)
+
+wsudo Verbose Mode:
 
 ![wsudo3](images/wsudo3.png)
 
@@ -112,4 +118,4 @@ Download CI Build:
 
 ## LICENSE
 
-This project use MIT License, and JSON use [https://github.com/nlohmann/json](https://github.com/nlohmann/json) , some API use NSudo.
+This project use MIT License, and JSON use [https://github.com/nlohmann/json](https://github.com/nlohmann/json) , some API use NSudo, but rewrite it.
