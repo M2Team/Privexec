@@ -88,23 +88,24 @@ usage: wsudo command args....
    -V|--verbose        Make the operation more talkative
    -x|--appx           AppContainer AppManifest file path
    -c|--cwd            Use a working directory to launch the process.
+   -e|--env            Set Environment Variable.
    --disable-alias     Disable Privexec alias, By default, if Privexec exists alias, use it.
 
 Select user can use the following flags:
-   -a          AppContainer
-   -M          Mandatory Integrity Control
-   -U          No Elevated(UAC)
-   -A          Administrator
-   -S          System
-   -T          TrustedInstaller
+   -a                  AppContainer
+   -M                  Mandatory Integrity Control
+   -U                  No Elevated(UAC)
+   -A                  Administrator
+   -S                  System
+   -T                  TrustedInstaller
 Example:
    wsudo -A "%SYSTEMROOT%/System32/WindowsPowerShell/v1.0/powershell.exe" -NoProfile
    wsudo -T cmd
+   wsudo -U -V CURL_SSL_BACKEND=sschannel curl --verbose  -I https://nghttp2.org
 
 Builtin 'alias' command:
    wsudo alias add ehs "notepad %SYSTEMROOT%/System32/drivers/etc/hosts" "Edit Hosts"
    wsudo alias delete ehs
-
 
 ```
 
