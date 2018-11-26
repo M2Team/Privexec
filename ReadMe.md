@@ -114,6 +114,27 @@ wsudo support `--new-console` flag. when a PE subsystem is `WINDOWS CUI`, wsudo 
 
 If your add `-wait` flag, wsudo will wait all process(Include GUI/CUI process), Unless process use `TaskScheduled API` startup.
 
+### WSUDO Environment
+
+wsudo support `-e/--env` to set environment. such as:
+
+```
+wsudo  -U -V CURL_SSL_BACKEND=sschannel curl --verbose  -I https://nghttp2.org
+wsudo  -U -V --env CURL_SSL_BACKEND=sschannel curl --verbose  -I https://nghttp2.org
+```
+
+Environment variables are deduced in cmd, so be careful to use quotes. In powershell, the environment variable format is different, and wsudo will eventually process the environment variable.
+
+```powershell
+# powershell
+.\bin\wsudo.exe -n 'PATH=%PATH%;%TEMP%' -U cmd
+```
+
+```batch
+::cmd
+wsudo "PATH=%PATH%;%TEMP%" -n -U cmd
+```
+
 
 ## Download
 

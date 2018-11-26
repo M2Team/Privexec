@@ -53,16 +53,13 @@ public:
     return true;
   }
   // Normal
-  bool Appendable(std::wstring_view s) {
-    auto pos = s.find(L'=');
-    if (pos == std::wstring_view::npos) {
+  bool Appendable(std::wstring_view ws) {
+    auto pos = ws.find(L'=');
+    if (pos == std::wstring_view::npos || pos == 0) {
       return false;
     }
-    auto k = s.substr(0, pos);
-    if (k.empty()) {
-      return false;
-    }
-    auto v = s.substr(pos + 1);
+    auto k = ws.substr(0, pos);
+    auto v = ws.substr(pos + 1);
     em.insert_or_assign(Toupper(k), ExpandEnv(v));
     return true;
   }

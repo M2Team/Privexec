@@ -75,10 +75,10 @@ int AppMode::ParseArgv(int argc, wchar_t **argv) {
   int i = 1;
   // std::wstring_view ua, cwd, appx;
   auto MatchInternal =
-      [&](const wchar_t *arg, const wchar_t *s,
+      [&](const wchar_t *a, const wchar_t *s,
           const wchar_t *l) -> std::optional<std::wstring_view> {
     std::wstring_view v;
-    if (!MatchEx(arg, s, l, v)) {
+    if (!MatchEx(a, s, l, v)) {
       // ok.
       return std::nullopt;
     }
@@ -88,7 +88,7 @@ int AppMode::ParseArgv(int argc, wchar_t **argv) {
     if (i + 1 < argc) {
       return std::make_optional<std::wstring_view>(argv[++i]);
     }
-    message.assign(L"Flag '").append(arg).append(L"' missing  argument");
+    message.assign(L"Flag '").append(a).append(L"' missing  argument");
     return std::nullopt;
   };
 
