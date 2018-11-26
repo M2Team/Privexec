@@ -211,8 +211,8 @@ usage: wsudo command args....
    -h|--help           print help information and exit
    -u|--user           run as user (optional), support '-uX', '-u X', '--user=X', '--user X'
                        Supported user categories (Ignore case):
-                       AppContainer  MIC 
-                       NoElevated    Administrator 
+                       AppContainer  MIC
+                       NoElevated    Administrator
                        System        TrustedInstaller
 
    -n|--new-console    Starts a separate window to run a specified program or command.
@@ -233,7 +233,7 @@ Example:
    wsudo -A "%SYSTEMROOT%/System32/WindowsPowerShell/v1.0/powershell.exe" -NoProfile
    wsudo -T cmd
 
-Buitin 'alias' command:
+Builtin 'alias' command:
    wsudo alias add ehs "notepad %SYSTEMROOT%/System32/drivers/etc/hosts" "Edit Hosts"
    wsudo alias delete ehs
 )";

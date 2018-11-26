@@ -104,7 +104,7 @@ Example:
    wsudo -A "%SYSTEMROOT%/System32/WindowsPowerShell/v1.0/powershell.exe" -NoProfile
    wsudo -T cmd
 
-Buitin 'alias' command:
+Builtin 'alias' command:
    wsudo alias add ehs "notepad %SYSTEMROOT%/System32/drivers/etc/hosts" "Edit Hosts"
    wsudo alias delete ehs
 
