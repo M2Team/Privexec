@@ -7,6 +7,7 @@
 #include <optional>
 #include <string_view>
 #include <process/process.hpp>
+#include "env.hpp"
 
 namespace wsudo {
 
@@ -58,6 +59,7 @@ inline bool MatchEx(const wchar_t *arg, const wchar_t *s, const wchar_t *l,
 }
 
 struct AppMode {
+  EnvContext envctx;
   std::wstring message;
   std::vector<std::wstring_view> args;
   std::wstring_view cwd;              // --cwd -c

@@ -53,17 +53,14 @@ AppContainer:
 
 **wsudo**:
 
-wsudo run under CMD:
+
+wsudo usage:
 
 ![wsudo](images/wsudo.png)
 
-wsudo run under Git for Windows Bash:
-
-![wsudo2](images/wsudo2.png)
-
 wsudo Verbose Mode:
 
-![wsudo3](images/wsudo3.png)
+![wsudo](images/wsudo3.png)
 
 ## Usage
 
