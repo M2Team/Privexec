@@ -40,12 +40,12 @@ wsudo alias ? working in progress
 
 ## Screenshot
 
-![ui](dosc/images/admin.png)
+![ui](docs/images/admin.png)
 
 
 Alias:
 
-![alias](dosc/images/alias.png)
+![alias](docs/images/alias.png)
 
 AppContainer:
 
