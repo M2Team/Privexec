@@ -6,8 +6,12 @@
 #include <functional>
 #include <ShlObj.h>
 #include <memory>
+//#include <subauth.h>
+#include <winternl.h>
 #include "pugixml/pugixml.hpp"
 #include "processfwd.hpp"
+
+#pragma comment(lib, "Ntdll.lib")
 
 namespace priv {
 
@@ -83,6 +87,35 @@ inline bool WellKnownFromAppmanifest(const std::wstring &file,
   return true;
 }
 
+inline std::wstring u8w(std::string_view str) {
+  std::wstring wstr;
+  auto N =
+      MultiByteToWideChar(CP_UTF8, 0, str.data(), (int)str.size(), nullptr, 0);
+  if (N > 0) {
+    wstr.resize(N);
+    MultiByteToWideChar(CP_UTF8, 0, str.data(), (int)str.size(), &wstr[0], N);
+  }
+  return wstr;
+}
+
+inline bool WellKnownFromAppmanifestEx(const std::wstring &file,
+                                       std::vector<std::wstring> &cans) {
+  pugi::xml_document doc;
+  if (!doc.load_file(file.c_str())) {
+    return false;
+  }
+  auto elem = doc.child("Package").child("Capabilities");
+  for (auto it : elem.children("Capability")) {
+    auto n = it.attribute("Name").as_string();
+    cans.push_back(u8w(n));
+  }
+  for (auto it : elem.children("rescap:Capability")) {
+    auto n = it.attribute("Name").as_string();
+    cans.push_back(u8w(n));
+  }
+  return true;
+}
+
 bool appcontainer::initialize(const wid_t *begin, const wid_t *end) {
   if (!ca.empty()) {
     kmessage.assign(L"capabilities is initialized");
@@ -137,12 +170,50 @@ bool appcontainer::initialize() {
   };
   return initialize(wslist, wslist + _countof(wslist));
 }
-bool appcontainer::initialize(const std::wstring &appxml) {
-  widcontainer sids;
-  if (WellKnownFromAppmanifest(appxml, sids)) {
+//
+typedef NTSTATUS(NTAPI *PRtlDeriveCapabilitySidsFromName)(
+    PCUNICODE_STRING CapName, PSID CapabilityGroupSid, PSID CapabilitySid);
+
+bool appcontainer::initialize(const std::vector<std::wstring> &names) {
+  //
+  auto _RtlDeriveCapabilitySidsFromName =
+      (PRtlDeriveCapabilitySidsFromName)GetProcAddress(
+          GetModuleHandle(L"ntdll.dll"), "RtlDeriveCapabilitySidsFromName");
+  for (const auto &n : names) {
+    UNICODE_STRING capabilityName;
+    RtlInitUnicodeString(&capabilityName, n.c_str());
+    PSID ntsid = HeapAlloc(GetProcessHeap(), 0, SECURITY_MAX_SID_SIZE);
+    PSID capsid = HeapAlloc(GetProcessHeap(), 0, SECURITY_MAX_SID_SIZE);
+    if (_RtlDeriveCapabilitySidsFromName(&capabilityName, ntsid, capsid) != 0) {
+      HeapFree(GetProcessHeap(), 0, ntsid);
+      HeapFree(GetProcessHeap(), 0, capsid);
+      auto err = error_code::lasterror();
+      wprintf(L"Add %s error %s\n", n.c_str(), err.message.c_str());
+      continue;
+    }
+    HeapFree(GetProcessHeap(), 0, ntsid);
+    SID_AND_ATTRIBUTES attr;
+    attr.Sid = capsid;
+    attr.Attributes = SE_GROUP_ENABLED;
+    ca.push_back(attr);
+  }
+  constexpr const wchar_t *appid = L"Privexec.Core.AppContainer.v3";
+  DeleteAppContainerProfile(appid); // ignore error
+  if (CreateAppContainerProfile(appid, appid, appid,
+                                (ca.empty() ? NULL : ca.data()),
+                                (DWORD)ca.size(), &appcontainersid) != S_OK) {
+    kmessage.assign(L"CreateAppContainerProfile");
     return false;
   }
-  return initialize(sids.data(), sids.data() + sids.size());
+  return true;
+}
+
+bool appcontainer::initialize(const std::wstring &appxml) {
+  std::vector<std::wstring> cans;
+  if (!WellKnownFromAppmanifestEx(appxml, cans)) {
+    return false;
+  }
+  return initialize(cans);
 }
 
 bool appcontainer::initializessid(const std::wstring &ssid) {

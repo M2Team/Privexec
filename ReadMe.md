@@ -40,27 +40,27 @@ wsudo alias ? working in progress
 
 ## Screenshot
 
-![ui](images/admin.png)
+![ui](dosc/images/admin.png)
 
 
 Alias:
 
-![alias](images/alias.png)
+![alias](dosc/images/alias.png)
 
 AppContainer:
 
-![appcoantiner](images/appcontainer.png)
+![appcoantiner](docs/images/appcontainer.png)
 
 **wsudo**:
 
 
 wsudo usage:
 
-![wsudo](images/wsudo.png)
+![wsudo](docs/images/wsudo.png)
 
 wsudo Verbose Mode:
 
-![wsudo](images/wsudo3.png)
+![wsudo](docs/images/wsudo3.png)
 
 ## Usage
 

@@ -166,6 +166,7 @@ public:
   bool initialize();
   bool initialize(const wid_t *begin, const wid_t *end);
   bool initialize(const std::wstring &appxml);
+  bool initialize(const std::vector<std::wstring> &names);
   bool initializessid(const std::wstring &ssid);
   bool execute();
 

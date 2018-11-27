@@ -160,7 +160,7 @@ int AppMode::ParseArgv(int argc, wchar_t **argv) {
     if (IsAppLevel(arg)) {
       continue;
     }
-    message.assign(L"invalid argument '").append(arg).append(L"'");
+    message.assign(L"unsupport flag '").append(arg).append(L"'");
     return AppFatal;
   }
   for (; i < argc; i++) {

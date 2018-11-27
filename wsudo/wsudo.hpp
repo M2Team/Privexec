@@ -33,7 +33,6 @@ inline bool Match(const wchar_t *arg, const wchar_t *s1, const wchar_t *s2,
 
 inline bool MatchEx(const wchar_t *arg, const wchar_t *s, const wchar_t *l,
                     std::wstring_view &value) {
-  value = L"";
   auto al = wcslen(arg);
   auto sl = wcslen(s);
   if (sl <= al && wcsncmp(arg, s, sl) == 0) {
