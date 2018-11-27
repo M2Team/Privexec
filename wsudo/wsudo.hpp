@@ -45,7 +45,7 @@ inline bool MatchEx(const wchar_t *arg, const wchar_t *s, const wchar_t *l,
   }
   auto ll = wcslen(l);
   if (ll <= al && wcsncmp(arg, l, ll) == 0) {
-    if (sl == ll) {
+    if (al == ll) {
       return true;
     }
     /// --user=appcontainer
