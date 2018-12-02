@@ -379,6 +379,7 @@ int AppExecute(wsudo::AppMode &am) {
     }
     auto appx = ExpandEnv(am.appx.data());
     p.newconsole(newconsole);
+    priv::Print(priv::fc::Yellow, L"Command: %s\n", cmdline);
     if (!p.initialize(appx) || !p.execute()) {
       auto ec = priv::error_code::lasterror();
       if (p.message().empty()) {
@@ -392,6 +393,8 @@ int AppExecute(wsudo::AppMode &am) {
       }
       return 1;
     }
+    priv::Print(priv::fc::Green, L"new appcontainer process is running: %d\n",
+                p.pid());
     if (!newconsole && isconsole || am.wait) {
       return AppWait(p.pid());
     }

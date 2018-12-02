@@ -6,8 +6,6 @@
 #include <functional>
 #include <ShlObj.h>
 #include <memory>
-//#include <subauth.h>
-#include <winternl.h>
 #include "pugixml/pugixml.hpp"
 #include "processfwd.hpp"
 
@@ -171,29 +169,67 @@ bool appcontainer::initialize() {
   return initialize(wslist, wslist + _countof(wslist));
 }
 //
-typedef NTSTATUS(NTAPI *PRtlDeriveCapabilitySidsFromName)(
-    PCUNICODE_STRING CapName, PSID CapabilityGroupSid, PSID CapabilitySid);
+// typedef NTSTATUS(NTAPI *PRtlDeriveCapabilitySidsFromName)(
+//     PCUNICODE_STRING CapName, PSID CapabilityGroupSid, PSID CapabilitySid);
+
+class SidArray {
+public:
+  SidArray() : count_(0), sids_(nullptr) {}
+
+  ~SidArray() {
+    if (sids_) {
+      for (size_t index = 0; index < count_; ++index) {
+        ::LocalFree(sids_[index]);
+      }
+      ::LocalFree(sids_);
+    }
+  }
+
+  DWORD count() { return count_; }
+  PSID *sids() { return sids_; }
+  PDWORD count_ptr() { return &count_; }
+  PSID **sids_ptr() { return &sids_; }
+
+private:
+  DWORD count_;
+  PSID *sids_;
+};
+
+typedef BOOL(WINAPI *DeriveCapabilitySidsFromNameImpl)(
+    LPCWSTR CapName, PSID **CapabilityGroupSids, DWORD *CapabilityGroupSidCount,
+    PSID **CapabilitySids, DWORD *CapabilitySidCount);
 
 bool appcontainer::initialize(const std::vector<std::wstring> &names) {
   //
-  auto _RtlDeriveCapabilitySidsFromName =
-      (PRtlDeriveCapabilitySidsFromName)GetProcAddress(
-          GetModuleHandle(L"ntdll.dll"), "RtlDeriveCapabilitySidsFromName");
+  auto _DeriveCapabilitySidsFromName =
+      (DeriveCapabilitySidsFromNameImpl)GetProcAddress(
+          GetModuleHandle(L"KernelBase.dll"), "DeriveCapabilitySidsFromName");
+  if (_DeriveCapabilitySidsFromName == nullptr) {
+    fwprintf(stderr,L"DeriveCapabilitySidsFromName Not Found in KernelBase.dll\n");
+    return false;
+  }
   for (const auto &n : names) {
-    UNICODE_STRING capabilityName;
-    RtlInitUnicodeString(&capabilityName, n.c_str());
-    PSID ntsid = HeapAlloc(GetProcessHeap(), 0, SECURITY_MAX_SID_SIZE);
-    PSID capsid = HeapAlloc(GetProcessHeap(), 0, SECURITY_MAX_SID_SIZE);
-    if (_RtlDeriveCapabilitySidsFromName(&capabilityName, ntsid, capsid) != 0) {
-      HeapFree(GetProcessHeap(), 0, ntsid);
-      HeapFree(GetProcessHeap(), 0, capsid);
-      auto err = error_code::lasterror();
-      wprintf(L"Add %s error %s\n", n.c_str(), err.message.c_str());
+    DWORD dwn = 0, dwca = 0;
+    SidArray capability_group_sids;
+    SidArray capability_sids;
+    if (!_DeriveCapabilitySidsFromName(
+            n.c_str(), capability_group_sids.sids_ptr(),
+            capability_group_sids.count_ptr(), capability_sids.sids_ptr(),
+            capability_sids.count_ptr())) {
+      auto ec = error_code::lasterror();
+      fwprintf(stderr,L"DeriveCapabilitySidsFromName: %s\n", ec.message.c_str());
       continue;
     }
-    HeapFree(GetProcessHeap(), 0, ntsid);
+    if (capability_sids.count() < 1) {
+      continue;
+    }
+    auto csid = HeapAlloc(GetProcessHeap(), 0, SECURITY_MAX_SID_SIZE);
+    if (csid == nullptr) {
+      return false;
+    }
+    ::CopySid(SECURITY_MAX_SID_SIZE, csid, capability_sids.sids()[0]);
     SID_AND_ATTRIBUTES attr;
-    attr.Sid = capsid;
+    attr.Sid = csid;
     attr.Attributes = SE_GROUP_ENABLED;
     ca.push_back(attr);
   }
