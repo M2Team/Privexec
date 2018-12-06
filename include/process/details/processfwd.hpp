@@ -99,6 +99,7 @@ public:
   // known level
   bool execute();
   bool noelevatedexec();
+  bool noelevatedexec2();
   bool tiexec();
   bool elevatedexec();
   bool lowlevelexec();

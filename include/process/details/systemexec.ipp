@@ -2,7 +2,6 @@
 #ifndef PRIVE_SYSTEMEXEC_IPP
 #define PRIVE_SYSTEMEXEC_IPP
 #include "processfwd.hpp"
-#include <wtsapi32.h>
 #include <cstdio>
 #include "systemhelper.hpp"
 
@@ -33,7 +32,7 @@ inline HANDLE OpenSystemProcessToken() {
   return hToken;
 }
 
-BOOL SetPrivilege(HANDLE hToken, LPCWSTR lpszPrivilege, bool bEnablePrivilege) {
+inline BOOL SetPrivilege(HANDLE hToken, LPCWSTR lpszPrivilege, bool bEnablePrivilege) {
   TOKEN_PRIVILEGES tp;
   LUID luid;
 
@@ -59,7 +58,7 @@ BOOL SetPrivilege(HANDLE hToken, LPCWSTR lpszPrivilege, bool bEnablePrivilege) {
   return TRUE;
 }
 
-BOOL EnableDebugPrivilege(void) {
+inline BOOL EnableDebugPrivilege(void) {
   HANDLE hToken;
   BOOL result;
   if (!::OpenProcessToken(GetCurrentProcess(),
@@ -78,7 +77,7 @@ inline void CloseHandleEx(HANDLE &h) {
   }
 }
 
-bool process::systemexec() {
+inline bool process::systemexec() {
   if (!IsUserAdministratorsGroup()) {
     SetLastError(ERROR_ACCESS_DENIED);
     return false;

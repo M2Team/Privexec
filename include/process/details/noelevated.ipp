@@ -8,8 +8,17 @@
 #include <Shlwapi.h>
 #include "processfwd.hpp"
 #include "comutils.hpp"
+#include "systemhelper.hpp"
 
 namespace priv {
+bool process::noelevatedexec2() {
+  if (!IsUserAdministratorsGroup()) {
+    return execute();
+  }
+  /// Enable Privilege TODO
+
+  return true;
+}
 bool process::noelevatedexec() {
   if (!IsUserAdministratorsGroup()) {
     return execute();
