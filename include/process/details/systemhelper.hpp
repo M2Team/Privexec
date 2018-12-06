@@ -5,8 +5,13 @@
 #include <WtsApi32.h>
 #include <cstdio>
 #include <vector>
+#include <string_view>
 
 namespace priv {
+struct PrivilegeValue {
+  std::vector<const wchar_t *> privis;
+};
+
 inline bool GetCurrentSessionId(DWORD &dwSessionId) {
   HANDLE hToken = INVALID_HANDLE_VALUE;
   if (!OpenProcessToken(GetCurrentProcess(), MAXIMUM_ALLOWED, &hToken)) {
@@ -75,16 +80,134 @@ inline bool UpdatePrivilege(HANDLE hToken, LPCWSTR lpszPrivilege,
   return true;
 }
 
+class SysProcess {
+public:
+  SysProcess() = default;
+  SysProcess(const SysProcess &) = delete;
+  SysProcess &operator=(const SysProcess &) = delete;
+  ~SysProcess() {
+    if (hToken != INVALID_HANDLE_VALUE) {
+      CloseHandle(hToken);
+    }
+  }
+  bool Enumerate(DWORD sessionId) {
+    PWTS_PROCESS_INFOW ppi;
+    DWORD count;
+    if (::WTSEnumerateProcessesW(WTS_CURRENT_SERVER_HANDLE, 0, 1, &ppi,
+                                 &count) != TRUE) {
+      return false;
+    }
+    HANDLE hExistingToken = nullptr;
+    auto end = ppi + count;
+    for (auto it = ppi; it != end; it++) {
+      if (it->SessionId == sessionId &&
+          _wcsicmp(L"winlogon.exe", it->pProcessName) == 0 &&
+          IsWellKnownSid(it->pUserSid, WinLocalSystemSid) == TRUE) {
+        pid = it->ProcessId;
+        ::WTSFreeMemory(ppi);
+        return true;
+      }
+    }
+    ::WTSFreeMemory(ppi);
+    return false;
+  }
+  bool SysDuplicateToken(DWORD sessionId) {
+    if (hToken != INVALID_HANDLE_VALUE) {
+      // duplicate call
+      fprintf(stderr, "SysDuplicateToken duplicate call\n");
+      return false;
+    }
+    if (!Enumerate(sessionId)) {
+      return false;
+    }
+
+    HANDLE hExistingToken = INVALID_HANDLE_VALUE;
+    auto hProcess = ::OpenProcess(MAXIMUM_ALLOWED, FALSE, pid);
+    if (hProcess == INVALID_HANDLE_VALUE) {
+      fprintf(stderr, "cannot open system process handle, pid %d\n", pid);
+      return false;
+    }
+    auto hpdeleter = finally([&] { CloseHandle(hProcess); });
+    if (OpenProcessToken(hProcess, MAXIMUM_ALLOWED, &hExistingToken) != TRUE) {
+      fprintf(stderr, "cannot open system process token pid: %d\n", pid);
+      return false;
+    }
+    auto htdeleter = finally([&] { CloseHandle(hExistingToken); });
+    if (DuplicateTokenEx(hExistingToken, MAXIMUM_ALLOWED, nullptr,
+                         SecurityImpersonation, TokenImpersonation,
+                         &hToken) != TRUE) {
+      return false;
+    }
+    return true;
+  }
+  bool UpdatePrivilegeEx(const PrivilegeValue *pv) {
+    if (pv == nullptr) {
+      return UpdatePrivileges(true);
+    }
+    for (const auto lpszPrivilege : pv->privis) {
+      TOKEN_PRIVILEGES tp;
+      LUID luid;
+
+      if (::LookupPrivilegeValueW(nullptr, lpszPrivilege, &luid) != TRUE) {
+        continue;
+      }
+
+      tp.PrivilegeCount = 1;
+      tp.Privileges[0].Luid = luid;
+      tp.Privileges[0].Attributes = SE_PRIVILEGE_ENABLED;
+      // Enable the privilege or disable all privileges.
+
+      if (::AdjustTokenPrivileges(hToken, FALSE, &tp, sizeof(TOKEN_PRIVILEGES),
+                                  nullptr, nullptr) != TRUE) {
+        fprintf(stderr, "UpdatePrivilege AdjustTokenPrivileges\n");
+        continue;
+      }
+
+      if (::GetLastError() == ERROR_NOT_ALL_ASSIGNED) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  bool UpdatePrivileges(bool enable) {
+    if (hToken == INVALID_HANDLE_VALUE) {
+      return false;
+    }
+    DWORD Length = 0;
+    GetTokenInformation(hToken, TokenPrivileges, nullptr, 0, &Length);
+    if (GetLastError() != ERROR_INSUFFICIENT_BUFFER) {
+      return false;
+    }
+    auto privs = (PTOKEN_PRIVILEGES)HeapAlloc(GetProcessHeap(), 0, Length);
+    if (privs == nullptr) {
+      return false;
+    }
+    auto pfree = finally([&] { HeapFree(GetProcessHeap(), 0, privs); });
+    if (GetTokenInformation(hToken, TokenPrivileges, privs, Length, &Length) !=
+        TRUE) {
+      return false;
+    }
+    auto end = privs->Privileges + privs->PrivilegeCount;
+    for (auto it = privs->Privileges; it != end; it++) {
+      it->Attributes = (DWORD)(enable ? SE_PRIVILEGE_ENABLED : 0);
+    }
+    return (AdjustTokenPrivileges(hToken, FALSE, privs, 0, nullptr, nullptr) ==
+            TRUE);
+  }
+  HANDLE Token() { return hToken; }
+
+private:
+  HANDLE hToken{INVALID_HANDLE_VALUE};
+  DWORD pid{0};
+};
+
 class SysImpersonator {
 public:
   SysImpersonator() = default;
   SysImpersonator(const SysImpersonator &) = delete;
   SysImpersonator &operator=(const SysImpersonator &) = delete;
-  ~SysImpersonator() {
-    if (hToken != INVALID_HANDLE_VALUE) {
-      CloseHandle(hToken);
-    }
-  }
+  ~SysImpersonator() = default;
   // query session and enable debug privilege
   bool PreImpersonation() {
     auto hCurrentToken = INVALID_HANDLE_VALUE;
@@ -98,18 +221,26 @@ public:
                             sizeof(DWORD), &Length) != TRUE) {
       return false;
     }
-    return UpdatePrivilege(hToken, SE_DEBUG_NAME, TRUE);
+    return UpdatePrivilege(hCurrentToken, SE_DEBUG_NAME, TRUE);
   }
   // Allowed All
-  bool Impersonation(bool allowedall = false) {
-    //
-    return false;
+  bool Impersonation() {
+    SysProcess sp;
+    if (!sp.SysDuplicateToken(sessionId)) {
+      return false;
+    }
+    if (!sp.UpdatePrivileges(true)) {
+      return false;
+    }
+    if (SetThreadToken(nullptr, sp.Token()) != TRUE) {
+      return false;
+    }
+    return true;
   }
+  DWORD SessionId() const { return sessionId; }
 
 private:
   DWORD sessionId{0};
-  DWORD winlogonid{0};
-  HANDLE hToken{nullptr};
 };
 
 // Enable System Privilege
