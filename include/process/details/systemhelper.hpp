@@ -7,6 +7,21 @@
 #include <vector>
 
 namespace priv {
+inline bool GetCurrentSessionId(DWORD &dwSessionId) {
+  HANDLE hToken = INVALID_HANDLE_VALUE;
+  if (!OpenProcessToken(GetCurrentProcess(), MAXIMUM_ALLOWED, &hToken)) {
+    return false;
+  }
+  DWORD Length = 0;
+  if (GetTokenInformation(hToken, TokenSessionId, &dwSessionId, sizeof(DWORD),
+                          &Length) != TRUE) {
+    CloseHandle(hToken);
+    return false;
+  }
+  CloseHandle(hToken);
+  return true;
+}
+
 inline bool LookupSystemProcessID(DWORD &pid) {
   PWTS_PROCESS_INFOW ppi;
   DWORD count;
@@ -33,18 +48,30 @@ inline bool LookupSystemProcessID(DWORD &pid) {
   return false;
 }
 
-inline bool GetCurrentSessionId(DWORD &dwSessionId) {
-  HANDLE hToken = INVALID_HANDLE_VALUE;
-  if (!OpenProcessToken(GetCurrentProcess(), MAXIMUM_ALLOWED, &hToken)) {
+inline bool UpdatePrivilege(HANDLE hToken, LPCWSTR lpszPrivilege,
+                            bool bEnablePrivilege) {
+  TOKEN_PRIVILEGES tp;
+  LUID luid;
+
+  if (::LookupPrivilegeValueW(nullptr, lpszPrivilege, &luid) != TRUE) {
+    fprintf(stderr, "UpdatePrivilege LookupPrivilegeValue\n");
     return false;
   }
-  DWORD Length = 0;
-  if (GetTokenInformation(hToken, TokenSessionId, &dwSessionId, sizeof(DWORD),
-                          &Length) != TRUE) {
-    CloseHandle(hToken);
+
+  tp.PrivilegeCount = 1;
+  tp.Privileges[0].Luid = luid;
+  tp.Privileges[0].Attributes = bEnablePrivilege ? SE_PRIVILEGE_ENABLED : 0;
+  // Enable the privilege or disable all privileges.
+
+  if (::AdjustTokenPrivileges(hToken, FALSE, &tp, sizeof(TOKEN_PRIVILEGES),
+                              nullptr, nullptr) != TRUE) {
+    fprintf(stderr, "UpdatePrivilege AdjustTokenPrivileges\n");
     return false;
   }
-  CloseHandle(hToken);
+
+  if (::GetLastError() == ERROR_NOT_ALL_ASSIGNED) {
+    return false;
+  }
   return true;
 }
 
@@ -71,10 +98,7 @@ public:
                             sizeof(DWORD), &Length) != TRUE) {
       return false;
     }
-    if (SetPrivilege(hToken, SE_DEBUG_NAME, TRUE) != TRUE) {
-      return false;
-    }
-    return true;
+    return UpdatePrivilege(hToken, SE_DEBUG_NAME, TRUE);
   }
   // Allowed All
   bool Impersonation(bool allowedall = false) {
@@ -83,8 +107,8 @@ public:
   }
 
 private:
-  DWORD syspid{0};
   DWORD sessionId{0};
+  DWORD winlogonid{0};
   HANDLE hToken{nullptr};
 };
 
