@@ -211,18 +211,18 @@ public:
   ~SysImpersonator() = default;
   // query session and enable debug privilege
   bool PreImpersonation() {
-    auto hCurrentToken = INVALID_HANDLE_VALUE;
+    auto hToken = INVALID_HANDLE_VALUE;
     constexpr DWORD flags = TOKEN_ADJUST_PRIVILEGES | TOKEN_QUERY;
-    if (OpenProcessToken(GetCurrentProcess(), flags, &hCurrentToken) != TRUE) {
+    if (OpenProcessToken(GetCurrentProcess(), flags, &hToken) != TRUE) {
       return false;
     }
-    auto closer = finally([&] { CloseHandle(hCurrentToken); });
+    auto closer = finally([&] { CloseHandle(hToken); });
     DWORD Length = 0;
-    if (GetTokenInformation(hCurrentToken, TokenSessionId, &sessionId,
-                            sizeof(DWORD), &Length) != TRUE) {
+    if (GetTokenInformation(hToken, TokenSessionId, &sessionId, sizeof(DWORD),
+                            &Length) != TRUE) {
       return false;
     }
-    return UpdatePrivilege(hCurrentToken, SE_DEBUG_NAME, TRUE);
+    return UpdatePrivilege(hToken, SE_DEBUG_NAME, TRUE);
   }
   // Allowed All
   bool Impersonation(const PrivilegeView *pv) {

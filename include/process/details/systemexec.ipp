@@ -32,7 +32,8 @@ inline HANDLE OpenSystemProcessToken() {
   return hToken;
 }
 
-inline BOOL SetPrivilege(HANDLE hToken, LPCWSTR lpszPrivilege, bool bEnablePrivilege) {
+inline BOOL SetPrivilege(HANDLE hToken, LPCWSTR lpszPrivilege,
+                         bool bEnablePrivilege) {
   TOKEN_PRIVILEGES tp;
   LUID luid;
 
@@ -68,13 +69,6 @@ inline BOOL EnableDebugPrivilege(void) {
   result = SetPrivilege(hToken, SE_DEBUG_NAME, TRUE);
   ::CloseHandle(hToken);
   return result;
-}
-
-inline void CloseHandleEx(HANDLE &h) {
-  if (h != INVALID_HANDLE_VALUE) {
-    CloseHandle(h);
-    h = INVALID_HANDLE_VALUE;
-  }
 }
 
 inline bool process::systemexec() {

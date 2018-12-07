@@ -55,6 +55,13 @@ template <typename T> const wchar_t *Castwstr(const T &t) {
   return t.data();
 }
 
+inline void CloseHandleEx(HANDLE &h) {
+  if (h != INVALID_HANDLE_VALUE) {
+    CloseHandle(h);
+    h = INVALID_HANDLE_VALUE;
+  }
+}
+
 enum ProcessExecuteLevel {
   ProcessNone = -1,
   ProcessAppContainer = 0,
