@@ -2,13 +2,13 @@
 #ifndef PRIVEXEC_SYSTEMTOKEN_HPP
 #define PRIVEXEC_SYSTEMTOKEN_HPP
 #include "processfwd.hpp"
-#include <WtsApi32.h>
+#include <wtsapi32.h>
 #include <cstdio>
 #include <vector>
 #include <string_view>
 
 namespace priv {
-struct PrivilegeValue {
+struct PrivilegeView {
   std::vector<const wchar_t *> privis;
 };
 
@@ -140,37 +140,8 @@ public:
     }
     return true;
   }
-  bool UpdatePrivilegeEx(const PrivilegeValue *pv) {
-    if (pv == nullptr) {
-      return UpdatePrivileges(true);
-    }
-    for (const auto lpszPrivilege : pv->privis) {
-      TOKEN_PRIVILEGES tp;
-      LUID luid;
-
-      if (::LookupPrivilegeValueW(nullptr, lpszPrivilege, &luid) != TRUE) {
-        continue;
-      }
-
-      tp.PrivilegeCount = 1;
-      tp.Privileges[0].Luid = luid;
-      tp.Privileges[0].Attributes = SE_PRIVILEGE_ENABLED;
-      // Enable the privilege or disable all privileges.
-
-      if (::AdjustTokenPrivileges(hToken, FALSE, &tp, sizeof(TOKEN_PRIVILEGES),
-                                  nullptr, nullptr) != TRUE) {
-        fprintf(stderr, "UpdatePrivilege AdjustTokenPrivileges\n");
-        continue;
-      }
-
-      if (::GetLastError() == ERROR_NOT_ALL_ASSIGNED) {
-        return false;
-      }
-    }
-    return true;
-  }
-
-  bool UpdatePrivileges(bool enable) {
+  //
+  bool PrivilegesEnableAll() {
     if (hToken == INVALID_HANDLE_VALUE) {
       return false;
     }
@@ -190,11 +161,41 @@ public:
     }
     auto end = privs->Privileges + privs->PrivilegeCount;
     for (auto it = privs->Privileges; it != end; it++) {
-      it->Attributes = (DWORD)(enable ? SE_PRIVILEGE_ENABLED : 0);
+      it->Attributes = SE_PRIVILEGE_ENABLED;
     }
     return (AdjustTokenPrivileges(hToken, FALSE, privs, 0, nullptr, nullptr) ==
             TRUE);
   }
+
+  bool PrivilegesEnableView(const PrivilegeView *pv) {
+    if (pv == nullptr) {
+      return PrivilegesEnableAll();
+    }
+    for (const auto lpszPrivilege : pv->privis) {
+      TOKEN_PRIVILEGES tp;
+      LUID luid;
+
+      if (::LookupPrivilegeValueW(nullptr, lpszPrivilege, &luid) != TRUE) {
+        continue;
+      }
+
+      tp.PrivilegeCount = 1;
+      tp.Privileges[0].Luid = luid;
+      tp.Privileges[0].Attributes = SE_PRIVILEGE_ENABLED;
+      // Enable the privilege or disable all privileges.
+
+      if (::AdjustTokenPrivileges(hToken, FALSE, &tp, sizeof(TOKEN_PRIVILEGES),
+                                  nullptr, nullptr) != TRUE) {
+        fwprintf(stderr, L"AdjustTokenPrivileges %s\n", lpszPrivilege);
+        continue;
+      }
+      if (::GetLastError() == ERROR_NOT_ALL_ASSIGNED) {
+        return false;
+      }
+    }
+    return true;
+  }
+
   HANDLE Token() { return hToken; }
 
 private:
@@ -224,12 +225,12 @@ public:
     return UpdatePrivilege(hCurrentToken, SE_DEBUG_NAME, TRUE);
   }
   // Allowed All
-  bool Impersonation() {
+  bool Impersonation(const PrivilegeView *pv) {
     SysProcess sp;
     if (!sp.SysDuplicateToken(sessionId)) {
       return false;
     }
-    if (!sp.UpdatePrivileges(true)) {
+    if (!sp.PrivilegesEnableView(pv)) {
       return false;
     }
     if (SetThreadToken(nullptr, sp.Token()) != TRUE) {
