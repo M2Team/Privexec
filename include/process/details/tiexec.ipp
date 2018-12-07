@@ -5,35 +5,32 @@
 #include "systemhelper.hpp"
 
 namespace priv {
-class TrustedInstallerProxy {
+
+void SafeCloseSO(SC_HANDLE hSCObject) {
+  if (hSCObject != nullptr) {
+    CloseServiceHandle(hSCObject);
+  }
+}
+
+class TiImpersonator {
 public:
-  TrustedInstallerProxy() = default;
-  TrustedInstallerProxy(const TrustedInstallerProxy &) = delete;
-  TrustedInstallerProxy &operator=(const TrustedInstallerProxy &) = delete;
-  ~TrustedInstallerProxy() {
-    if (hSCM != nullptr) {
-      if (hSCM) {
-        CloseServiceHandle(hSCM);
-      }
-      if (hService) {
-        CloseServiceHandle(hService);
-      }
-      if (hToken != INVALID_HANDLE_VALUE) {
-        CloseHandle(hToken);
-      }
-      if (hProcess != INVALID_HANDLE_VALUE) {
-        CloseHandle(hProcess);
-      }
-    }
+  TiImpersonator() = default;
+  TiImpersonator(const TiImpersonator &) = delete;
+  TiImpersonator &operator=(const TiImpersonator &) = delete;
+  ~TiImpersonator() {
+    SafeCloseSO(hSCM);
+    SafeCloseSO(hService);
+    CloseHandleEx(hToken);
+    CloseHandleEx(hProcess);
   }
   bool Initialize() {
-    hSCM = OpenSCManagerW(nullptr, nullptr, SC_MANAGER_CONNECT);
-    if (hSCM == nullptr) {
+    if ((hSCM = OpenSCManagerW(nullptr, nullptr, SC_MANAGER_CONNECT)) ==
+        nullptr) {
       return false;
     }
-    hService = OpenServiceW(hSCM, L"TrustedInstaller",
-                            SERVICE_QUERY_STATUS | SERVICE_START);
-    if (hService == nullptr) {
+    if ((hService = OpenServiceW(hSCM, L"TrustedInstaller",
+                                 SERVICE_QUERY_STATUS | SERVICE_START)) ==
+        nullptr) {
       return false;
     }
     DWORD dwNeed;
@@ -86,8 +83,8 @@ public:
     if (!Initialize()) {
       return false;
     }
-    hProcess = OpenProcess(MAXIMUM_ALLOWED, FALSE, ssp.dwProcessId);
-    if (hProcess == nullptr) {
+    if ((hProcess = OpenProcess(MAXIMUM_ALLOWED, FALSE, ssp.dwProcessId)) ==
+        nullptr) {
       return false;
     }
     if (OpenProcessToken(hProcess, MAXIMUM_ALLOWED, &hToken) != TRUE) {
@@ -106,82 +103,15 @@ private:
   SERVICE_STATUS_PROCESS ssp;
 };
 
-inline bool EnableAllTokenPrivileges(_In_ HANDLE hExistingToken,
-                                     _In_ bool bEnable) {
-  DWORD Length = 0;
-  GetTokenInformation(hExistingToken, TokenPrivileges, nullptr, 0, &Length);
-  if (GetLastError() != ERROR_INSUFFICIENT_BUFFER) {
-    return false;
-  }
-  auto privs = (PTOKEN_PRIVILEGES)HeapAlloc(GetProcessHeap(), 0, Length);
-  if (privs == nullptr) {
-    return false;
-  }
-  auto pfree = finally([&] { HeapFree(GetProcessHeap(), 0, privs); });
-  if (GetTokenInformation(hExistingToken, TokenPrivileges, privs, Length,
-                          &Length) != TRUE) {
-    return false;
-  }
-  auto end = privs->Privileges + privs->PrivilegeCount;
-  for (auto it = privs->Privileges; it != end; it++) {
-    it->Attributes = (DWORD)(bEnable ? SE_PRIVILEGE_ENABLED : 0);
-  }
-  return (AdjustTokenPrivileges(hExistingToken, FALSE, privs, 0, nullptr,
-                                nullptr) == TRUE);
-}
-
-inline bool
-DuplicateProcessTokenEx(_In_ DWORD dwProcessID, _In_ DWORD dwDesiredAccess,
-                        _In_opt_ LPSECURITY_ATTRIBUTES lpTokenAttributes,
-                        _In_ SECURITY_IMPERSONATION_LEVEL ImpersonationLevel,
-                        _In_ TOKEN_TYPE TokenType, _Outptr_ PHANDLE phToken) {
-  HANDLE hProcess = nullptr;
-  HANDLE hToken = INVALID_HANDLE_VALUE;
-  if ((hProcess = OpenProcess(MAXIMUM_ALLOWED, FALSE, dwProcessID)) ==
-      nullptr) {
-    return false;
-  }
-  if (!OpenProcessToken(hProcess, MAXIMUM_ALLOWED, &hToken)) {
-    CloseHandle(hProcess);
-    return false;
-  }
-  auto result = DuplicateTokenEx(hToken, dwDesiredAccess, lpTokenAttributes,
-                                 ImpersonationLevel, TokenType, phToken);
-  CloseHandle(hProcess);
-  CloseHandle(hToken);
-  return (result == TRUE);
-}
-
-inline bool ImpersonateSystem() {
-  DWORD pid = 0;
-  if (!LookupSystemProcessID(pid)) {
-    return false;
-  }
-  HANDLE hToken = nullptr;
-  if (!DuplicateProcessTokenEx(pid, MAXIMUM_ALLOWED, nullptr,
-                               SecurityImpersonation, TokenImpersonation,
-                               &hToken)) {
-    return false;
-  }
-  if (EnableAllTokenPrivileges(hToken, true)) {
-    auto result = SetThreadToken(nullptr, hToken);
-    CloseHandle(hToken);
-    return result == TRUE;
-  }
-  return false;
-}
-
 bool process::tiexec() {
-  if (!IsUserAdministratorsGroup()) {
-    fprintf(stderr, "current process's user not administrator\n");
-    SetLastError(ERROR_ACCESS_DENIED);
+  SysImpersonator impersonator;
+  if (!impersonator.PreImpersonation()) {
     return false;
   }
-  if (!ImpersonateSystem()) {
-    fprintf(stderr, "cannot impersonate system\n");
+  if (!impersonator.Impersonation(nullptr)) {
     return false;
   }
-  TrustedInstallerProxy tip;
+  TiImpersonator tip;
   HANDLE hToken = INVALID_HANDLE_VALUE;
   if (!tip.DuplicateTiToken(&hToken)) {
     return false;

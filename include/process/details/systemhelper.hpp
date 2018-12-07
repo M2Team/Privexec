@@ -197,6 +197,7 @@ public:
   }
 
   HANDLE Token() { return hToken; }
+  DWORD SystemPID() const { return pid; }
 
 private:
   HANDLE hToken{INVALID_HANDLE_VALUE};
@@ -230,6 +231,7 @@ public:
     if (!sp.SysDuplicateToken(sessionId)) {
       return false;
     }
+    syspid = sp.SystemPID();
     if (!sp.PrivilegesEnableView(pv)) {
       return false;
     }
@@ -239,16 +241,12 @@ public:
     return true;
   }
   DWORD SessionId() const { return sessionId; }
+  DWORD SystemPID() const { return syspid; }
 
 private:
   DWORD sessionId{0};
+  DWORD syspid{0};
 };
-
-// Enable System Privilege
-inline bool EnableSystemToken(std::vector<LPCWSTR> &las) {
-  //
-  return true;
-}
 
 } // namespace priv
 

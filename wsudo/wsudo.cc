@@ -344,8 +344,8 @@ int AppExecute(wsudo::AppMode &am) {
   auto isconsole = AppExecuteSubsystemIsConsole(cmdline, am.verbose);
   auto elevated = priv::IsUserAdministratorsGroup();
   bool newconsole = am.newconsole;
-  if (elevated && am.level == priv::ProcessNoElevated ||
-      (!elevated && am.level == priv::ProcessElevated)) {
+  // UAC Elevated
+  if (!elevated && am.level == priv::ProcessElevated) {
     newconsole = isconsole;
   }
   if (am.verbose && isconsole) {
