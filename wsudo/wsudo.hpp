@@ -67,7 +67,20 @@ struct AppMode {
   bool verbose{false};                // --verbose -V
   bool disablealias{false};           // --disable-alias
   bool wait{false};                   // -w --wait
-  bool newconsole{false};             // -n --new-console
+  priv::visiblemode_t visible{priv::VisibleNone};
+  const wchar_t *Visible() {
+    switch (visible) {
+    case priv::VisibleNone:
+      return L"shared console window";
+    case priv::VisibleNewConsole:
+      return L"new console window";
+    case priv::VisibleHide:
+      return L"no console window";
+    default:
+      break;
+    }
+    return L"none";
+  }
   bool IsAppLevel(const wchar_t *arg);
   bool IsAppLevelKey(std::wstring_view k);
   int ParseArgv(int argc, wchar_t **argv);

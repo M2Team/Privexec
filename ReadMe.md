@@ -84,6 +84,7 @@ usage: wsudo command args....
                        System        TrustedInstaller
 
    -n|--new-console    Starts a separate window to run a specified program or command.
+   -H|--hide           Hide child process window. not wait. (CREATE_NO_WINDOW)
    -w|--wait           Start application and wait for it to terminate.
    -V|--verbose        Make the operation more talkative
    -x|--appx           AppContainer AppManifest file path

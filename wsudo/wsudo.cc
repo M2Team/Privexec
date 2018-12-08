@@ -115,7 +115,11 @@ int AppMode::ParseArgv(int argc, wchar_t **argv) {
       continue;
     }
     if (Match(arg, L"-n", L"--new-console")) {
-      newconsole = true;
+      visible = priv::VisibleNewConsole;
+      continue;
+    }
+    if (Match(arg, L"-H", L"--hide")) {
+      visible = priv::VisibleHide;
       continue;
     }
     if (Match(arg, L"--disable-alias")) {
@@ -227,6 +231,7 @@ usage: wsudo command args....
                        System        TrustedInstaller
 
    -n|--new-console    Starts a separate window to run a specified program or command.
+   -H|--hide           Hide child process window. not wait. (CREATE_NO_WINDOW)
    -w|--wait           Start application and wait for it to terminate.
    -V|--verbose        Make the operation more talkative
    -x|--appx           AppContainer AppManifest file path
@@ -343,14 +348,19 @@ int AppExecute(wsudo::AppMode &am) {
   auto cmdline = ExpandEnv(cmd);
   auto isconsole = AppExecuteSubsystemIsConsole(cmdline, am.verbose);
   auto elevated = priv::IsUserAdministratorsGroup();
-  bool newconsole = am.newconsole;
-  // UAC Elevated
-  if (!elevated && am.level == priv::ProcessElevated) {
-    newconsole = isconsole;
+  bool waitable = false;
+  if (!elevated && am.level == priv::ProcessElevated &&
+      am.visible == priv::VisibleNone) {
+    am.visible = priv::VisibleNewConsole; /// change visible
   }
+  if (am.visible == priv::VisibleNone && isconsole || am.wait) {
+    waitable = true;
+  }
+  // UAC Elevated
+
   if (am.verbose && isconsole) {
     priv::Print(priv::fc::Yellow, L"* App subsystem is console, %s\n",
-                newconsole ? L"create new console" : L"share the same console");
+                am.Visible());
   }
   for (auto it = am.args.begin() + 1; it != am.args.end(); it++) {
     if (it->empty()) {
@@ -378,7 +388,7 @@ int AppExecute(wsudo::AppMode &am) {
       p.cwd() = ExpandEnv(am.cwd.data());
     }
     auto appx = ExpandEnv(am.appx.data());
-    p.newconsole(newconsole);
+    p.visiblemode(am.visible);
     priv::Print(priv::fc::Yellow, L"Command: %s\n", cmdline);
     if (!p.initialize(appx) || !p.execute()) {
       auto ec = priv::error_code::lasterror();
@@ -395,21 +405,21 @@ int AppExecute(wsudo::AppMode &am) {
     }
     priv::Print(priv::fc::Green, L"new appcontainer process is running: %d\n",
                 p.pid());
-    if (!newconsole && isconsole || am.wait) {
+    if (waitable) {
       return AppWait(p.pid());
     }
     return 0;
   }
 
   priv::process p(cmdline);
-  p.newconsole(am.newconsole);
+  p.visiblemode(am.visible);
   if (!am.cwd.empty()) {
     p.cwd() = ExpandEnv(am.cwd.data());
   }
   priv::Print(priv::fc::Yellow, L"Command: %s\n", cmdline);
   if (p.execute(am.level)) {
     priv::Print(priv::fc::Green, L"new process is running: %d\n", p.pid());
-    if (!newconsole && isconsole || am.wait) {
+    if (waitable) {
       return AppWait(p.pid());
     }
     return 0;

@@ -16,8 +16,10 @@ bool process::execute() {
   PROCESS_INFORMATION pi;
   ZeroMemory(&pi, sizeof(pi));
   DWORD createflags = CREATE_UNICODE_ENVIRONMENT;
-  if (nc) {
+  if (visible == VisibleNewConsole) {
     createflags |= CREATE_NEW_CONSOLE;
+  } else if (visible == VisibleHide) {
+    createflags |= CREATE_NO_WINDOW;
   }
   if (CreateProcessW(nullptr, &cmd_[0], nullptr, nullptr, FALSE, createflags,
                      nullptr, Castwstr(cwd_), &si, &pi) != TRUE) {
@@ -54,7 +56,11 @@ bool process::elevatedexec() {
   info.lpVerb = L"runas";
   info.cbSize = sizeof(info);
   info.hwnd = NULL;
-  info.nShow = SW_SHOWNORMAL;
+  if (visible == VisibleHide) {
+    info.nShow = SW_HIDE;
+  } else {
+    info.nShow = SW_SHOWNORMAL;
+  }
   info.fMask = SEE_MASK_DEFAULT | SEE_MASK_NOCLOSEPROCESS;
   info.lpDirectory = Castwstr(cwd_);
   if (ShellExecuteExW(&info) != TRUE) {
@@ -90,8 +96,10 @@ bool process::execwithtoken(HANDLE hToken, bool desktop) {
   if (lpEnvironment = nullptr) {
     createflags |= CREATE_UNICODE_ENVIRONMENT;
   }
-  if (nc) {
+  if (visible == VisibleNewConsole) {
     createflags |= CREATE_NEW_CONSOLE;
+  } else if (visible == VisibleHide) {
+    createflags |= CREATE_NO_WINDOW;
   }
   if (CreateProcessAsUserW(hToken, nullptr, &cmd_[0], nullptr, nullptr, FALSE,
                            createflags, lpEnvironment, Castwstr(cwd_), &si,

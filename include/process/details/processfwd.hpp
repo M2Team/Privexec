@@ -72,6 +72,12 @@ enum ProcessExecuteLevel {
   ProcessTrustedInstaller
 };
 
+enum visiblemode_t {
+  VisibleNone, //
+  VisibleNewConsole,
+  VisibleHide
+};
+
 class process {
 public:
   template <typename... Args> process(std::wstring_view app, Args... args) {
@@ -111,9 +117,9 @@ public:
   bool lowlevelexec();
   bool systemexec();
   //
-  bool newconsole(bool nc_) {
-    nc = nc_;
-    return nc;
+  visiblemode_t visiblemode(visiblemode_t vm) {
+    visible = vm;
+    return visible;
   }
 
 private:
@@ -122,7 +128,7 @@ private:
   std::wstring cmd_;
   std::wstring cwd_;
   std::wstring kmessage;
-  bool nc{false};
+  visiblemode_t visible{VisibleNone}; ///
 };
 // SECURITY_CAPABILITY_INTERNET_EXPLORER
 using wid_t = WELL_KNOWN_SID_TYPE;
@@ -178,9 +184,9 @@ public:
   bool execute();
 
   //
-  bool newconsole(bool nc_) {
-    nc = nc_;
-    return nc;
+  visiblemode_t visiblemode(visiblemode_t vm) {
+    visible = vm;
+    return visible;
   }
 
 private:
@@ -190,7 +196,7 @@ private:
   std::wstring kmessage;
   PSID appcontainersid{nullptr};
   capabilities_t ca;
-  bool nc{false};
+  visiblemode_t visible{VisibleNone}; ///
 };
 
 /*++

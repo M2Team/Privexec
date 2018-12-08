@@ -4,6 +4,7 @@
 #include <commdlg.h>
 #include <shellapi.h>
 #include <ShlObj.h>
+#include <comutils.hpp>
 
 HRESULT WINAPI TaskDialogCallbackProc__(__in HWND hwnd, __in UINT msg,
                                         __in WPARAM wParam, __in LPARAM lParam,
@@ -26,52 +27,6 @@ HRESULT WINAPI TaskDialogCallbackProc__(__in HWND hwnd, __in UINT msg,
 }
 
 namespace utils {
-template <class T> class comptr {
-public:
-  comptr() { ptr = NULL; }
-  comptr(T *p) {
-    ptr = p;
-    if (ptr != NULL)
-      ptr->AddRef();
-  }
-  comptr(const comptr<T> &sptr) {
-    ptr = sptr.ptr;
-    if (ptr != NULL)
-      ptr->AddRef();
-  }
-  T **operator&() { return &ptr; }
-  T *operator->() { return ptr; }
-  T *operator=(T *p) {
-    if (*this != p) {
-      ptr = p;
-      if (ptr != NULL)
-        ptr->AddRef();
-    }
-    return *this;
-  }
-  operator T *() const { return ptr; }
-  template <class I> HRESULT QueryInterface(REFCLSID rclsid, I **pp) {
-    if (pp != NULL) {
-      return ptr->QueryInterface(rclsid, (void **)pp);
-    } else {
-      return E_FAIL;
-    }
-  }
-  HRESULT CoCreateInstance(REFCLSID clsid, IUnknown *pUnknown,
-                           REFIID interfaceId,
-                           DWORD dwClsContext = CLSCTX_ALL) {
-    HRESULT hr = ::CoCreateInstance(clsid, pUnknown, dwClsContext, interfaceId,
-                                    (void **)&ptr);
-    return hr;
-  }
-  ~comptr() {
-    if (ptr != NULL)
-      ptr->Release();
-  }
-
-private:
-  T *ptr;
-};
 
 HRESULT PrivMessageBox(HWND hWnd, LPCWSTR pszWindowTitle, LPCWSTR pszContent,
                        LPCWSTR pszExpandedInfo, windowtype_t type) {
@@ -129,8 +84,8 @@ std::optional<std::wstring> PrivFilePicker(HWND hWnd, const wchar_t *title,
   if (filter == nullptr) {
     return std::nullopt;
   }
-  comptr<IFileOpenDialog> window;
-  comptr<IShellItem> item;
+  priv::comptr<IFileOpenDialog> window;
+  priv::comptr<IShellItem> item;
   if (window.CoCreateInstance(CLSID_FileOpenDialog, nullptr,
                               IID_IFileOpenDialog,
                               CLSCTX_INPROC_SERVER) != S_OK) {
@@ -160,7 +115,7 @@ std::optional<std::wstring> PrivFilePicker(HWND hWnd, const wchar_t *title,
   return opt;
 }
 std::optional<std::wstring> PrivFolderPicker(HWND hWnd, const wchar_t *title) {
-  comptr<IFileDialog> w;
+  priv::comptr<IFileDialog> w;
   if (w.CoCreateInstance(CLSID_FileOpenDialog, nullptr, IID_IFileDialog,
                          CLSCTX_INPROC_SERVER) != S_OK) {
     return std::nullopt;
@@ -171,7 +126,7 @@ std::optional<std::wstring> PrivFolderPicker(HWND hWnd, const wchar_t *title) {
   }
   w->SetOptions(dwo | FOS_PICKFOLDERS);
   w->SetTitle(title == nullptr ? L"Open Folder Picker" : title);
-  comptr<IShellItem> item;
+  priv::comptr<IShellItem> item;
   if (w->Show(hWnd) != S_OK) {
     return std::nullopt;
   }

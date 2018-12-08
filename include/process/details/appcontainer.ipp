@@ -205,7 +205,8 @@ bool appcontainer::initialize(const std::vector<std::wstring> &names) {
       (DeriveCapabilitySidsFromNameImpl)GetProcAddress(
           GetModuleHandle(L"KernelBase.dll"), "DeriveCapabilitySidsFromName");
   if (_DeriveCapabilitySidsFromName == nullptr) {
-    fwprintf(stderr,L"DeriveCapabilitySidsFromName Not Found in KernelBase.dll\n");
+    fwprintf(stderr,
+             L"DeriveCapabilitySidsFromName Not Found in KernelBase.dll\n");
     return false;
   }
   for (const auto &n : names) {
@@ -217,7 +218,8 @@ bool appcontainer::initialize(const std::vector<std::wstring> &names) {
             capability_group_sids.count_ptr(), capability_sids.sids_ptr(),
             capability_sids.count_ptr())) {
       auto ec = error_code::lasterror();
-      fwprintf(stderr,L"DeriveCapabilitySidsFromName: %s\n", ec.message.c_str());
+      fwprintf(stderr, L"DeriveCapabilitySidsFromName: %s\n",
+               ec.message.c_str());
       continue;
     }
     if (capability_sids.count() < 1) {
@@ -290,8 +292,10 @@ bool appcontainer::execute() {
     return false;
   }
   DWORD createflags = EXTENDED_STARTUPINFO_PRESENT | CREATE_UNICODE_ENVIRONMENT;
-  if (nc) {
+  if (visible == VisibleNewConsole) {
     createflags |= CREATE_NEW_CONSOLE;
+  } else if (visible == VisibleHide) {
+    createflags |= CREATE_NO_WINDOW;
   }
   if (CreateProcessW(nullptr, &cmd_[0], nullptr, nullptr, FALSE, createflags,
                      nullptr, Castwstr(cwd_),
