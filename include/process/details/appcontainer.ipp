@@ -96,8 +96,32 @@ inline std::wstring u8w(std::string_view str) {
   return wstr;
 }
 
-inline bool WellKnownFromAppmanifestEx(const std::wstring &file,
-                                       std::vector<std::wstring> &cans) {
+inline bool MergeFromAppmanifest(const std::wstring &file,
+                                 std::vector<std::wstring> &cans) {
+  pugi::xml_document doc;
+  if (!doc.load_file(file.c_str())) {
+    return false;
+  }
+  auto Append = [&](std::wstring &c) {
+    if (std::find(std::begin(cans), std::end(cans), c) == std::end(cans)) {
+      cans.push_back(c);
+    }
+  };
+
+  auto elem = doc.child("Package").child("Capabilities");
+  for (auto it : elem.children("Capability")) {
+    auto n = it.attribute("Name").as_string();
+    Append(u8w(n));
+  }
+  for (auto it : elem.children("rescap:Capability")) {
+    auto n = it.attribute("Name").as_string();
+    Append(u8w(n));
+  }
+  return true;
+}
+
+inline bool FromAppmanifest(const std::wstring &file,
+                            std::vector<std::wstring> &cans) {
   pugi::xml_document doc;
   if (!doc.load_file(file.c_str())) {
     return false;
@@ -143,7 +167,7 @@ bool appcontainer::initialize(const wid_t *begin, const wid_t *end) {
     attr.Attributes = SE_GROUP_ENABLED;
     ca.push_back(attr);
   }
-  constexpr const wchar_t *appid = L"Privexec.Core.AppContainer.v2";
+  constexpr const wchar_t *appid = L"Privexec.AppContainer.WellKnownSid";
   DeleteAppContainerProfile(appid); // ignore error
   if (CreateAppContainerProfile(appid, appid, appid,
                                 (ca.empty() ? NULL : ca.data()),
@@ -235,7 +259,8 @@ bool appcontainer::initialize(const std::vector<std::wstring> &names) {
     attr.Attributes = SE_GROUP_ENABLED;
     ca.push_back(attr);
   }
-  constexpr const wchar_t *appid = L"Privexec.Core.AppContainer.v3";
+  constexpr const wchar_t *appid =
+      L"Privexec.AppContainer.DeriveCapabilitySidsFromName";
   DeleteAppContainerProfile(appid); // ignore error
   if (CreateAppContainerProfile(appid, appid, appid,
                                 (ca.empty() ? NULL : ca.data()),
@@ -248,7 +273,7 @@ bool appcontainer::initialize(const std::vector<std::wstring> &names) {
 
 bool appcontainer::initialize(const std::wstring &appxml) {
   std::vector<std::wstring> cans;
-  if (!WellKnownFromAppmanifestEx(appxml, cans)) {
+  if (!FromAppmanifest(appxml, cans)) {
     return false;
   }
   return initialize(cans);

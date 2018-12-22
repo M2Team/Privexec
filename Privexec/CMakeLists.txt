@@ -3,6 +3,7 @@
 add_executable(Privexec WIN32
     appalias.cc
     apputils.cc
+    capabilities.cc
     app.cc
     main.cc
     Privexec.manifest

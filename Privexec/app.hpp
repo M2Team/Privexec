@@ -9,6 +9,7 @@
 #include <Windows.h>
 #endif
 #include <Windowsx.h>
+#include <CommCtrl.h>
 #include <PathCch.h>
 #include <vector>
 #include <unordered_map>
@@ -67,6 +68,7 @@ struct Element {
     EnableWindow(hInput, v);
     EnableWindow(hButton, v);
   }
+  bool IsVisible() const { return IsWindowVisible(hInput) == TRUE; }
   std::wstring Content() {
     auto l = GetWindowTextLengthW(hInput);
     if (l == 0 || l > PATHCCH_MAX_CCH * 2) {
@@ -84,33 +86,36 @@ struct Element {
 };
 
 struct AppCapabilities {
-  std::unordered_map<HWND, wid_t> vals;
-  void Add(HWND hWnd, int id, wid_t wsid) {
-    auto h = GetDlgItem(hWnd, id);
-    vals.insert(std::pair<HWND, wid_t>(h, wsid));
+  HWND hlview{nullptr};
+  bool IsChecked(int i) { return ListView_GetCheckState(hlview, i) != 0; }
+  const wchar_t *CheckedValue(int i) {
+    LVITEM item;
+    memset(&item, 0, sizeof(LVITEM));
+    item.mask = LVIF_PARAM;
+    item.iItem = i;
+
+    if (!ListView_GetItem(hlview, &item)) {
+      return nullptr;
+    }
+    return reinterpret_cast<const wchar_t *>(item.lParam);
   }
   void Visible(BOOL visible) {
-    for (auto &e : vals) {
-      EnableWindow(e.first, visible);
-    }
+    // enable
+    EnableWindow(hlview, visible);
   }
-  std::vector<wid_t> Capabilities() {
-    std::vector<wid_t> cas;
-    for (auto &c : vals) {
-      if (Button_GetCheck(c.first) == BST_CHECKED) {
-        cas.push_back((wid_t)c.second);
+
+  std::vector<std::wstring> Capabilities() {
+    std::vector<std::wstring> cas;
+    auto count = (int)::SendMessageW(hlview, LVM_GETITEMCOUNT, 0, 0);
+    for (int i = 0; i < count; i++) {
+      if (IsChecked(i)) {
+        auto cv = CheckedValue(i);
+        if (cv != nullptr) {
+          cas.push_back(cv);
+        }
       }
     }
     return cas;
-  }
-  void Update(const std::vector<wid_t> &cas) {
-    for (auto &c : vals) {
-      if (std::find(cas.begin(), cas.end(), c.second) != cas.end()) {
-        Button_SetCheck(c.first, TRUE);
-      } else {
-        Button_SetCheck(c.first, FALSE);
-      }
-    }
   }
 };
 
@@ -126,12 +131,12 @@ public:
   static INT_PTR WINAPI WindowProc(HWND hWnd, UINT message, WPARAM wParam,
                                    LPARAM lParam);
   INT_PTR MessageHandler(UINT message, WPARAM wParam, LPARAM lParam);
+  bool DropFiles(WPARAM wParam, LPARAM lParam);
 
 private:
   bool Initialize(HWND window);
   bool InitializeCapabilities();
   bool SelChanged();
-  bool UpdateCapabilities(const std::wstring &file);
   std::wstring ResolveCMD();
   std::wstring ResolveCWD();
   bool AppLookupExecute();

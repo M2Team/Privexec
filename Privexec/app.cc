@@ -46,32 +46,47 @@ INT_PTR WINAPI App::WindowProc(HWND hWnd, UINT message, WPARAM wParam,
   return FALSE;
 }
 
-bool App::InitializeCapabilities() {
-  appcas.Add(hWnd, IDP_INTERNETCLIENT, WinCapabilityInternetClientSid);
-  appcas.Add(hWnd, IDP_INTERNETCLIENTSERVER,
-             WinCapabilityInternetClientServerSid);
-  appcas.Add(hWnd, IDP_PRIVATENETWORKCLIENTSERVER,
-             WinCapabilityPrivateNetworkClientServerSid);
-  appcas.Add(hWnd, IDP_DOCUMENTSLIBRARY, WinCapabilityDocumentsLibrarySid);
-  appcas.Add(hWnd, IDP_PICTURESLIBRARY, WinCapabilityPicturesLibrarySid);
-  appcas.Add(hWnd, IDP_VIDEOSLIBRARY, WinCapabilityVideosLibrarySid);
-  appcas.Add(hWnd, IDP_MUSICLIBRARY, WinCapabilityMusicLibrarySid);
-  appcas.Add(hWnd, IDP_ENTERPRISEAUTHENTICATION,
-             WinCapabilityEnterpriseAuthenticationSid);
-  appcas.Add(hWnd, IDP_SHAREDUSERCERTIFICATES,
-             WinCapabilitySharedUserCertificatesSid);
-  appcas.Add(hWnd, IDP_REMOVABLESTORAGE, WinCapabilityRemovableStorageSid);
-  appcas.Add(hWnd, IDP_APPOINTMENTS, WinCapabilityAppointmentsSid);
-  appcas.Add(hWnd, IDP_CONTACTS, WinCapabilityContactsSid);
-  return true;
-}
+struct CapabilityName {
+  LPCWSTR name;
+  LPCWSTR value;
+};
 
-bool App::UpdateCapabilities(const std::wstring &file) {
-  std::vector<wid_t> cas;
-  if (!priv::WellKnownFromAppmanifest(file, cas)) {
-    return false;
+bool App::InitializeCapabilities() {
+  appcas.hlview = GetDlgItem(hWnd, IDL_APPCONTAINER_LISTVIEW);
+  ListView_SetExtendedListViewStyleEx(appcas.hlview, LVS_EX_CHECKBOXES,
+                                      LVS_EX_CHECKBOXES);
+  LVCOLUMNW lvw;
+  memset(&lvw, 0, sizeof(lvw));
+  lvw.cx = 200;
+  ListView_InsertColumn(appcas.hlview, 0, &lvw);
+  const CapabilityName wncas[] = {
+      {L"Internet Client", L"internetClient"},
+      {L"Internet Client Server", L"internetClientServer"},
+      {L"Private Network", L"privateNetworkClientServer"},
+      {L"Pictures Library", L"picturesLibrary"},
+      {L"Videos Library", L"videosLibrary"},
+      {L"Music Library", L"musicLibrary"},
+      {L"Documents Library", L"documentsLibrary"},
+      {L"Shared User Certificates", L"sharedUserCertificates"},
+      {L"Enterprise Authentication", L"enterpriseAuthentication"},
+      {L"Removable Storage", L"removableStorage"},
+      {L"Appointments", L"appointments"},
+      {L"Contacts", L"contacts"},
+      {L"runFullTrust", L"runFullTrust"},
+      {L"broadFileSystemAccess", L"broadFileSystemAccess"},
+      {L"lpacAppExperience", L"lpacAppExperience"},
+      {L"constrainedImpersonation", L"constrainedImpersonation"}
+      //
+  };
+  for (const auto &w : wncas) {
+    LVITEMW item;
+    ZeroMemory(&item, sizeof(item));
+    item.mask = LVIF_TEXT | LVIF_PARAM;
+    item.pszText = const_cast<LPWSTR>(w.name);
+    item.lParam = (LPARAM)w.value;
+    ListView_InsertItem(appcas.hlview, &item);
   }
-  appcas.Update(cas);
+  ListView_SetColumnWidth(appcas.hlview, 0, LVSCW_AUTOSIZE_USEHEADER);
   return true;
 }
 
@@ -79,6 +94,12 @@ bool App::Initialize(HWND window) {
   hWnd = window;
   HICON icon = LoadIconW(hInst, MAKEINTRESOURCEW(IDI_APPLICATION_ICON));
   SendMessage(hWnd, WM_SETICON, ICON_BIG, (LPARAM)icon);
+  // Drag support
+  ChangeWindowMessageFilter(WM_DROPFILES, MSGFLT_ADD);
+  ChangeWindowMessageFilter(WM_COPYDATA, MSGFLT_ADD);
+  ChangeWindowMessageFilter(0x0049, MSGFLT_ADD);
+  ::DragAcceptFiles(hWnd, TRUE);
+
   auto elevated = priv::IsUserAdministratorsGroup();
   if (elevated) {
     // Update title when app run as admin
@@ -158,18 +179,31 @@ std::wstring App::ResolveCWD() {
 }
 
 bool App::AppExecute() {
-  auto appindex = box.AppIndex();
-  auto cmd_ = ResolveCMD();
-  auto cwd_ = ResolveCWD(); // app startup directory
   constexpr const wchar_t *ei =
       L"Ask for help with this issue. \nVisit: <a "
       L"href=\"https://github.com/M2Team/Privexec/issues\">Privexec Issues</a>";
+  auto appindex = box.AppIndex();
+  auto cmd_ = ResolveCMD();
+  if (cmd_.empty()) {
+    utils::PrivMessageBox(hWnd, L"Please input command line", L"command empty",
+                          ei, utils::kFatalWindow);
+    return false;
+  }
+  auto cwd_ = ResolveCWD(); // app startup directory
+
   if (appindex == priv::ProcessAppContainer) {
     //// TODO app container.
     auto cas = appcas.Capabilities();
+    auto xml = ExpandEnv(appx.Content());
+    if (!xml.empty() && !priv::MergeFromAppmanifest(xml, cas)) {
+      auto ec = priv::error_code::lasterror();
+      utils::PrivMessageBox(hWnd, L"Privexec appmanifest error",
+                            ec.message.c_str(), ei, utils::kFatalWindow);
+      return false;
+    }
     priv::appcontainer p(cmd_);
     p.cwd().assign(cwd_);
-    if (!p.initialize(cas.data(), cas.data() + cas.size()) || !p.execute()) {
+    if (!p.initialize(cas) || !p.execute()) {
       auto ec = priv::error_code::lasterror();
       if (!p.message().empty()) {
         ec.message.append(L" (").append(p.message()).append(L")");
@@ -221,7 +255,6 @@ bool App::AppLookupManifest() {
       utils::PrivFilePicker(hWnd, L"Privexec: Select AppManifest", filters, 2);
   if (xml) {
     appx.Update(*xml);
-    UpdateCapabilities(*xml);
     return true;
   }
   return false;
@@ -236,6 +269,25 @@ bool App::AppLookupCWD() {
   return false;
 }
 
+bool App::DropFiles(WPARAM wParam, LPARAM lParam) {
+  const LPCWSTR appmanifest[] = {L".xml", L".appxmanifest"};
+  HDROP hDrop = (HDROP)wParam;
+  UINT nfilecounts = DragQueryFileW(hDrop, 0xFFFFFFFF, NULL, 0);
+  WCHAR dfile[4096] = {0};
+  for (UINT i = 0; i < nfilecounts; i++) {
+    DragQueryFileW(hDrop, i, dfile, 4096);
+    if (PathFindSuffixArrayW(dfile, appmanifest, ARRAYSIZE(appmanifest))) {
+      if (appx.IsVisible()) {
+        appx.Update(dfile);
+      }
+      continue;
+    }
+    cmd.Update(dfile);
+  }
+  DragFinish(hDrop);
+  return true;
+}
+
 INT_PTR App::MessageHandler(UINT message, WPARAM wParam, LPARAM lParam) {
   constexpr const wchar_t *appurl =
       L"For more information about this tool. \nVisit: <a "
@@ -245,6 +297,9 @@ INT_PTR App::MessageHandler(UINT message, WPARAM wParam, LPARAM lParam) {
   case WM_CTLCOLORDLG:
   case WM_CTLCOLORSTATIC:
     return (INT_PTR)CreateSolidBrush(RGB(255, 255, 255));
+  case WM_DROPFILES:
+    DropFiles(wParam, lParam);
+    return TRUE;
   case WM_SYSCOMMAND:
     switch (LOWORD(wParam)) {
     case IDM_PRIVEXEC_ABOUT:
@@ -282,9 +337,6 @@ INT_PTR App::MessageHandler(UINT message, WPARAM wParam, LPARAM lParam) {
       AppExecute();
       EnableWindow(hExecute, TRUE);
     }
-      return TRUE;
-    case IDB_EXIT_BUTTON:
-      DestroyWindow(hWnd);
       return TRUE;
     default:
       return FALSE;

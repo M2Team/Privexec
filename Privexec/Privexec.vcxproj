@@ -154,6 +154,7 @@
     <ClCompile Include="app.cc" />
     <ClCompile Include="appalias.cc" />
     <ClCompile Include="apputils.cc" />
+    <ClCompile Include="capabilities.cc" />
     <ClCompile Include="main.cc" />
   </ItemGroup>
   <ItemGroup>

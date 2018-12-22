@@ -144,6 +144,11 @@ wsudo "PATH=%PATH%;%TEMP%" -n -U cmd
 Download CI Build:
 [https://ci.appveyor.com/project/fcharlie/privexec/build/artifacts](https://ci.appveyor.com/project/fcharlie/privexec/build/artifacts)
 
+
+## Changelog
+
+see: [changelog.md](./docs/changelog.md)
+
 ## LICENSE
 
 This project use MIT License, and JSON use [https://github.com/nlohmann/json](https://github.com/nlohmann/json) , some API use NSudo, but rewrite it.
