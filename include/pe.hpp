@@ -79,11 +79,6 @@ bool EndsWith(const std::basic_string_view<CharT> &str, const CharT *cstr,
 }
 inline std::wstring GetFileTarget(std::wstring file) {
   std::wstring target;
-  if (EndsWith(file, L".lnk", 4)) {
-    if (readshelllink(file, target)) {
-      file.assign(std::move(target));
-    }
-  }
   if (readlink(file, target)) {
     return target;
   }
