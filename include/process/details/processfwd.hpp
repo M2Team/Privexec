@@ -188,6 +188,10 @@ public:
     visible = vm;
     return visible;
   }
+  bool enablelpac(bool enable) {
+    lpac = enable;
+    return lpac;
+  }
 
 private:
   DWORD pid_{0};
@@ -197,6 +201,7 @@ private:
   PSID appcontainersid{nullptr};
   capabilities_t ca;
   visiblemode_t visible{VisibleNone}; ///
+  bool lpac{false};
 };
 
 /*++

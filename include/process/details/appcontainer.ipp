@@ -8,6 +8,7 @@
 #include <memory>
 #include "pugixml/pugixml.hpp"
 #include "processfwd.hpp"
+#include "appcontainerlpac.hpp"
 
 #pragma comment(lib, "Ntdll.lib")
 
@@ -322,6 +323,20 @@ bool appcontainer::execute() {
   } else if (visible == VisibleHide) {
     createflags |= CREATE_NO_WINDOW;
   }
+
+  if (lpac) {
+    if (!CreateProcessLPAC(nullptr, &cmd_[0], nullptr, nullptr, FALSE,
+                           createflags, nullptr, Castwstr(cwd_),
+                           reinterpret_cast<STARTUPINFOW *>(&siex), &pi)) {
+      kmessage.assign(L"CreateProcessLPAC");
+      return false;
+    }
+    pid_ = pi.dwProcessId;
+    CloseHandle(pi.hThread);
+    CloseHandle(pi.hProcess);
+    return true;
+  }
+
   if (CreateProcessW(nullptr, &cmd_[0], nullptr, nullptr, FALSE, createflags,
                      nullptr, Castwstr(cwd_),
                      reinterpret_cast<STARTUPINFOW *>(&siex), &pi) != TRUE) {

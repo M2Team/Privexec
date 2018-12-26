@@ -122,10 +122,15 @@ int AppMode::ParseArgv(int argc, wchar_t **argv) {
       visible = priv::VisibleHide;
       continue;
     }
+    if (Match(arg, L"-L", L"--lpac")) {
+      lpac = true;
+      continue;
+    }
     if (Match(arg, L"--disable-alias")) {
       disablealias = true;
       continue;
     }
+
     auto es = MatchInternal(arg, L"-e", L"--env");
     if (es) {
       envctx.Append(*es);
@@ -237,6 +242,7 @@ usage: wsudo command args....
    -x|--appx           AppContainer AppManifest file path
    -c|--cwd            Use a working directory to launch the process.
    -e|--env            Set Environment Variable.
+   -L|--lpac           AppContainer LPAC mode.
    --disable-alias     Disable Privexec alias, By default, if Privexec exists alias, use it.
 
 Select user can use the following flags:
@@ -389,6 +395,7 @@ int AppExecute(wsudo::AppMode &am) {
     }
     auto appx = ExpandEnv(am.appx.data());
     p.visiblemode(am.visible);
+    p.enablelpac(am.lpac);
     priv::Print(priv::fc::Yellow, L"Command: %s\n", cmdline);
     if (!p.initialize(appx) || !p.execute()) {
       auto ec = priv::error_code::lasterror();

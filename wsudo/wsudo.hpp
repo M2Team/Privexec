@@ -67,6 +67,7 @@ struct AppMode {
   bool verbose{false};                // --verbose -V
   bool disablealias{false};           // --disable-alias
   bool wait{false};                   // -w --wait
+  bool lpac{false};
   priv::visiblemode_t visible{priv::VisibleNone};
   const wchar_t *Visible() {
     switch (visible) {
