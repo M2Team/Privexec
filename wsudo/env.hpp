@@ -63,7 +63,7 @@ public:
     em.insert_or_assign(Toupper(k), ExpandEnv(v));
     return true;
   }
-  bool Apply(std::function<void(const std::wstring, const std::wstring)>
+  bool Apply(std::function<void(const std::wstring&, const std::wstring&)>
                  callback) const {
     if (em.empty()) {
       return true;
