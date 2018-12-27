@@ -8,7 +8,6 @@
 #include <memory>
 #include "pugixml/pugixml.hpp"
 #include "processfwd.hpp"
-#include "appcontainerlpac.hpp"
 
 #pragma comment(lib, "Ntdll.lib")
 
@@ -289,6 +288,9 @@ bool appcontainer::initializessid(const std::wstring &ssid) {
 
 // PAWapper is
 using PAttribute = LPPROC_THREAD_ATTRIBUTE_LIST;
+#define PROC_THREAD_ATTRIBUTE_ALL_APPLICATION_PACKAGES_POLICY_EX               \
+  ProcThreadAttributeValue(ProcThreadAttributeAllApplicationPackagesPolicy,    \
+                           FALSE, TRUE, FALSE)
 bool appcontainer::execute() {
   PROCESS_INFORMATION pi;
   STARTUPINFOEX siex = {sizeof(STARTUPINFOEX)};
@@ -313,28 +315,28 @@ bool appcontainer::execute() {
   sc.Reserved = 0;
   if (UpdateProcThreadAttribute(siex.lpAttributeList, 0,
                                 PROC_THREAD_ATTRIBUTE_SECURITY_CAPABILITIES,
-                                &sc, sizeof(sc), NULL, NULL) != TRUE) {
+                                &sc, sizeof(sc), nullptr, nullptr) != TRUE) {
     kmessage.assign(L"UpdateProcThreadAttribute");
     return false;
+  }
+  DWORD dwvalue = 1;
+  if (lpac) {
+
+    if (UpdateProcThreadAttribute(
+            siex.lpAttributeList, 0,
+            PROC_THREAD_ATTRIBUTE_ALL_APPLICATION_PACKAGES_POLICY_EX,&dwvalue,
+            sizeof(dwvalue), nullptr, nullptr) != TRUE) {
+                  kmessage.assign(L"UpdateProcThreadAttribute(LPAC)");
+    return false;
+    }
+    // ProcThreadAttributeAllApplicationPackagesPolicy
+    // UpdateProcThreadAttribute(siex.lpAttributeList,0,)
   }
   DWORD createflags = EXTENDED_STARTUPINFO_PRESENT | CREATE_UNICODE_ENVIRONMENT;
   if (visible == VisibleNewConsole) {
     createflags |= CREATE_NEW_CONSOLE;
   } else if (visible == VisibleHide) {
     createflags |= CREATE_NO_WINDOW;
-  }
-
-  if (lpac) {
-    if (!CreateProcessLPAC(nullptr, &cmd_[0], nullptr, nullptr, FALSE,
-                           createflags, nullptr, Castwstr(cwd_),
-                           reinterpret_cast<STARTUPINFOW *>(&siex), &pi)) {
-      kmessage.assign(L"CreateProcessLPAC");
-      return false;
-    }
-    pid_ = pi.dwProcessId;
-    CloseHandle(pi.hThread);
-    CloseHandle(pi.hProcess);
-    return true;
   }
 
   if (CreateProcessW(nullptr, &cmd_[0], nullptr, nullptr, FALSE, createflags,

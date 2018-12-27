@@ -242,7 +242,7 @@ usage: wsudo command args....
    -x|--appx           AppContainer AppManifest file path
    -c|--cwd            Use a working directory to launch the process.
    -e|--env            Set Environment Variable.
-   -L|--lpac           AppContainer LPAC mode.
+   -L|--lpac           Less Privileged AppContainer mode.
    --disable-alias     Disable Privexec alias, By default, if Privexec exists alias, use it.
 
 Select user can use the following flags:
