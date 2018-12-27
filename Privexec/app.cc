@@ -53,6 +53,7 @@ struct CapabilityName {
 
 bool App::InitializeCapabilities() {
   appcas.hlview = GetDlgItem(hWnd, IDL_APPCONTAINER_LISTVIEW);
+  appcas.hlpacbox = GetDlgItem(hWnd, IDC_LPACMODE);
   ListView_SetExtendedListViewStyleEx(appcas.hlview, LVS_EX_CHECKBOXES,
                                       LVS_EX_CHECKBOXES);
   LVCOLUMNW lvw;
@@ -114,12 +115,12 @@ bool App::Initialize(HWND window) {
   box.Append(priv::ProcessMandatoryIntegrityControl,
              L"Mandatory Integrity Control");
   if (elevated) {
-    box.Append(priv::ProcessNoElevated, L"No Elevated (UAC)", true);
+    box.Append(priv::ProcessNoElevated, L"Not Elevated (UAC)", true);
     box.Append(priv::ProcessElevated, L"Administrator");
     box.Append(priv::ProcessSystem, L"System");
     box.Append(priv::ProcessTrustedInstaller, L"TrustedInstaller");
   } else {
-    box.Append(priv::ProcessNoElevated, L"No Elevated (UAC)");
+    box.Append(priv::ProcessNoElevated, L"Not Elevated (UAC)");
     box.Append(priv::ProcessElevated, L"Administrator", true);
   }
   HMENU hSystemMenu = ::GetSystemMenu(hWnd, FALSE);
@@ -202,6 +203,7 @@ bool App::AppExecute() {
       return false;
     }
     priv::appcontainer p(cmd_);
+    p.enablelpac(appcas.IsLowPrivilegeAppContainer());
     p.cwd().assign(cwd_);
     if (!p.initialize(cas) || !p.execute()) {
       auto ec = priv::error_code::lasterror();
