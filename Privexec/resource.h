@@ -20,15 +20,18 @@
 #define IDE_APPCONTAINER_APPMANIFEST 1013
 #define IDC_APPCONTAINER_STATIC 1014
 #define IDB_APPCONTAINER_BUTTON 1015
-#define IDS_RECOMMENDED_CAPS 1016 //recommended
+#define IDS_RECOMMENDED_CAPS 1016 // recommended
 #define IDL_APPCONTAINER_LISTVIEW 1017
 #define IDS_HELPMSG 1018
-
+#define IDC_LPACMODE 1019
 
 #define CS_LISTVIEW                                                            \
   WS_BORDER | WS_VSCROLL | WS_TABSTOP | LVS_REPORT | LVS_SORTASCENDING |       \
       LVS_NOCOLUMNHEADER
 
+#define CS_BASE                                                                \
+  BS_PUSHBUTTON | BS_TEXT | BS_DEFPUSHBUTTON | BS_CHECKBOX | BS_AUTOCHECKBOX | \
+      WS_CHILD | WS_OVERLAPPED | WS_VISIBLE
 
 // Next default values for new objects
 //

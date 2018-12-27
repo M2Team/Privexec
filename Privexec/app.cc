@@ -53,6 +53,7 @@ struct CapabilityName {
 
 bool App::InitializeCapabilities() {
   appcas.hlview = GetDlgItem(hWnd, IDL_APPCONTAINER_LISTVIEW);
+  appcas.hlpacbox = GetDlgItem(hWnd, IDC_LPACMODE);
   ListView_SetExtendedListViewStyleEx(appcas.hlview, LVS_EX_CHECKBOXES,
                                       LVS_EX_CHECKBOXES);
   LVCOLUMNW lvw;
@@ -202,6 +203,7 @@ bool App::AppExecute() {
       return false;
     }
     priv::appcontainer p(cmd_);
+    p.enablelpac(appcas.IsLowPrivilegeAppContainer());
     p.cwd().assign(cwd_);
     if (!p.initialize(cas) || !p.execute()) {
       auto ec = priv::error_code::lasterror();

@@ -87,7 +87,9 @@ struct Element {
 
 struct AppCapabilities {
   HWND hlview{nullptr};
+  HWND hlpacbox{nullptr};
   bool IsChecked(int i) { return ListView_GetCheckState(hlview, i) != 0; }
+  bool IsLowPrivilegeAppContainer() { return Button_GetCheck(hlpacbox) != 0; }
   const wchar_t *CheckedValue(int i) {
     LVITEM item;
     memset(&item, 0, sizeof(LVITEM));
@@ -102,6 +104,7 @@ struct AppCapabilities {
   void Visible(BOOL visible) {
     // enable
     EnableWindow(hlview, visible);
+    EnableWindow(hlpacbox, visible);
   }
 
   std::vector<std::wstring> Capabilities() {
