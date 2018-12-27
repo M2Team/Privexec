@@ -114,12 +114,12 @@ bool App::Initialize(HWND window) {
   box.Append(priv::ProcessMandatoryIntegrityControl,
              L"Mandatory Integrity Control");
   if (elevated) {
-    box.Append(priv::ProcessNoElevated, L"No Elevated (UAC)", true);
+    box.Append(priv::ProcessNoElevated, L"Not Elevated (UAC)", true);
     box.Append(priv::ProcessElevated, L"Administrator");
     box.Append(priv::ProcessSystem, L"System");
     box.Append(priv::ProcessTrustedInstaller, L"TrustedInstaller");
   } else {
-    box.Append(priv::ProcessNoElevated, L"No Elevated (UAC)");
+    box.Append(priv::ProcessNoElevated, L"Not Elevated (UAC)");
     box.Append(priv::ProcessElevated, L"Administrator", true);
   }
   HMENU hSystemMenu = ::GetSystemMenu(hWnd, FALSE);
