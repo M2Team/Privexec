@@ -8,7 +8,7 @@
 
 namespace wsudo {
 
-//     -a          AppContainer
+//    -a          AppContainer
 //    -M          Mandatory Integrity Control
 //    -U          No Elevated(UAC)
 //    -A          Administrator
@@ -396,6 +396,10 @@ int AppExecute(wsudo::AppMode &am) {
     auto appx = ExpandEnv(am.appx.data());
     p.visiblemode(am.visible);
     p.enablelpac(am.lpac);
+    if (am.verbose && am.lpac) {
+      priv::Print(priv::fc::Yellow,
+                  L"* AppContainer: Less Privileged AppContainer Is Enabled.\n");
+    }
     priv::Print(priv::fc::Yellow, L"Command: %s\n", cmdline);
     if (!p.initialize(appx) || !p.execute()) {
       auto ec = priv::error_code::lasterror();
@@ -417,7 +421,10 @@ int AppExecute(wsudo::AppMode &am) {
     }
     return 0;
   }
-
+  if (am.level == priv::ProcessAppContainer && am.lpac) {
+    priv::Print(priv::fc::Yellow, L"AppContainer: LPAC mode is set but will "
+                                  L"not take effect. Appmanifest not set.\n");
+  }
   priv::process p(cmdline);
   p.visiblemode(am.visible);
   if (!am.cwd.empty()) {

@@ -1,5 +1,10 @@
 # Changelog
 
+## 2018-12-28
+
+1. Privexec/WSUDO support `Less Privileged AppContainer`
+2. Privexec AppContainer supports more capabilities to choose from
+
 ## 2018-12-22
 
 1.  Privexec (GUI) AppContainer support Restricted Capabilities.  

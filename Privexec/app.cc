@@ -589,7 +589,7 @@ INT_PTR App::MessageHandler(UINT message, WPARAM wParam, LPARAM lParam) {
       utils::PrivMessageBox(
           hWnd, L"About Privexec",
           L"Prerelease:"
-          L" " PRIVEXEC_BUILD_VERSION L"\nCopyright \xA9 2018, Force "
+          L" " PRIVEXEC_BUILD_VERSION L"\nCopyright \xA9 2019, Force "
           L"Charlie. All Rights Reserved.",
           appurl, utils::kAboutWindow);
       break;
