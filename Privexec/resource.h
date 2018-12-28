@@ -26,8 +26,7 @@
 #define IDC_LPACMODE 1019
 
 #define CS_LISTVIEW                                                            \
-  WS_BORDER | WS_VSCROLL | WS_TABSTOP | LVS_REPORT | LVS_SORTASCENDING |       \
-      LVS_NOCOLUMNHEADER
+  WS_BORDER | WS_VSCROLL | WS_TABSTOP | LVS_REPORT | LVS_NOCOLUMNHEADER
 
 #define CS_BASE                                                                \
   BS_PUSHBUTTON | BS_TEXT | BS_DEFPUSHBUTTON | BS_CHECKBOX | BS_AUTOCHECKBOX | \
