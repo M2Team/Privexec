@@ -358,7 +358,9 @@ bool App::InitializeCapabilities() {
       {L"xboxTrackingStream", L"xboxTrackingStream"}
       //
   };
-  for (const auto &w : wncas) {
+  constexpr std::size_t wnlen = sizeof(wncas) / sizeof(CapabilityName);
+  for (std::size_t n = wnlen; n > 0; n--) {
+    const auto &w = wncas[n - 1];
     LVITEMW item;
     ZeroMemory(&item, sizeof(item));
     item.mask = LVIF_TEXT | LVIF_PARAM;
