@@ -35,8 +35,6 @@ If you want add a alias to Privexec, Please modify Privexec.json on your Privexe
 }
 ```
 
-wsudo alias ? working in progress
-
 
 ## Screenshot
 
