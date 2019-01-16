@@ -8,6 +8,7 @@
 #include <memory>
 #include "pugixml/pugixml.hpp"
 #include "processfwd.hpp"
+#include "acl.ipp"
 
 #pragma comment(lib, "Ntdll.lib")
 
@@ -291,7 +292,19 @@ using PAttribute = LPPROC_THREAD_ATTRIBUTE_LIST;
 #define PROC_THREAD_ATTRIBUTE_ALL_APPLICATION_PACKAGES_POLICY_EX               \
   ProcThreadAttributeValue(ProcThreadAttributeAllApplicationPackagesPolicy,    \
                            FALSE, TRUE, FALSE)
+
 bool appcontainer::execute() {
+  PWSTR pszstr;
+  if (::ConvertSidToStringSidW(appcontainersid, &pszstr) != TRUE) {
+    return false;
+  }
+  strid_.assign(pszstr);
+  PWSTR pszfolder;
+  if (SUCCEEDED(::GetAppContainerFolderPath(pszstr, &pszfolder))) {
+    folder_ = pszfolder;
+    ::CoTaskMemFree(pszfolder);
+  }
+  ::LocalFree(pszstr);
   PROCESS_INFORMATION pi;
   STARTUPINFOEX siex = {sizeof(STARTUPINFOEX)};
   siex.StartupInfo.cb = sizeof(siex);
@@ -321,17 +334,26 @@ bool appcontainer::execute() {
   }
   DWORD dwvalue = 1;
   if (lpac) {
-
-    if (UpdateProcThreadAttribute(
-            siex.lpAttributeList, 0,
-            PROC_THREAD_ATTRIBUTE_ALL_APPLICATION_PACKAGES_POLICY_EX,&dwvalue,
-            sizeof(dwvalue), nullptr, nullptr) != TRUE) {
-                  kmessage.assign(L"UpdateProcThreadAttribute(LPAC)");
-    return false;
-    }
     // ProcThreadAttributeAllApplicationPackagesPolicy
     // UpdateProcThreadAttribute(siex.lpAttributeList,0,)
+    if (UpdateProcThreadAttribute(
+            siex.lpAttributeList, 0,
+            PROC_THREAD_ATTRIBUTE_ALL_APPLICATION_PACKAGES_POLICY_EX, &dwvalue,
+            sizeof(dwvalue), nullptr, nullptr) != TRUE) {
+      kmessage.assign(L"UpdateProcThreadAttribute(LPAC)");
+      return false;
+    }
   }
+  for (auto &f : alloweddirs_) {
+    AllowNameObjectAccess(appcontainersid, f.data(), SE_FILE_OBJECT,
+                          FILE_ALL_ACCESS);
+  }
+
+  for (auto &r : registries_) {
+    AllowNameObjectAccess(appcontainersid, r.data(), SE_REGISTRY_KEY,
+                          KEY_ALL_ACCESS);
+  }
+
   DWORD createflags = EXTENDED_STARTUPINFO_PRESENT | CREATE_UNICODE_ENVIRONMENT;
   if (visible == VisibleNewConsole) {
     createflags |= CREATE_NEW_CONSOLE;

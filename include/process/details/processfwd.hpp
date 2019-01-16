@@ -133,6 +133,7 @@ private:
 // SECURITY_CAPABILITY_INTERNET_EXPLORER
 using wid_t = WELL_KNOWN_SID_TYPE;
 using widcontainer = std::vector<wid_t>;
+using alloweddir_t = std::vector<std::wstring>;
 class appcontainer {
 public:
   using capabilities_t = std::vector<SID_AND_ATTRIBUTES>;
@@ -192,11 +193,21 @@ public:
     lpac = enable;
     return lpac;
   }
+  alloweddir_t &alloweddirs() { return alloweddirs_; }
+  const alloweddir_t &alloweddirs() const { return alloweddirs_; }
+  alloweddir_t &registries() { return registries_; }
+  const alloweddir_t &registries() const { return registries_; }
+  const std::wstring &strid() const { return strid_; }
+  const std::wstring &conatinerfolder() const { return folder_; }
 
 private:
   DWORD pid_{0};
   std::wstring cmd_;
   std::wstring cwd_;
+  alloweddir_t alloweddirs_;
+  alloweddir_t registries_;
+  std::wstring strid_;
+  std::wstring folder_;
   std::wstring kmessage;
   PSID appcontainersid{nullptr};
   capabilities_t ca;
