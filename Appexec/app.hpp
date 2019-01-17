@@ -20,16 +20,16 @@ using wid_t = WELL_KNOWN_SID_TYPE;
 using alias_t = std::unordered_map<std::wstring, std::wstring>;
 bool AppAliasInitialize(HWND hbox, priv::alias_t &alias);
 
-inline  std::wstring windowcontent(HWND hWnd) {
-    auto l = GetWindowTextLengthW(hWnd);
-    if (l == 0 || l > PATHCCH_MAX_CCH * 2) {
-      return L"";
-    }
-    std::wstring s(l + 1, L'\0');
-    GetWindowTextW(hWnd, &s[0], l + 1); //// Null T
-    s.resize(l);
-    return s;
+inline std::wstring windowcontent(HWND hWnd) {
+  auto l = GetWindowTextLengthW(hWnd);
+  if (l == 0 || l > PATHCCH_MAX_CCH * 2) {
+    return L"";
   }
+  std::wstring s(l + 1, L'\0');
+  GetWindowTextW(hWnd, &s[0], l + 1); //// Null T
+  s.resize(l);
+  return s;
+}
 
 struct Element {
   HWND hInput{nullptr};
@@ -61,13 +61,9 @@ struct Appx {
   HWND hlview{nullptr};
   HWND hlpacbox{nullptr};
 
-  std::wstring AppContainerName(){
-    return windowcontent(hName);
-  }
+  std::wstring AppContainerName() { return windowcontent(hName); }
 
-  std::wstring AclText(){
-    return windowcontent(hAcl);
-  }
+  std::wstring AclText() { return windowcontent(hAcl); }
 
   bool IsChecked(int i) { return ListView_GetCheckState(hlview, i) != 0; }
   bool IsLowPrivilegeAppContainer() { return Button_GetCheck(hlpacbox) != 0; }
