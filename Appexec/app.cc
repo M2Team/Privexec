@@ -166,7 +166,7 @@ bool IsRegistryKey(std::wstring_view path) {
       L"HKEY_CLASSES_ROOT",  L"HKCR", L"HKEY_CURRENT_USER", L"HKCU",
       L"HKEY_LOCAL_MACHINE", L"HKLM", L"HKEY_USERS",        L"HKU"};
   for (auto k : keys) {
-    if (wcsnicmp(k, pv[0].data(), pv[0].size()) == 0) {
+    if (_wcsnicmp(k, pv[0].data(), pv[0].size()) == 0) {
       return true;
     }
   }
