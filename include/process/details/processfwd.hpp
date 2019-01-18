@@ -193,6 +193,8 @@ public:
     lpac = enable;
     return lpac;
   }
+  std::wstring &name() { return name_; };
+  const std::wstring &name() const { return name_; }
   alloweddir_t &alloweddirs() { return alloweddirs_; }
   const alloweddir_t &alloweddirs() const { return alloweddirs_; }
   alloweddir_t &registries() { return registries_; }
@@ -202,6 +204,7 @@ public:
 
 private:
   DWORD pid_{0};
+  std::wstring name_;
   std::wstring cmd_;
   std::wstring cwd_;
   alloweddir_t alloweddirs_;

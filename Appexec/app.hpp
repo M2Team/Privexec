@@ -60,11 +60,12 @@ struct Appx {
   HWND hAcl{nullptr};
   HWND hlview{nullptr};
   HWND hlpacbox{nullptr};
-
+  void UpdateName(const std::wstring &text) {
+    // update hInput (commbox or edit text)
+    ::SetWindowTextW(hName, text.data());
+  }
   std::wstring AppContainerName() { return windowcontent(hName); }
-
   std::wstring AclText() { return windowcontent(hAcl); }
-
   bool IsChecked(int i) { return ListView_GetCheckState(hlview, i) != 0; }
   bool IsLowPrivilegeAppContainer() { return Button_GetCheck(hlpacbox) != 0; }
   const wchar_t *CheckedValue(int i) {

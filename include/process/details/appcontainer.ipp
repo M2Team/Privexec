@@ -169,8 +169,11 @@ bool appcontainer::initialize(const wid_t *begin, const wid_t *end) {
     ca.push_back(attr);
   }
   constexpr const wchar_t *appid = L"Privexec.AppContainer.WellKnownSid";
-  DeleteAppContainerProfile(appid); // ignore error
-  if (CreateAppContainerProfile(appid, appid, appid,
+  if (name_.empty()) {
+    name_ = appid;
+  }
+  DeleteAppContainerProfile(name_.c_str()); // ignore error
+  if (CreateAppContainerProfile(name_.c_str(), name_.c_str(), name_.c_str(),
                                 (ca.empty() ? NULL : ca.data()),
                                 (DWORD)ca.size(), &appcontainersid) != S_OK) {
     kmessage.assign(L"CreateAppContainerProfile");
@@ -262,8 +265,11 @@ bool appcontainer::initialize(const std::vector<std::wstring> &names) {
   }
   constexpr const wchar_t *appid =
       L"Privexec.AppContainer.DeriveCapabilitySidsFromName";
-  DeleteAppContainerProfile(appid); // ignore error
-  if (CreateAppContainerProfile(appid, appid, appid,
+  if (name_.empty()) {
+    name_ = appid;
+  }
+  DeleteAppContainerProfile(name_.c_str()); // ignore error
+  if (CreateAppContainerProfile(name_.c_str(), name_.c_str(), name_.c_str(),
                                 (ca.empty() ? NULL : ca.data()),
                                 (DWORD)ca.size(), &appcontainersid) != S_OK) {
     kmessage.assign(L"CreateAppContainerProfile");

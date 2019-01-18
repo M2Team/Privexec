@@ -461,14 +461,12 @@ std::wstring App::ResolveCWD() {
 }
 
 bool App::AppExecute() {
-  constexpr const wchar_t *ei =
-      L"Ask for help with this issue. \nVisit: <a "
-      L"href=\"https://github.com/M2Team/Privexec/issues\">Privexec Issues</a>";
+
   auto appindex = box.AppIndex();
   auto cmd_ = ResolveCMD();
   if (cmd_.empty()) {
     utils::PrivMessageBox(hWnd, L"Please input command line", L"command empty",
-                          ei, utils::kFatalWindow);
+                          PRIVEXEC_APPLINKE, utils::kFatalWindow);
     return false;
   }
   auto cwd_ = ResolveCWD(); // app startup directory
@@ -480,7 +478,8 @@ bool App::AppExecute() {
     if (!xml.empty() && !priv::MergeFromAppmanifest(xml, cas)) {
       auto ec = priv::error_code::lasterror();
       utils::PrivMessageBox(hWnd, L"Privexec appmanifest error",
-                            ec.message.c_str(), ei, utils::kFatalWindow);
+                            ec.message.c_str(), PRIVEXEC_APPLINKE,
+                            utils::kFatalWindow);
       return false;
     }
     priv::appcontainer p(cmd_);
@@ -491,9 +490,9 @@ bool App::AppExecute() {
       if (!p.message().empty()) {
         ec.message.append(L" (").append(p.message()).append(L")");
       }
-      utils::PrivMessageBox(hWnd,
-                            L"Privexec create appconatiner process failed",
-                            ec.message.c_str(), ei, utils::kFatalWindow);
+      utils::PrivMessageBox(
+          hWnd, L"Privexec create appconatiner process failed",
+          ec.message.c_str(), PRIVEXEC_APPLINKE, utils::kFatalWindow);
       return false;
     }
     return true;
@@ -511,7 +510,8 @@ bool App::AppExecute() {
       ec.message.append(L" (").append(p.message()).append(L")");
     }
     utils::PrivMessageBox(hWnd, L"Privexec create process failed",
-                          ec.message.c_str(), ei, utils::kFatalWindow);
+                          ec.message.c_str(), PRIVEXEC_APPLINKE,
+                          utils::kFatalWindow);
     return false;
   }
   return true;
@@ -572,10 +572,6 @@ bool App::DropFiles(WPARAM wParam, LPARAM lParam) {
 }
 
 INT_PTR App::MessageHandler(UINT message, WPARAM wParam, LPARAM lParam) {
-  constexpr const wchar_t *appurl =
-      L"For more information about this tool. \nVisit: <a "
-      L"href=\"https://github.com/M2Team/Privexec\">Privexec</a>\nVisit: <a "
-      L"href=\"https://forcemz.net/\">forcemz.net</a>";
   switch (message) {
   case WM_CTLCOLORDLG:
   case WM_CTLCOLORSTATIC:
@@ -586,12 +582,8 @@ INT_PTR App::MessageHandler(UINT message, WPARAM wParam, LPARAM lParam) {
   case WM_SYSCOMMAND:
     switch (LOWORD(wParam)) {
     case IDM_PRIVEXEC_ABOUT:
-      utils::PrivMessageBox(
-          hWnd, L"About Privexec",
-          L"Prerelease:"
-          L" " PRIVEXEC_BUILD_VERSION L"\nCopyright \xA9 2019, Force "
-          L"Charlie. All Rights Reserved.",
-          appurl, utils::kAboutWindow);
+      utils::PrivMessageBox(hWnd, L"About Privexec", PRIVEXEC_APPVERSION,
+                            PRIVEXEC_APPLINK, utils::kAboutWindow);
       break;
     default:
       break;

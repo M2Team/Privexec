@@ -67,18 +67,20 @@ bool App::Initialize(HWND window) {
 
   HMENU hSystemMenu = ::GetSystemMenu(hWnd, FALSE);
   InsertMenuW(hSystemMenu, SC_CLOSE, MF_ENABLED, IDM_APPEXEC_ABOUT,
-              L"About Privexec\tAlt+F1");
+              L"About AppContainer Exec\tAlt+F1");
   cmd.hInput = GetDlgItem(hWnd, IDC_COMMAND_COMBOX);
   cmd.hButton = GetDlgItem(hWnd, IDB_COMMAND_TARGET);
   AppAliasInitialize(cmd.hInput, alias); // Initialize app alias
   ///
   cwd.hInput = GetDlgItem(hWnd, IDE_APPSTARTUP);
   cwd.hButton = GetDlgItem(hWnd, IDB_APPSTARTUP);
-  appx.hAcl= GetDlgItem(hWnd, IDE_APPCONTAINER_ACL);
-  appx.hName= GetDlgItem(hWnd, IDE_APPCONTAINER_NAME);
+  appx.hAcl = GetDlgItem(hWnd, IDE_APPCONTAINER_ACL);
+  appx.hName = GetDlgItem(hWnd, IDE_APPCONTAINER_NAME);
   appx.hlview = GetDlgItem(hWnd, IDL_APPCONTAINER_LISTVIEW);
   appx.hlpacbox = GetDlgItem(hWnd, IDC_LPACMODE);
-    hINFO = GetDlgItem(hWnd, IDE_APPEXEC_INFO);
+  appx.UpdateName(L"Privexec.AppContainer.Launcher");
+  ::SetFocus(cmd.hInput);
+  hINFO = GetDlgItem(hWnd, IDE_APPEXEC_INFO);
   InitializeCapabilities();
 
   return true;
@@ -117,13 +119,10 @@ bool App::AppLookupAcl(std::vector<std::wstring> &fsdir,
 }
 
 bool App::AppExecute() {
-  constexpr const wchar_t *ei =
-      L"Ask for help with this issue. \nVisit: <a "
-      L"href=\"https://github.com/M2Team/Privexec/issues\">Privexec Issues</a>";
   auto cmd_ = ResolveCMD();
   if (cmd_.empty()) {
     utils::PrivMessageBox(hWnd, L"Please input command line", L"command empty",
-                          ei, utils::kFatalWindow);
+                          PRIVEXEC_APPLINKE, utils::kFatalWindow);
     return false;
   }
   auto cwd_ = ResolveCWD(); // app startup directory
@@ -137,8 +136,9 @@ bool App::AppExecute() {
     if (!p.message().empty()) {
       ec.message.append(L" (").append(p.message()).append(L")");
     }
-    utils::PrivMessageBox(hWnd, L"Privexec create appconatiner process failed",
-                          ec.message.c_str(), ei, utils::kFatalWindow);
+    utils::PrivMessageBox(hWnd, L"Appexec create appconatiner process failed",
+                          ec.message.c_str(), PRIVEXEC_APPLINKE,
+                          utils::kFatalWindow);
     return false;
   }
   return true;
@@ -159,7 +159,7 @@ bool App::AppLookupExecute() {
 
 bool App::AppLookupCWD() {
   auto folder =
-      utils::PrivFolderPicker(hWnd, L"Privexec: Select App Launcher Folder");
+      utils::PrivFolderPicker(hWnd, L"Appexec: Select App Launcher Folder");
   if (folder) {
     cwd.Update(*folder);
     return true;
@@ -180,10 +180,6 @@ bool App::DropFiles(WPARAM wParam, LPARAM lParam) {
 }
 
 INT_PTR App::MessageHandler(UINT message, WPARAM wParam, LPARAM lParam) {
-  constexpr const wchar_t *appurl =
-      L"For more information about this tool. \nVisit: <a "
-      L"href=\"https://github.com/M2Team/Privexec\">Privexec</a>\nVisit: <a "
-      L"href=\"https://forcemz.net/\">forcemz.net</a>";
   switch (message) {
   case WM_CTLCOLORDLG:
   case WM_CTLCOLORSTATIC:
@@ -194,12 +190,9 @@ INT_PTR App::MessageHandler(UINT message, WPARAM wParam, LPARAM lParam) {
   case WM_SYSCOMMAND:
     switch (LOWORD(wParam)) {
     case IDM_APPEXEC_ABOUT:
-      utils::PrivMessageBox(
-          hWnd, L"About Privexec",
-          L"Prerelease:"
-          L" " PRIVEXEC_BUILD_VERSION L"\nCopyright \xA9 2019, Force "
-          L"Charlie. All Rights Reserved.",
-          appurl, utils::kAboutWindow);
+      utils::PrivMessageBox(hWnd, L"About AppContainer Exec",
+                            PRIVEXEC_APPVERSION, PRIVEXEC_APPLINK,
+                            utils::kAboutWindow);
       break;
     default:
       break;
