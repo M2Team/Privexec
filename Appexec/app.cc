@@ -80,7 +80,7 @@ bool App::Initialize(HWND window) {
   appx.hlpacbox = GetDlgItem(hWnd, IDC_LPACMODE);
   appx.UpdateName(L"Privexec.AppContainer.Launcher");
   ::SetFocus(cmd.hInput);
-  hINFO = GetDlgItem(hWnd, IDE_APPEXEC_INFO);
+  trace.hInfo = GetDlgItem(hWnd, IDE_APPEXEC_INFO);
   InitializeCapabilities();
 
   return true;
@@ -112,25 +112,108 @@ std::wstring App::ResolveCWD() {
   return cwd_;
 }
 
+std::vector<std::wstring_view> PathSplit(std::wstring_view sv) {
+  std::vector<std::wstring_view> output;
+  size_t first = 0;
+  while (first < sv.size()) {
+    const auto second = sv.find_first_of(L'\\', first);
+    if (first != second) {
+      auto s = sv.substr(first, second - first);
+      if (s == L"..") {
+        if (!output.empty()) {
+          output.pop_back();
+        }
+      } else if (s != L".") {
+        output.emplace_back(s);
+      }
+    }
+    if (second == std::wstring_view::npos) {
+      break;
+    }
+    first = second + 1;
+  }
+  return output;
+}
+
+std::vector<std::wstring_view> NewlineTokenize(std::wstring_view sv) {
+  std::vector<std::wstring_view> output;
+  size_t first = 0;
+  while (first < sv.size()) {
+    const auto second = sv.find_first_of(L'\n', first);
+    if (first != second) {
+      auto subsv = sv.substr(first, second - first);
+      if (subsv.back() == L'\r') {
+        subsv.remove_suffix(1);
+      }
+      if (!subsv.empty()) {
+        output.emplace_back(subsv);
+      }
+    }
+    if (second == std::wstring_view::npos) {
+      break;
+    }
+    first = second + 1;
+  }
+  return output;
+}
+
+bool IsRegistryKey(std::wstring_view path) {
+  auto pv = PathSplit(path);
+  if (pv.empty()) {
+    return false;
+  }
+  const wchar_t *keys[] = {
+      L"HKEY_CLASSES_ROOT",  L"HKCR", L"HKEY_CURRENT_USER", L"HKCU",
+      L"HKEY_LOCAL_MACHINE", L"HKLM", L"HKEY_USERS",        L"HKU"};
+  for (auto k : keys) {
+    if (wcsnicmp(k, pv[0].data(), pv[0].size()) == 0) {
+      return true;
+    }
+  }
+  return false;
+}
+
 bool App::AppLookupAcl(std::vector<std::wstring> &fsdir,
                        std::vector<std::wstring> &registries) {
-  //
+  auto acl = appx.AclText();
+  for (auto it = acl.begin(); it != acl.end(); it++) {
+    if (*it == L'/') {
+      *it = L'\\'; // Replace all '/' to ' \\'
+    }
+  }
+  auto dirs = NewlineTokenize(acl);
+  for (auto d : dirs) {
+    if (IsRegistryKey(d)) {
+      trace.Append(L"Registry Access", d);
+      registries.push_back(std::wstring(d));
+    } else {
+      fsdir.push_back(std::wstring(d));
+      trace.Append(L"Fs Access", d);
+    }
+  }
   return true;
 }
 
 bool App::AppExecute() {
+  trace.Clear();
   auto cmd_ = ResolveCMD();
   if (cmd_.empty()) {
     utils::PrivMessageBox(hWnd, L"Please input command line", L"command empty",
                           PRIVEXEC_APPLINKE, utils::kFatalWindow);
     return false;
   }
+  trace.Append(L"Command", cmd_);
   auto cwd_ = ResolveCWD(); // app startup directory
-                            //// TODO app container.
+  //// TODO app container.
+  if (!cwd_.empty()) {
+    trace.Append(L"CurrentDir", cwd_);
+  }
   auto cas = appx.Capabilities();
   priv::appcontainer p(cmd_);
   p.enablelpac(appx.IsLowPrivilegeAppContainer());
   p.cwd().assign(cwd_);
+  p.name().assign(appx.AppContainerName());
+  AppLookupAcl(p.alloweddirs(), p.registries());
   if (!p.initialize(cas) || !p.execute()) {
     auto ec = priv::error_code::lasterror();
     if (!p.message().empty()) {
@@ -141,6 +224,9 @@ bool App::AppExecute() {
                           utils::kFatalWindow);
     return false;
   }
+  trace.Append(L"AppContainer Name", p.name());
+  trace.Append(L"AppContainer SID", p.strid());
+  trace.Append(L"AppContainer Folder", p.conatinerfolder());
   return true;
 }
 

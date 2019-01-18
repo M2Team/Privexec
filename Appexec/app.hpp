@@ -55,6 +55,29 @@ struct Element {
   }
 };
 
+struct AppTrace {
+  HWND hInfo;
+  std::wstring buffer;
+  void Append(std::wstring_view name, std::wstring_view value) {
+    if (!buffer.empty()) {
+      buffer.append(L"\r\n");
+    }
+    buffer.append(name).append(L": ").append(value);
+    ::SetWindowTextW(hInfo, buffer.data());
+  }
+  void Append(std::wstring_view text) {
+    if (!buffer.empty()) {
+      buffer.append(L"\r\n");
+    }
+    buffer.append(text);
+    ::SetWindowTextW(hInfo, buffer.data());
+  }
+  void Clear() {
+    buffer.clear();
+    ::SetWindowTextW(hInfo, buffer.data());
+  }
+};
+
 struct Appx {
   HWND hName{nullptr};
   HWND hAcl{nullptr};
@@ -126,10 +149,10 @@ private:
   bool AppExecute();
   HINSTANCE hInst{nullptr};
   HWND hWnd{nullptr};
-  HWND hINFO{nullptr};
   Element cmd;
   Element cwd;
   Appx appx;
+  AppTrace trace;
   alias_t alias;
 };
 } // namespace priv
