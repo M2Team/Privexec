@@ -71,6 +71,6 @@ install(FILES Privexec/Privexec.json
     DESTINATION bin
 )
 
-add_subdirectory(Appexec)
+add_subdirectory(AppExec)
 add_subdirectory(Privexec)
 add_subdirectory(wsudo)
