@@ -24,7 +24,7 @@
 #define IDE_APPEXEC_INFO 1018
 #define IDS_HELPMSG 1019
 #define IDL_APPEXEC_DESC 1020
-
+#define IDM_APPTHEME 1021
 
 #define CS_LISTVIEW                                                            \
   WS_BORDER | WS_VSCROLL | WS_TABSTOP | LVS_REPORT | LVS_NOCOLUMNHEADER

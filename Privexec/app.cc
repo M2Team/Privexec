@@ -574,8 +574,13 @@ bool App::DropFiles(WPARAM wParam, LPARAM lParam) {
 INT_PTR App::MessageHandler(UINT message, WPARAM wParam, LPARAM lParam) {
   switch (message) {
   case WM_CTLCOLORDLG:
-  case WM_CTLCOLORSTATIC:
-    return (INT_PTR)CreateSolidBrush(RGB(255, 255, 255));
+  case WM_CTLCOLORSTATIC: {
+    if (hbrBkgnd == nullptr) {
+      hbrBkgnd = CreateSolidBrush(RGB(255,255,255));
+    }
+    return (INT_PTR)hbrBkgnd;
+  }
+
   case WM_DROPFILES:
     DropFiles(wParam, lParam);
     return TRUE;

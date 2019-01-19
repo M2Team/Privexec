@@ -19,6 +19,8 @@ namespace priv {
 using wid_t = WELL_KNOWN_SID_TYPE;
 using alias_t = std::unordered_map<std::wstring, std::wstring>;
 bool AppAliasInitialize(HWND hbox, priv::alias_t &alias);
+bool AppThemeApply(DWORD color);
+bool AppThemeLookup(DWORD &dwcolor);
 
 inline std::wstring windowcontent(HWND hWnd) {
   auto l = GetWindowTextLengthW(hWnd);
@@ -123,11 +125,14 @@ struct Appx {
   }
 };
 
+static constexpr const auto whitecolor = RGB(255, 255, 255);
+static constexpr const auto blackcolor = RGB(0, 0, 0);
 class App {
 public:
   App() = default;
   App(const App &) = delete;
   App &operator=(const App &) = delete;
+  ~App();
   static App *GetThisFromHandle(HWND const window) noexcept {
     return reinterpret_cast<App *>(GetWindowLongPtrW(window, GWLP_USERDATA));
   }
@@ -138,6 +143,8 @@ public:
   bool DropFiles(WPARAM wParam, LPARAM lParam);
 
 private:
+  bool AppTheme();
+  bool AppUpdateWindow();
   bool Initialize(HWND window);
   bool InitializeCapabilities();
   std::wstring ResolveCMD();
@@ -154,6 +161,9 @@ private:
   Appx appx;
   AppTrace trace;
   alias_t alias;
+  DWORD color_{whitecolor};
+  DWORD textcolor_{blackcolor};
+  HBRUSH hbrBkgnd{nullptr};
 };
 } // namespace priv
 

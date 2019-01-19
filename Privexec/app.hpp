@@ -127,6 +127,12 @@ public:
   App() = default;
   App(const App &) = delete;
   App &operator=(const App &) = delete;
+  ~App() {
+    if (hbrBkgnd != nullptr) {
+      DeleteObject(hbrBkgnd);
+      hbrBkgnd = nullptr;
+    }
+  }
   static App *GetThisFromHandle(HWND const window) noexcept {
     return reinterpret_cast<App *>(GetWindowLongPtrW(window, GWLP_USERDATA));
   }
@@ -154,6 +160,7 @@ private:
   Element appx;
   AppCapabilities appcas;
   alias_t alias;
+  HBRUSH hbrBkgnd{nullptr};
 };
 } // namespace priv
 

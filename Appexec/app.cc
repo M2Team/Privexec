@@ -28,9 +28,16 @@ inline std::wstring ExpandEnv(const std::wstring &s) {
 
 int App::run(HINSTANCE hInstance) {
   hInst = hInstance;
+  AppThemeLookup(color_);
   return (int)DialogBoxParamW(hInstance,
                               MAKEINTRESOURCE(IDD_APPLICATION_DIALOG), NULL,
                               App::WindowProc, reinterpret_cast<LPARAM>(this));
+}
+App::~App() {
+  if (hbrBkgnd != nullptr) {
+    DeleteObject(hbrBkgnd);
+    hbrBkgnd = nullptr;
+  }
 }
 
 INT_PTR WINAPI App::WindowProc(HWND hWnd, UINT message, WPARAM wParam,
@@ -66,6 +73,8 @@ bool App::Initialize(HWND window) {
   }
 
   HMENU hSystemMenu = ::GetSystemMenu(hWnd, FALSE);
+  InsertMenuW(hSystemMenu, SC_CLOSE, MF_ENABLED, IDM_APPTHEME,
+              L"Change Panel Color");
   InsertMenuW(hSystemMenu, SC_CLOSE, MF_ENABLED, IDM_APPEXEC_ABOUT,
               L"About AppContainer Exec\tAlt+F1");
   cmd.hInput = GetDlgItem(hWnd, IDC_COMMAND_COMBOX);
@@ -81,8 +90,57 @@ bool App::Initialize(HWND window) {
   appx.UpdateName(L"Privexec.AppContainer.Launcher");
   ::SetFocus(cmd.hInput);
   trace.hInfo = GetDlgItem(hWnd, IDE_APPEXEC_INFO);
+
+  // SetWindowLongPtr(trace.hInfo, GWL_EXSTYLE, 0);
+
   InitializeCapabilities();
 
+  return true;
+}
+
+bool App::AppUpdateWindow() {
+  if (hbrBkgnd != nullptr) {
+    DeleteObject(hbrBkgnd);
+    hbrBkgnd = nullptr;
+  }
+  ::InvalidateRect(hWnd, nullptr, TRUE);
+  ::InvalidateRect(appx.hlpacbox, nullptr, TRUE);
+  return true;
+}
+
+bool App::AppTheme() {
+  static COLORREF CustColors[] = {
+      RGB(255, 255, 255), RGB(255, 255, 255), RGB(255, 255, 255),
+      RGB(255, 255, 255), RGB(255, 255, 255), RGB(255, 255, 255),
+      RGB(255, 255, 255), RGB(255, 255, 255), RGB(255, 255, 255),
+      RGB(255, 255, 255), RGB(255, 255, 255), RGB(255, 255, 255),
+      RGB(255, 255, 255), RGB(255, 255, 255), RGB(255, 255, 255),
+      RGB(255, 255, 255),
+  };
+  CHOOSECOLORW co;
+  ZeroMemory(&co, sizeof(co));
+  co.lStructSize = sizeof(CHOOSECOLOR);
+  co.hwndOwner = hWnd;
+  co.lpCustColors = (LPDWORD)CustColors;
+  co.rgbResult = color_;
+  co.lCustData = 0;
+  co.lpTemplateName = nullptr;
+  co.lpfnHook = nullptr;
+  co.Flags = CC_FULLOPEN | CC_RGBINIT;
+  if (ChooseColorW(&co)) {
+    auto r = GetRValue(co.rgbResult);
+    auto g = GetGValue(co.rgbResult);
+    auto b = GetBValue(co.rgbResult);
+    color_ = RGB(r, g, b);
+    auto N = r * 0.299 + g * 0.587 + b * 0.114;
+    if (N < 127.0) {
+      textcolor_ = RGB(255, 255, 255);
+    } else {
+      textcolor_ = RGB(0, 0, 0);
+    }
+    AppUpdateWindow();
+    AppThemeApply(color_);
+  }
   return true;
 }
 
@@ -267,9 +325,23 @@ bool App::DropFiles(WPARAM wParam, LPARAM lParam) {
 
 INT_PTR App::MessageHandler(UINT message, WPARAM wParam, LPARAM lParam) {
   switch (message) {
-  case WM_CTLCOLORDLG:
-  case WM_CTLCOLORSTATIC:
-    return (INT_PTR)CreateSolidBrush(RGB(255, 255, 255));
+  case WM_CTLCOLORDLG: {
+    if (hbrBkgnd == nullptr) {
+      hbrBkgnd = CreateSolidBrush(color_);
+    }
+    return (INT_PTR)hbrBkgnd;
+  }
+  case WM_CTLCOLORSTATIC: {
+    HDC hdc = (HDC)wParam;
+    SetTextColor(hdc, textcolor_);
+    SetBkColor(hdc, color_);
+    SetBkMode(hdc, TRANSPARENT);
+    if (hbrBkgnd == nullptr) {
+      hbrBkgnd = CreateSolidBrush(color_);
+    }
+    return (INT_PTR)hbrBkgnd;
+  }
+
   case WM_DROPFILES:
     DropFiles(wParam, lParam);
     return TRUE;
@@ -279,6 +351,9 @@ INT_PTR App::MessageHandler(UINT message, WPARAM wParam, LPARAM lParam) {
       utils::PrivMessageBox(hWnd, L"About AppContainer Exec",
                             PRIVEXEC_APPVERSION, PRIVEXEC_APPLINK,
                             utils::kAboutWindow);
+      break;
+    case IDM_APPTHEME:
+      AppTheme();
       break;
     default:
       break;
