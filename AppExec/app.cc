@@ -102,7 +102,7 @@ bool App::Initialize(HWND window) {
   appx.hAcl = GetDlgItem(hWnd, IDE_APPCONTAINER_ACL);
   appx.hName = GetDlgItem(hWnd, IDE_APPCONTAINER_NAME);
   appx.hlview = GetDlgItem(hWnd, IDL_APPCONTAINER_LISTVIEW);
-  appx.hlpacbox = GetDlgItem(hWnd, IDC_LPACMODE);
+  appx.hlpacbox = GetDlgItem(hWnd, IDC_ENABLE_LPAC);
   appx.UpdateName(L"Privexec.AppContainer.Launcher");
   ::SetFocus(cmd.hInput);
   trace.hInfo = GetDlgItem(hWnd, IDE_APPEXEC_INFO);
