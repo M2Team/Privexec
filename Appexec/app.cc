@@ -26,9 +26,25 @@ inline std::wstring ExpandEnv(const std::wstring &s) {
   return s2;
 }
 
+inline DWORD calcLuminance(uint16_t r, uint16_t g, uint16_t b) {
+  auto N = r * 0.299 + g * 0.587 + b * 0.114;
+  if (N < 127.0) {
+    return whitecolor;
+  }
+  return blackcolor;
+}
+
+inline DWORD calcLuminance(uint32_t color) {
+  auto r = GetRValue(color);
+  auto g = GetGValue(color);
+  auto b = GetBValue(color);
+  return calcLuminance(r, g, b);
+}
+
 int App::run(HINSTANCE hInstance) {
   hInst = hInstance;
   AppThemeLookup(color_);
+  textcolor_ = calcLuminance(color_);
   return (int)DialogBoxParamW(hInstance,
                               MAKEINTRESOURCE(IDD_APPLICATION_DIALOG), NULL,
                               App::WindowProc, reinterpret_cast<LPARAM>(this));
@@ -132,12 +148,7 @@ bool App::AppTheme() {
     auto g = GetGValue(co.rgbResult);
     auto b = GetBValue(co.rgbResult);
     color_ = RGB(r, g, b);
-    auto N = r * 0.299 + g * 0.587 + b * 0.114;
-    if (N < 127.0) {
-      textcolor_ = RGB(255, 255, 255);
-    } else {
-      textcolor_ = RGB(0, 0, 0);
-    }
+    textcolor_ = calcLuminance(r, g, b);
     AppUpdateWindow();
     AppThemeApply(color_);
   }
@@ -333,6 +344,10 @@ INT_PTR App::MessageHandler(UINT message, WPARAM wParam, LPARAM lParam) {
   }
   case WM_CTLCOLORSTATIC: {
     HDC hdc = (HDC)wParam;
+    HWND hChild = (HWND)lParam;
+    if (hChild == trace.hInfo) {
+      return (INT_PTR)GetStockObject(WHITE_BRUSH);
+    }
     SetTextColor(hdc, textcolor_);
     SetBkColor(hdc, color_);
     SetBkMode(hdc, TRANSPARENT);
