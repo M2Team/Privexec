@@ -60,6 +60,10 @@ wsudo Verbose Mode:
 
 ![wsudo](docs/images/wsudo3.png)
 
+AppContainer Exec
+
+![appexec](docs/images/appexec.png)
+
 ## Usage
 
 Privexec is a GUI client, Your can run as administrator (no administrator), System and TrustedInstaller require administrator!!!
