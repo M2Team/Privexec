@@ -11,6 +11,7 @@
 #include <Windowsx.h>
 #include <CommCtrl.h>
 #include <PathCch.h>
+#include <string_view>
 #include <vector>
 #include <unordered_map>
 

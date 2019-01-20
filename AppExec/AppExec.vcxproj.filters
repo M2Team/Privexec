@@ -27,6 +27,9 @@
     <ClCompile Include="apputils.cc">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="appx.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
     <ClCompile Include="capabilities.cc">
       <Filter>源文件</Filter>
     </ClCompile>

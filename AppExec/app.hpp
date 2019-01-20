@@ -11,6 +11,8 @@
 #include <Windowsx.h>
 #include <CommCtrl.h>
 #include <PathCch.h>
+#include <string>
+#include <string_view>
 #include <vector>
 #include <unordered_map>
 
@@ -145,6 +147,23 @@ struct Appx {
   }
 };
 
+struct AppTitle{
+  std::wstring title;
+  void Initialize(HWND hWnd){
+    hWnd_=hWnd;
+    title=windowcontent(hWnd_);
+  }
+  void Update(std::wstring_view suffix){
+    std::wstring s;
+    s.assign(title).append(L" - ").append(suffix);
+    SetWindowText(hWnd_,s.c_str());
+  }
+  void Reset(){
+    SetWindowText(hWnd_,title.c_str());
+  }
+  HWND hWnd_{nullptr};
+};
+
 class App {
 public:
   App() = default;
@@ -165,6 +184,7 @@ private:
   bool AppUpdateWindow();
   bool Initialize(HWND window);
   bool InitializeCapabilities();
+    bool ParseAppx(std::wstring_view file);
   std::wstring ResolveCMD();
   std::wstring ResolveCWD();
   bool AppLookupExecute();
@@ -174,6 +194,7 @@ private:
   bool AppExecute();
   HINSTANCE hInst{nullptr};
   HWND hWnd{nullptr};
+  AppTitle title;
   Element cmd;
   Element cwd;
   Appx appx;

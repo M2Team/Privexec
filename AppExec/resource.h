@@ -27,6 +27,8 @@
 #define IDL_APPEXEC_DESC 1019
 #define IDM_APPTHEME 1020
 
+#define IDB_APPX_IMPORT 1021
+
 #define CS_LISTVIEW                                                            \
   WS_BORDER | WS_VSCROLL | WS_TABSTOP | LVS_REPORT | LVS_NOCOLUMNHEADER
 

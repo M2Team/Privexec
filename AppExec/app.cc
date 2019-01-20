@@ -12,6 +12,7 @@
 #include "apputils.hpp"
 #include "resource.h"
 
+
 namespace priv {
 
 // expand env
@@ -55,6 +56,7 @@ INT_PTR WINAPI App::WindowProc(HWND hWnd, UINT message, WPARAM wParam,
 
 bool App::Initialize(HWND window) {
   hWnd = window;
+  title.Initialize(hWnd);
   HICON icon = LoadIconW(hInst, MAKEINTRESOURCEW(IDI_APPLICATION_ICON));
   SendMessage(hWnd, WM_SETICON, ICON_BIG, (LPARAM)icon);
   // Drag support
@@ -335,7 +337,6 @@ INT_PTR App::MessageHandler(UINT message, WPARAM wParam, LPARAM lParam) {
     }
     return (INT_PTR)hbrBkgnd;
   }
-
   case WM_DROPFILES:
     DropFiles(wParam, lParam);
     return TRUE;
@@ -356,6 +357,18 @@ INT_PTR App::MessageHandler(UINT message, WPARAM wParam, LPARAM lParam) {
   case WM_COMMAND: {
     // WM_COMMAND
     switch (LOWORD(wParam)) {
+    case IDB_APPX_IMPORT: {
+      const utils::filter_t filters[] = {
+          {L"Windows Appxmanifest (*.appxmanifest;*.xml)",
+           L"*.appxmanifest;*.xml"},
+          {L"All Files (*.*)", L"*.*"}};
+      auto xml = utils::PrivFilePicker(hWnd, L"AppExec: Select AppManifest",
+                                       filters, 2);
+      if (xml) {
+        ParseAppx(*xml);
+      }
+    }
+      return TRUE;
     case IDB_COMMAND_TARGET: /// lookup command
       AppLookupExecute();
       return TRUE;

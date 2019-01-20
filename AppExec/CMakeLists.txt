@@ -5,6 +5,7 @@ add_executable(AppExec WIN32
     apputils.cc
     capabilities.cc
     app.cc
+    appx.cc
     main.cc
     Appexec.manifest
     Appexec.rc
