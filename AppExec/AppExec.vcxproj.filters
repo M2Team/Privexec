@@ -21,7 +21,7 @@
     <ClCompile Include="app.cc">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="appalias.cc">
+    <ClCompile Include="appsettings.cc">
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="apputils.cc">

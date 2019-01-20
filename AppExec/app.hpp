@@ -18,9 +18,32 @@ namespace priv {
 
 using wid_t = WELL_KNOWN_SID_TYPE;
 using alias_t = std::unordered_map<std::wstring, std::wstring>;
+static constexpr const auto whitecolor = RGB(255, 255, 255);
+static constexpr const auto blackcolor = RGB(0, 0, 0);
+
+struct AppSettings {
+  COLORREF background{whitecolor};
+  COLORREF foreground{blackcolor};
+};
+bool AppInitializeSettings(AppSettings &as);
+bool AppApplySettings(const AppSettings &as);
+
+inline DWORD calcLuminance(uint16_t r, uint16_t g, uint16_t b) {
+  auto N = r * 0.299 + g * 0.587 + b * 0.114;
+  if (N < 127.0) {
+    return whitecolor;
+  }
+  return blackcolor;
+}
+
+inline DWORD calcLuminance(uint32_t color) {
+  auto r = GetRValue(color);
+  auto g = GetGValue(color);
+  auto b = GetBValue(color);
+  return calcLuminance(r, g, b);
+}
+
 bool AppAliasInitialize(HWND hbox, priv::alias_t &alias);
-bool AppThemeApply(DWORD color);
-bool AppThemeLookup(DWORD &dwcolor);
 
 inline std::wstring windowcontent(HWND hWnd) {
   auto l = GetWindowTextLengthW(hWnd);
@@ -58,25 +81,25 @@ struct Element {
 };
 
 struct AppTrace {
-  HWND hInfo;
+  HWND hWindow;
   std::wstring buffer;
   void Append(std::wstring_view name, std::wstring_view value) {
     if (!buffer.empty()) {
       buffer.append(L"\r\n");
     }
     buffer.append(name).append(L": ").append(value);
-    ::SetWindowTextW(hInfo, buffer.data());
+    ::SetWindowTextW(hWindow, buffer.data());
   }
   void Append(std::wstring_view text) {
     if (!buffer.empty()) {
       buffer.append(L"\r\n");
     }
     buffer.append(text);
-    ::SetWindowTextW(hInfo, buffer.data());
+    ::SetWindowTextW(hWindow, buffer.data());
   }
   void Clear() {
     buffer.clear();
-    ::SetWindowTextW(hInfo, buffer.data());
+    ::SetWindowTextW(hWindow, buffer.data());
   }
 };
 
@@ -125,8 +148,6 @@ struct Appx {
   }
 };
 
-static constexpr const auto whitecolor = RGB(255, 255, 255);
-static constexpr const auto blackcolor = RGB(0, 0, 0);
 class App {
 public:
   App() = default;
@@ -161,8 +182,7 @@ private:
   Appx appx;
   AppTrace trace;
   alias_t alias;
-  DWORD color_{whitecolor};
-  DWORD textcolor_{blackcolor};
+  AppSettings as;
   HBRUSH hbrBkgnd{nullptr};
 };
 } // namespace priv

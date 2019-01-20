@@ -576,7 +576,7 @@ INT_PTR App::MessageHandler(UINT message, WPARAM wParam, LPARAM lParam) {
   case WM_CTLCOLORDLG:
   case WM_CTLCOLORSTATIC: {
     if (hbrBkgnd == nullptr) {
-      hbrBkgnd = CreateSolidBrush(RGB(255,255,255));
+      hbrBkgnd = CreateSolidBrush(RGB(255, 255, 255));
     }
     return (INT_PTR)hbrBkgnd;
   }

@@ -1,7 +1,7 @@
 # privexec
 
 add_executable(AppExec WIN32
-    appalias.cc
+    appsettings.cc
     apputils.cc
     capabilities.cc
     app.cc

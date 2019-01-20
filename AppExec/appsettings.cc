@@ -136,7 +136,7 @@ bool AppJSON(nlohmann::json &j) {
   return true;
 }
 
-bool AppThemeLookup(DWORD &dwcolor) {
+bool AppInitializeSettings(AppSettings &as) {
   try {
     nlohmann::json j;
     if (!AppJSON(j)) {
@@ -146,7 +146,8 @@ bool AppThemeLookup(DWORD &dwcolor) {
     auto scolor = root["Background"].get<std::string>();
     COLORREF cr;
     if (HexColorDecode(scolor, cr)) {
-      dwcolor = cr;
+      as.background = cr;
+      as.foreground = calcLuminance(cr);
     }
   } catch (const std::exception &e) {
     OutputDebugStringA(e.what());
@@ -155,7 +156,7 @@ bool AppThemeLookup(DWORD &dwcolor) {
   return true;
 }
 
-bool AppThemeApply(DWORD color) {
+bool AppApplySettings(const AppSettings &as) {
   std::wstring file;
   if (!PathAppImageCombine(file, L"AppExec.json")) {
     return false;
@@ -170,7 +171,7 @@ bool AppThemeApply(DWORD color) {
     if (it != j.end()) {
       a = *it;
     }
-    a["Background"] = EncodeColor(color);
+    a["Background"] = EncodeColor(as.background);
     j["AppExec"] = a;
     o << std::setw(4) << j << std::endl;
   } catch (const std::exception &e) {

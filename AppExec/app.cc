@@ -26,25 +26,9 @@ inline std::wstring ExpandEnv(const std::wstring &s) {
   return s2;
 }
 
-inline DWORD calcLuminance(uint16_t r, uint16_t g, uint16_t b) {
-  auto N = r * 0.299 + g * 0.587 + b * 0.114;
-  if (N < 127.0) {
-    return whitecolor;
-  }
-  return blackcolor;
-}
-
-inline DWORD calcLuminance(uint32_t color) {
-  auto r = GetRValue(color);
-  auto g = GetGValue(color);
-  auto b = GetBValue(color);
-  return calcLuminance(r, g, b);
-}
-
 int App::run(HINSTANCE hInstance) {
   hInst = hInstance;
-  AppThemeLookup(color_);
-  textcolor_ = calcLuminance(color_);
+  AppInitializeSettings(as);
   return (int)DialogBoxParamW(hInstance,
                               MAKEINTRESOURCE(IDD_APPLICATION_DIALOG), NULL,
                               App::WindowProc, reinterpret_cast<LPARAM>(this));
@@ -105,7 +89,7 @@ bool App::Initialize(HWND window) {
   appx.hlpacbox = GetDlgItem(hWnd, IDC_ENABLE_LPAC);
   appx.UpdateName(L"Privexec.AppContainer.Launcher");
   ::SetFocus(cmd.hInput);
-  trace.hInfo = GetDlgItem(hWnd, IDE_APPEXEC_INFO);
+  trace.hWindow = GetDlgItem(hWnd, IDE_APPEXEC_INFO);
 
   // SetWindowLongPtr(trace.hInfo, GWL_EXSTYLE, 0);
 
@@ -138,7 +122,7 @@ bool App::AppTheme() {
   co.lStructSize = sizeof(CHOOSECOLOR);
   co.hwndOwner = hWnd;
   co.lpCustColors = (LPDWORD)CustColors;
-  co.rgbResult = color_;
+  co.rgbResult = as.background;
   co.lCustData = 0;
   co.lpTemplateName = nullptr;
   co.lpfnHook = nullptr;
@@ -147,10 +131,10 @@ bool App::AppTheme() {
     auto r = GetRValue(co.rgbResult);
     auto g = GetGValue(co.rgbResult);
     auto b = GetBValue(co.rgbResult);
-    color_ = RGB(r, g, b);
-    textcolor_ = calcLuminance(r, g, b);
+    as.background = RGB(r, g, b);
+    as.foreground = calcLuminance(r, g, b);
     AppUpdateWindow();
-    AppThemeApply(color_);
+    AppApplySettings(as);
   }
   return true;
 }
@@ -338,21 +322,21 @@ INT_PTR App::MessageHandler(UINT message, WPARAM wParam, LPARAM lParam) {
   switch (message) {
   case WM_CTLCOLORDLG: {
     if (hbrBkgnd == nullptr) {
-      hbrBkgnd = CreateSolidBrush(color_);
+      hbrBkgnd = CreateSolidBrush(as.background);
     }
     return (INT_PTR)hbrBkgnd;
   }
   case WM_CTLCOLORSTATIC: {
     HDC hdc = (HDC)wParam;
     HWND hChild = (HWND)lParam;
-    if (hChild == trace.hInfo) {
+    if (hChild == trace.hWindow) {
       return (INT_PTR)GetStockObject(WHITE_BRUSH);
     }
-    SetTextColor(hdc, textcolor_);
-    SetBkColor(hdc, color_);
+    SetTextColor(hdc, as.foreground);
+    SetBkColor(hdc, as.background);
     SetBkMode(hdc, TRANSPARENT);
     if (hbrBkgnd == nullptr) {
-      hbrBkgnd = CreateSolidBrush(color_);
+      hbrBkgnd = CreateSolidBrush(as.background);
     }
     return (INT_PTR)hbrBkgnd;
   }
