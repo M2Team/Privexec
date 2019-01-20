@@ -24,6 +24,7 @@
 #define IDL_APPCONTAINER_LISTVIEW 1017
 #define IDS_HELPMSG 1018
 #define IDC_LPACMODE 1019
+#define IDM_PRIVEXEC_THEME 1020
 
 #define CS_LISTVIEW                                                            \
   WS_BORDER | WS_VSCROLL | WS_TABSTOP | LVS_REPORT | LVS_NOCOLUMNHEADER

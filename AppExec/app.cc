@@ -121,7 +121,7 @@ bool App::AppTheme() {
   co.lStructSize = sizeof(CHOOSECOLOR);
   co.hwndOwner = hWnd;
   co.lpCustColors = (LPDWORD)CustColors;
-  co.rgbResult = as.background;
+  co.rgbResult = as.bk;
   co.lCustData = 0;
   co.lpTemplateName = nullptr;
   co.lpfnHook = nullptr;
@@ -130,8 +130,8 @@ bool App::AppTheme() {
     auto r = GetRValue(co.rgbResult);
     auto g = GetGValue(co.rgbResult);
     auto b = GetBValue(co.rgbResult);
-    as.background = RGB(r, g, b);
-    as.foreground = calcLuminance(r, g, b);
+    as.bk = RGB(r, g, b);
+    as.textcolor = calcLuminance(r, g, b);
     AppUpdateWindow();
     AppApplySettings(as);
   }
@@ -317,7 +317,7 @@ INT_PTR App::MessageHandler(UINT message, WPARAM wParam, LPARAM lParam) {
   switch (message) {
   case WM_CTLCOLORDLG: {
     if (hbrBkgnd == nullptr) {
-      hbrBkgnd = CreateSolidBrush(as.background);
+      hbrBkgnd = CreateSolidBrush(as.bk);
     }
     return (INT_PTR)hbrBkgnd;
   }
@@ -327,11 +327,11 @@ INT_PTR App::MessageHandler(UINT message, WPARAM wParam, LPARAM lParam) {
     if (hChild == trace.hWindow) {
       return (INT_PTR)GetStockObject(WHITE_BRUSH);
     }
-    SetTextColor(hdc, as.foreground);
-    SetBkColor(hdc, as.background);
+    SetTextColor(hdc, as.textcolor);
+    SetBkColor(hdc, as.bk);
     SetBkMode(hdc, TRANSPARENT);
     if (hbrBkgnd == nullptr) {
-      hbrBkgnd = CreateSolidBrush(as.background);
+      hbrBkgnd = CreateSolidBrush(as.bk);
     }
     return (INT_PTR)hbrBkgnd;
   }

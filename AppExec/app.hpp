@@ -21,8 +21,8 @@ static constexpr const auto whitecolor = RGB(255, 255, 255);
 static constexpr const auto blackcolor = RGB(0, 0, 0);
 
 struct AppSettings {
-  COLORREF background{whitecolor};
-  COLORREF foreground{blackcolor};
+  COLORREF bk{whitecolor};
+  COLORREF textcolor{blackcolor};
 };
 bool AppInitializeSettings(AppSettings &as);
 bool AppApplySettings(const AppSettings &as);

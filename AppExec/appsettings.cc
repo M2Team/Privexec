@@ -146,8 +146,8 @@ bool AppInitializeSettings(AppSettings &as) {
     auto scolor = root["Background"].get<std::string>();
     COLORREF cr;
     if (HexColorDecode(scolor, cr)) {
-      as.background = cr;
-      as.foreground = calcLuminance(cr);
+      as.bk = cr;
+      as.textcolor = calcLuminance(cr);
     }
   } catch (const std::exception &e) {
     OutputDebugStringA(e.what());
@@ -171,7 +171,7 @@ bool AppApplySettings(const AppSettings &as) {
     if (it != j.end()) {
       a = *it;
     }
-    a["Background"] = EncodeColor(as.background);
+    a["Background"] = EncodeColor(as.bk);
     j["AppExec"] = a;
     o << std::setw(4) << j << std::endl;
   } catch (const std::exception &e) {

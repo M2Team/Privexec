@@ -19,6 +19,16 @@ namespace priv {
 using wid_t = WELL_KNOWN_SID_TYPE;
 using alias_t = std::unordered_map<std::wstring, std::wstring>;
 bool AppAliasInitialize(HWND hbox, priv::alias_t &alias);
+static constexpr const auto whitecolor = RGB(255, 255, 255);
+static constexpr const auto blackcolor = RGB(0, 0, 0);
+
+struct AppSettings {
+  COLORREF bk{whitecolor};
+  COLORREF textcolor{blackcolor};
+};
+
+bool AppInitializeSettings(AppSettings &as);
+bool AppApplySettings(const AppSettings &as);
 
 struct Appbox {
   Appbox &operator=(HWND hc) {
