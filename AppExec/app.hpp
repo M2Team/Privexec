@@ -17,7 +17,6 @@
 namespace priv {
 
 using wid_t = WELL_KNOWN_SID_TYPE;
-using alias_t = std::unordered_map<std::wstring, std::wstring>;
 static constexpr const auto whitecolor = RGB(255, 255, 255);
 static constexpr const auto blackcolor = RGB(0, 0, 0);
 
@@ -42,8 +41,6 @@ inline DWORD calcLuminance(uint32_t color) {
   auto b = GetBValue(color);
   return calcLuminance(r, g, b);
 }
-
-bool AppAliasInitialize(HWND hbox, priv::alias_t &alias);
 
 inline std::wstring windowcontent(HWND hWnd) {
   auto l = GetWindowTextLengthW(hWnd);
@@ -181,7 +178,6 @@ private:
   Element cwd;
   Appx appx;
   AppTrace trace;
-  alias_t alias;
   AppSettings as;
   HBRUSH hbrBkgnd{nullptr};
 };

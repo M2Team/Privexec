@@ -181,26 +181,4 @@ bool AppApplySettings(const AppSettings &as) {
   return true;
 }
 
-bool AppAliasInitialize(HWND hbox, priv::alias_t &alias) {
-  std::wstring file;
-  if (!PathAppImageCombineExists(file, L"Privexec.json")) {
-    return false;
-  }
-  try {
-    std::ifstream fs;
-    fs.open(file);
-    auto json = nlohmann::json::parse(fs);
-    auto cmds = json["Alias"];
-    for (auto &cmd : cmds) {
-      auto desc = utf8towide(cmd["Desc"].get<std::string>());
-      auto target = utf8towide(cmd["Target"].get<std::string>());
-      alias.insert(std::make_pair(desc, target));
-      ::SendMessage(hbox, CB_ADDSTRING, 0, (LPARAM)desc.data());
-    }
-  } catch (const std::exception &e) {
-    OutputDebugStringA(e.what());
-    return false;
-  }
-  return true;
-}
 } // namespace priv

@@ -77,9 +77,8 @@ bool App::Initialize(HWND window) {
               L"Change Panel Color");
   InsertMenuW(hSystemMenu, SC_CLOSE, MF_ENABLED, IDM_APPEXEC_ABOUT,
               L"About AppContainer Exec\tAlt+F1");
-  cmd.hInput = GetDlgItem(hWnd, IDC_COMMAND_COMBOX);
+  cmd.hInput = GetDlgItem(hWnd, IDC_COMMAND_EDIT);
   cmd.hButton = GetDlgItem(hWnd, IDB_COMMAND_TARGET);
-  AppAliasInitialize(cmd.hInput, alias); // Initialize app alias
   ///
   cwd.hInput = GetDlgItem(hWnd, IDE_APPSTARTUP);
   cwd.hButton = GetDlgItem(hWnd, IDB_APPSTARTUP);
@@ -141,10 +140,6 @@ bool App::AppTheme() {
 
 std::wstring App::ResolveCMD() {
   auto cmd_ = cmd.Content();
-  auto it = alias.find(cmd_);
-  if (it != alias.end()) {
-    return ExpandEnv(it->second);
-  }
   return ExpandEnv(cmd_);
 }
 
