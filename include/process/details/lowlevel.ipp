@@ -6,7 +6,7 @@
 
 namespace priv {
 
-bool process::lowlevelexec() {
+inline bool process::lowlevelexec() {
   HANDLE hToken;
   HANDLE hNewToken;
   PWSTR szIntegritySid = L"S-1-16-4096";

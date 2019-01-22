@@ -121,10 +121,10 @@ inline bool MergeFromAppmanifest(const std::wstring &file,
   return true;
 }
 
-inline bool FromAppmanifest(const std::wstring &file,
+inline bool FromAppmanifest(std::wstring_view file,
                             std::vector<std::wstring> &cans) {
   pugi::xml_document doc;
-  if (!doc.load_file(file.c_str())) {
+  if (!doc.load_file(file.data())) {
     return false;
   }
   auto elem = doc.child("Package").child("Capabilities");
@@ -139,7 +139,7 @@ inline bool FromAppmanifest(const std::wstring &file,
   return true;
 }
 
-bool appcontainer::initialize(const wid_t *begin, const wid_t *end) {
+inline bool appcontainer::initialize(const wid_t *begin, const wid_t *end) {
   if (!ca.empty()) {
     kmessage.assign(L"capabilities is initialized");
     return false;
@@ -181,7 +181,8 @@ bool appcontainer::initialize(const wid_t *begin, const wid_t *end) {
   }
   return true;
 }
-bool appcontainer::initialize() {
+
+inline bool appcontainer::initialize() {
   wid_t wslist[] = {
       WinCapabilityInternetClientSid,
       WinCapabilityInternetClientServerSid,
@@ -227,7 +228,7 @@ typedef BOOL(WINAPI *DeriveCapabilitySidsFromNameImpl)(
     LPCWSTR CapName, PSID **CapabilityGroupSids, DWORD *CapabilityGroupSidCount,
     PSID **CapabilitySids, DWORD *CapabilitySidCount);
 
-bool appcontainer::initialize(const std::vector<std::wstring> &names) {
+inline bool appcontainer::initialize(const std::vector<std::wstring> &names) {
   //
   auto _DeriveCapabilitySidsFromName =
       (DeriveCapabilitySidsFromNameImpl)GetProcAddress(
@@ -278,7 +279,7 @@ bool appcontainer::initialize(const std::vector<std::wstring> &names) {
   return true;
 }
 
-bool appcontainer::initialize(const std::wstring &appxml) {
+inline bool appcontainer::initialize(const std::wstring &appxml) {
   std::vector<std::wstring> cans;
   if (!FromAppmanifest(appxml, cans)) {
     return false;
@@ -286,7 +287,7 @@ bool appcontainer::initialize(const std::wstring &appxml) {
   return initialize(cans);
 }
 
-bool appcontainer::initializessid(const std::wstring &ssid) {
+inline bool appcontainer::initializessid(const std::wstring &ssid) {
   if (ConvertStringSidToSidW(ssid.c_str(), &appcontainersid) != TRUE) {
     return false;
   }
@@ -299,7 +300,7 @@ using PAttribute = LPPROC_THREAD_ATTRIBUTE_LIST;
   ProcThreadAttributeValue(ProcThreadAttributeAllApplicationPackagesPolicy,    \
                            FALSE, TRUE, FALSE)
 
-bool appcontainer::execute() {
+inline bool appcontainer::execute() {
   PWSTR pszstr;
   if (::ConvertSidToStringSidW(appcontainersid, &pszstr) != TRUE) {
     return false;

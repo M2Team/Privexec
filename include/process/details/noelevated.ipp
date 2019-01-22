@@ -9,7 +9,7 @@
 #include "systemhelper.hpp"
 
 namespace priv {
-bool process::noelevatedexec() {
+inline bool process::noelevatedexec() {
   if (!IsUserAdministratorsGroup()) {
     return execute();
   }

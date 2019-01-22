@@ -6,7 +6,7 @@
 
 namespace priv {
 
-void SafeCloseSO(SC_HANDLE hSCObject) {
+inline void SafeCloseSO(SC_HANDLE hSCObject) {
   if (hSCObject != nullptr) {
     CloseServiceHandle(hSCObject);
   }
@@ -103,7 +103,7 @@ private:
   SERVICE_STATUS_PROCESS ssp;
 };
 
-bool process::tiexec() {
+inline bool process::tiexec() {
   SysImpersonator impersonator;
   if (!impersonator.PreImpersonation()) {
     return false;

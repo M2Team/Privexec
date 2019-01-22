@@ -9,7 +9,7 @@
 
 namespace priv {
 // execute only
-bool process::execute() {
+inline bool process::execute() {
   STARTUPINFOW si;
   ZeroMemory(&si, sizeof(si));
   si.cb = sizeof(si);
@@ -31,7 +31,7 @@ bool process::execute() {
   return true;
 }
 
-bool process::elevatedexec() {
+inline bool process::elevatedexec() {
   if (IsUserAdministratorsGroup()) {
     return execute();
   }
@@ -72,7 +72,7 @@ bool process::elevatedexec() {
 }
 
 // Exe with token
-bool process::execwithtoken(HANDLE hToken, bool desktop) {
+inline bool process::execwithtoken(HANDLE hToken, bool desktop) {
   STARTUPINFO si;
   PROCESS_INFORMATION pi;
   ZeroMemory(&si, sizeof(si));
@@ -112,7 +112,7 @@ bool process::execwithtoken(HANDLE hToken, bool desktop) {
   return true;
 }
 
-bool process::execute(int level) {
+inline bool process::execute(int level) {
   switch (level) {
   case ProcessAppContainer: {
     appcontainer ac(cmd_);
