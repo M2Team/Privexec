@@ -1,7 +1,7 @@
 /**
  * pugixml parser - version 1.9
  * --------------------------------------------------------
- * Copyright (C) 2006-2018, by Arseny Kapoulkine (arseny.kapoulkine@gmail.com)
+ * Copyright (C) 2006-2019, by Arseny Kapoulkine (arseny.kapoulkine@gmail.com)
  * Report bugs and download new versions at https://pugixml.org/
  *
  * This library is distributed under the MIT License. See notice at the end
@@ -1861,7 +1861,7 @@ PUGI__NS_BEGIN
 	enum chartypex_t
 	{
 		ctx_special_pcdata = 1,   // Any symbol >= 0 and < 32 (except \t, \r, \n), &, <, >
-		ctx_special_attr = 2,     // Any symbol >= 0 and < 32 (except \t), &, <, >, "
+		ctx_special_attr = 2,     // Any symbol >= 0 and < 32, &, <, >, "
 		ctx_start_symbol = 4,	  // Any symbol > 127, a-z, A-Z, _
 		ctx_digit = 8,			  // 0-9
 		ctx_symbol = 16			  // Any symbol > 127, a-z, A-Z, 0-9, _, -, .
@@ -1869,7 +1869,7 @@ PUGI__NS_BEGIN
 
 	static const unsigned char chartypex_table[256] =
 	{
-		3,  3,  3,  3,  3,  3,  3,  3,     3,  0,  2,  3,  3,  2,  3,  3,     // 0-15
+		3,  3,  3,  3,  3,  3,  3,  3,     3,  2,  2,  3,  3,  2,  3,  3,     // 0-15
 		3,  3,  3,  3,  3,  3,  3,  3,     3,  3,  3,  3,  3,  3,  3,  3,     // 16-31
 		0,  0,  2,  0,  0,  0,  3,  0,     0,  0,  0,  0,  0, 16, 16,  0,     // 32-47
 		24, 24, 24, 24, 24, 24, 24, 24,    24, 24, 0,  0,  3,  0,  3,  0,     // 48-63
@@ -4656,7 +4656,7 @@ PUGI__NS_BEGIN
 	PUGI__FN bool set_value_convert(String& dest, Header& header, uintptr_t header_mask, float value)
 	{
 		char buf[128];
-		PUGI__SNPRINTF(buf, "%.9g", value);
+		PUGI__SNPRINTF(buf, "%.9g", double(value));
 
 		return set_value_ascii(dest, header, header_mask, buf);
 	}
@@ -4688,6 +4688,7 @@ PUGI__NS_BEGIN
 		char_t* buffer = 0;
 		size_t length = 0;
 
+		// coverity[var_deref_model]
 		if (!impl::convert_buffer(buffer, length, buffer_encoding, contents, size, is_mutable)) return impl::make_parse_result(status_out_of_memory);
 
 		// delete original buffer if we performed a conversion
@@ -8069,7 +8070,7 @@ PUGI__NS_BEGIN
 		typedef uint32_t UI; // BCC5 workaround
 		union { float f; UI i; } u;
 		u.i = 0x7fc00000;
-		return u.f;
+		return double(u.f);
 	#else
 		// fallback
 		const volatile double zero = 0.0;
@@ -10083,6 +10084,7 @@ PUGI__NS_BEGIN
 			bool once =
 				(axis == axis_attribute && _test == nodetest_name) ||
 				(!_right && eval_once(axis_type, eval)) ||
+			    // coverity[mixed_enums]
 				(_right && !_right->_next && _right->_test == predicate_constant_one);
 
 			xpath_node_set_raw ns;
@@ -10863,6 +10865,7 @@ PUGI__NS_BEGIN
 			if (_next)
 				_next->optimize(alloc);
 
+			// coverity[var_deref_model]
 			optimize_self(alloc);
 		}
 
@@ -10923,6 +10926,7 @@ PUGI__NS_BEGIN
 			// Use optimized path for @attr = 'value' or @attr = $value
 			if (_type == ast_op_equal &&
 				_left && _right && // workaround for clang static analyzer and Coverity (_left and _right are never null for ast_op_equal)
+                // coverity[mixed_enums]
 				_left->_type == ast_step && _left->_axis == axis_attribute && _left->_test == nodetest_name && !_left->_left && !_left->_right &&
 				(_right->_type == ast_string_constant || (_right->_type == ast_variable && _right->_rettype == xpath_type_string)))
 			{
@@ -12762,7 +12766,7 @@ namespace pugi
 #endif
 
 /**
- * Copyright (c) 2006-2018 Arseny Kapoulkine
+ * Copyright (c) 2006-2019 Arseny Kapoulkine
  *
  * Permission is hereby granted, free of charge, to any person
  * obtaining a copy of this software and associated documentation

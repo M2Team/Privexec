@@ -6,7 +6,7 @@
 #include <functional>
 #include <ShlObj.h>
 #include <memory>
-#include "pugixml/pugixml.hpp"
+#include "../../xml.hpp"
 #include "processfwd.hpp"
 #include "acl.ipp"
 
