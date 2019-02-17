@@ -9,7 +9,7 @@ namespace priv {
 inline bool process::lowlevelexec() {
   HANDLE hToken;
   HANDLE hNewToken;
-  PWSTR szIntegritySid = L"S-1-16-4096";
+  LPCWSTR szIntegritySid = L"S-1-16-4096";
   PSID pIntegritySid = NULL;
   TOKEN_MANDATORY_LABEL TIL = {0};
   if (!OpenProcessToken(GetCurrentProcess(), MAXIMUM_ALLOWED, &hToken)) {

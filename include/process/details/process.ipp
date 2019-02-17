@@ -78,8 +78,9 @@ inline bool process::execwithtoken(HANDLE hToken, bool desktop) {
   ZeroMemory(&si, sizeof(si));
   si.cb = sizeof(si);
   ZeroMemory(&pi, sizeof(pi));
+  wchar_t lpDesktop[] = L"WinSta0\\Default";
   if (desktop) {
-    si.lpDesktop = L"WinSta0\\Default";
+    si.lpDesktop = lpDesktop;
   }
   LPVOID lpEnvironment = nullptr;
   HANDLE hProcessToken = nullptr;

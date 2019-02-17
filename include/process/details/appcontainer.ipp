@@ -103,7 +103,7 @@ inline bool MergeFromAppmanifest(const std::wstring &file,
   if (!doc.load_file(file.c_str())) {
     return false;
   }
-  auto Append = [&](std::wstring &c) {
+  auto Append = [&](const std::wstring &c) {
     if (std::find(std::begin(cans), std::end(cans), c) == std::end(cans)) {
       cans.push_back(c);
     }

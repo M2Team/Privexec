@@ -82,12 +82,12 @@ class process {
 public:
   template <typename... Args> process(std::wstring_view app, Args... args) {
     std::initializer_list<std::wstring_view> av = {args...};
-    if (app.find(L' ') != app.end()) {
+    if (app.find(L' ') != std::wstring_view::npos) {
       cmd_.assign(L"\"").append(app.data(), app.size()).append(L"\" ");
     } else {
       cmd_.assign(app.data(), app.size()).append(L" ");
     }
-    for (const auto &a = av) {
+    for (const auto &c : av) {
       if (c.empty()) {
         cmd_.append(L"\"\" ");
         continue;
@@ -140,12 +140,12 @@ public:
   template <typename... Args>
   appcontainer(std::wstring_view app, Args... args) {
     std::initializer_list<std::wstring_view> av = {args...};
-    if (app.find(L' ') != app.end()) {
+    if (app.find(L' ') != std::wstring_view::npos) {
       cmd_.assign(L"\"").append(app.data(), app.size()).append(L"\" ");
     } else {
       cmd_.assign(app.data(), app.size()).append(L" ");
     }
-    for (const auto &a = av) {
+    for (const auto &c : av) {
       if (c.empty()) {
         cmd_.append(L"\"\" ");
         continue;
