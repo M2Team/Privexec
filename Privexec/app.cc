@@ -29,7 +29,7 @@ inline std::wstring ExpandEnv(const std::wstring &s) {
 int App::run(HINSTANCE hInstance) {
   hInst = hInstance;
   return (int)DialogBoxParamW(hInstance,
-                              MAKEINTRESOURCE(IDD_APPLICATION_DIALOG), NULL,
+                              MAKEINTRESOURCEW(IDD_APPLICATION_DIALOG), NULL,
                               App::WindowProc, reinterpret_cast<LPARAM>(this));
 }
 
