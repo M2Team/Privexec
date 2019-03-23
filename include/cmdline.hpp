@@ -21,7 +21,7 @@ inline std::wstring EscapeArg(std::wstring_view arg) {
       break;
     case L' ':
     case L'\t':
-      hasspace = 1;
+      hasspace = true;
       break;
     default:
       break;
