@@ -3,6 +3,7 @@
 #include <console/console.hpp>
 #include <version.h>
 #include <pe.hpp>
+#include <argvbuilder.hpp>
 #include "wsudo.hpp"
 #include "wsudoalias.hpp"
 
@@ -397,8 +398,9 @@ int AppExecute(wsudo::AppMode &am) {
     p.visiblemode(am.visible);
     p.enablelpac(am.lpac);
     if (am.verbose && am.lpac) {
-      priv::Print(priv::fc::Yellow,
-                  L"* AppContainer: Less Privileged AppContainer Is Enabled.\n");
+      priv::Print(
+          priv::fc::Yellow,
+          L"* AppContainer: Less Privileged AppContainer Is Enabled.\n");
     }
     priv::Print(priv::fc::Yellow, L"Command: %s\n", cmdline);
     if (!p.initialize(appx) || !p.execute()) {
