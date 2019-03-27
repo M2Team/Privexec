@@ -10,7 +10,7 @@ public:
   ArgvBuilder() = default;
   ArgvBuilder(const ArgvBuilder &) = delete;
   ArgvBuilder &operator=(const ArgvBuilder &) = delete;
-  ArgvBuilder &assgin(std::wstring_view a0) {
+  ArgvBuilder &assign(std::wstring_view a0) {
     args_.assign(escape(a0));
     return *this;
   }
