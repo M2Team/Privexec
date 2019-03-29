@@ -369,17 +369,23 @@ int AppExecute(wsudo::AppMode &am) {
     priv::Print(priv::fc::Yellow, L"* App subsystem is console, %s\n",
                 am.Visible());
   }
-  for (auto it = am.args.begin() + 1; it != am.args.end(); it++) {
-    if (it->empty()) {
-      cmdline.append(L" \"\"");
-      continue;
-    }
-    if (it->find(L' ') != std::wstring_view::npos && it->front() != L'"') {
-      cmdline.append(L" \"").append(it->data(), it->size()).append(L"\"");
-    } else {
-      cmdline.append(L" ").append(it->data(), it->size());
-    }
+  // for (auto it = am.args.begin() + 1; it != am.args.end(); it++) {
+  //   if (it->empty()) {
+  //     cmdline.append(L" \"\"");
+  //     continue;
+  //   }
+  //   if (it->find(L' ') != std::wstring_view::npos && it->front() != L'"') {
+  //     cmdline.append(L" \"").append(it->data(), it->size()).append(L"\"");
+  //   } else {
+  //     cmdline.append(L" ").append(it->data(), it->size());
+  //   }
+  // }
+  priv::ArgvBuilder ab;
+  ab.assign_no_escape(cmdline);
+  for(size_t i=1;i<am.args.size();i++){
+    ab.append(am.args[i]);
   }
+
   if (am.verbose) {
     priv::Print(priv::fc::Yellow, L"* App real command '%s'\n", cmdline);
   }
@@ -390,7 +396,7 @@ int AppExecute(wsudo::AppMode &am) {
     }
   });
   if (am.level == priv::ProcessAppContainer && !am.appx.empty()) {
-    priv::appcontainer p(cmdline);
+    priv::appcontainer p(ab.args());
     if (!am.cwd.empty()) {
       p.cwd() = ExpandEnv(am.cwd.data());
     }
@@ -402,7 +408,7 @@ int AppExecute(wsudo::AppMode &am) {
           priv::fc::Yellow,
           L"* AppContainer: Less Privileged AppContainer Is Enabled.\n");
     }
-    priv::Print(priv::fc::Yellow, L"Command: %s\n", cmdline);
+    priv::Print(priv::fc::Yellow, L"Command: %s\n", ab.args());
     if (!p.initialize(appx) || !p.execute()) {
       auto ec = priv::error_code::lasterror();
       if (p.message().empty()) {
@@ -427,12 +433,12 @@ int AppExecute(wsudo::AppMode &am) {
     priv::Print(priv::fc::Yellow, L"AppContainer: LPAC mode is set but will "
                                   L"not take effect. Appmanifest not set.\n");
   }
-  priv::process p(cmdline);
+  priv::process p(ab.args());
   p.visiblemode(am.visible);
   if (!am.cwd.empty()) {
     p.cwd() = ExpandEnv(am.cwd.data());
   }
-  priv::Print(priv::fc::Yellow, L"Command: %s\n", cmdline);
+  priv::Print(priv::fc::Yellow, L"Command: %s\n", ab.args());
   if (p.execute(am.level)) {
     priv::Print(priv::fc::Green, L"new process is running: %d\n", p.pid());
     if (waitable) {

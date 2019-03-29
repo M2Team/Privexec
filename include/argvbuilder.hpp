@@ -14,6 +14,10 @@ public:
     args_.assign(escape(a0));
     return *this;
   }
+  ArgvBuilder &assign_no_escape(std::wstring_view a0) {
+    args_.assign(a0);
+    return *this;
+  }
   ArgvBuilder &append(std::wstring_view a) {
     args_.append(L" ").append(escape(a));
     return *this;
