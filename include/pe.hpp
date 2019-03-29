@@ -184,7 +184,10 @@ inline bool SearchSinglePath(const std::wstring &cmd, std::wstring_view p,
   const wchar_t *suffix[] = {L"", L".exe", L".com", L".bat"};
   for (auto s : suffix) {
     std::wstring exe_(p.data(), p.size());
-    exe_.append(L"\\").append(cmd).append(s);
+    if (exe_.empty() && exe_.back() != '\\') {
+      exe_.push_back('\\');
+    }
+    exe_.append(cmd).append(s);
     if (PathFileIsExists(exe_)) {
       exe.assign(std::move(exe_));
       return true;
