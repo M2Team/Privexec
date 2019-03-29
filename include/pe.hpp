@@ -194,12 +194,14 @@ inline bool SearchSinglePath(const std::wstring &cmd, std::wstring_view p,
 }
 
 inline bool FindExecutableImageEx(const std::wstring &cmd, std::wstring &exe) {
-  auto pos = exe.find(L'/');
+  auto pos = cmd.find(L'/');
   if (pos != std::wstring::npos) {
+    exe = cmd;
     return PathFileIsExists(cmd);
   }
-  pos = exe.find(L'\\');
+  pos = cmd.find(L'\\');
   if (pos != std::wstring::npos) {
+    exe = cmd;
     return PathFileIsExists(cmd);
   }
   std::wstring Path(PATHCCH_MAX_CCH, L'\0');

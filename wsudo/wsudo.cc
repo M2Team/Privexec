@@ -4,6 +4,8 @@
 #include <version.h>
 #include <pe.hpp>
 #include <argvbuilder.hpp>
+#include <Shellapi.h>
+#include <Shlobj.h>
 #include "wsudo.hpp"
 #include "wsudoalias.hpp"
 
@@ -279,31 +281,32 @@ inline std::wstring ExpandEnv(const std::wstring &s) {
 }
 
 bool AppExecuteSubsystemIsConsole(const std::wstring &cmd, bool verbose) {
-  std::wstring xcmd;
-  if (cmd.front() == L'"') {
-    for (size_t i = 1; i < cmd.size(); i++) {
-      if (cmd[i] == L'"' && cmd[i - 1] != L'\\') {
-        if (i < 2) {
-          return false;
-        }
-        xcmd.assign(cmd.data() + 1, i - 1);
-      }
-    }
-  } else {
-    auto pos = cmd.find(' ');
-    if (pos == std::wstring::npos) {
-      xcmd = cmd;
-    } else {
-      xcmd = cmd.substr(0, pos);
-    }
-  }
-  if (verbose) {
-    priv::Print(priv::fc::Yellow, L"* App real argv0 '%s'\n", xcmd);
-  }
-  std::wstring exe;
-  if (!priv::FindExecutableImageEx(xcmd, exe)) {
+  if (cmd.empty()) {
     return false;
   }
+  if (cmd.front() != L'"') {
+    std::wstring exe;
+    if (!priv::FindExecutableImageEx(cmd, exe)) {
+      return false;
+    }
+    priv::Print(priv::fc::Yellow, L"* App real argv0 '%s'\n", exe);
+    return priv::PESubsystemIsConsole(exe);
+  }
+
+  int Argc;
+  auto Argv = CommandLineToArgvW(cmd.data(), &Argc);
+  if (Argc == 0) {
+    return false;
+  }
+  if (verbose) {
+    priv::Print(priv::fc::Yellow, L"* App real argv0 '%s'\n", Argv[0]);
+  }
+  std::wstring exe;
+  if (!priv::FindExecutableImageEx(Argv[0], exe)) {
+    LocalFree(Argv);
+    return false;
+  }
+  LocalFree(Argv);
   if (verbose) {
     priv::Print(priv::fc::Yellow, L"* App real path '%s'\n", exe);
   }
@@ -369,20 +372,10 @@ int AppExecute(wsudo::AppMode &am) {
     priv::Print(priv::fc::Yellow, L"* App subsystem is console, %s\n",
                 am.Visible());
   }
-  // for (auto it = am.args.begin() + 1; it != am.args.end(); it++) {
-  //   if (it->empty()) {
-  //     cmdline.append(L" \"\"");
-  //     continue;
-  //   }
-  //   if (it->find(L' ') != std::wstring_view::npos && it->front() != L'"') {
-  //     cmdline.append(L" \"").append(it->data(), it->size()).append(L"\"");
-  //   } else {
-  //     cmdline.append(L" ").append(it->data(), it->size());
-  //   }
-  // }
+
   priv::ArgvBuilder ab;
   ab.assign_no_escape(cmdline);
-  for(size_t i=1;i<am.args.size();i++){
+  for (size_t i = 1; i < am.args.size(); i++) {
     ab.append(am.args[i]);
   }
 
