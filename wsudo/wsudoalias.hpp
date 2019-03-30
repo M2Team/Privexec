@@ -3,6 +3,7 @@
 #define WSUDOALIAS_HPP
 #pragma once
 #include <string>
+#include <string_view>
 #include <optional>
 #include <unordered_map>
 

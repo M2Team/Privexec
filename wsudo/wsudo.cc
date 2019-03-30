@@ -269,10 +269,10 @@ Builtin 'alias' command:
 }
 
 // expand env
-inline std::wstring ExpandEnv(const std::wstring &s) {
+inline std::wstring ExpandEnv(std::wstring_view s) {
   auto len = ExpandEnvironmentStringsW(s.data(), nullptr, 0);
   if (len <= 0) {
-    return s;
+    return std::wstring(s);
   }
   std::wstring s2(len + 1, L'\0');
   auto N = ExpandEnvironmentStringsW(s.data(), &s2[0], len + 1);
@@ -280,36 +280,29 @@ inline std::wstring ExpandEnv(const std::wstring &s) {
   return s2;
 }
 
-bool AppExecuteSubsystemIsConsole(const std::wstring &cmd, bool verbose) {
-  if (cmd.empty()) {
-    return false;
-  }
-  if (cmd.front() != L'"') {
+bool AppExecuteSubsystemIsConsole(const std::wstring &cmd, bool aliasexpand,
+                                  bool verbose) {
+  if (!aliasexpand) {
     std::wstring exe;
     if (!priv::FindExecutableImageEx(cmd, exe)) {
       return false;
     }
-    priv::Print(priv::fc::Yellow, L"* App real argv0 '%s'\n", exe);
+    priv::Verbose(verbose, L"* App real argv0 '%s'\n", exe);
     return priv::PESubsystemIsConsole(exe);
   }
-
   int Argc;
   auto Argv = CommandLineToArgvW(cmd.data(), &Argc);
   if (Argc == 0) {
     return false;
   }
-  if (verbose) {
-    priv::Print(priv::fc::Yellow, L"* App real argv0 '%s'\n", Argv[0]);
-  }
+  priv::Verbose(verbose, L"* App real argv0 '%s'\n", Argv[0]);
   std::wstring exe;
   if (!priv::FindExecutableImageEx(Argv[0], exe)) {
     LocalFree(Argv);
     return false;
   }
   LocalFree(Argv);
-  if (verbose) {
-    priv::Print(priv::fc::Yellow, L"* App real path '%s'\n", exe);
-  }
+  priv::Verbose(verbose, L"* App real path '%s'\n", exe);
   return priv::PESubsystemIsConsole(exe);
 }
 
@@ -340,23 +333,37 @@ int AppWait(DWORD pid) {
   return static_cast<int>(exitcode);
 }
 
-int AppExecute(wsudo::AppMode &am) {
-  std::wstring cmd(am.args[0]);
-  if (!am.disablealias) {
-    wsudo::AliasEngine ae;
-    if (ae.Initialize()) {
-      auto al = ae.Target(cmd);
-      if (al) {
-        if (am.verbose) {
-          priv::Print(priv::fc::Yellow, L"* App alias '%s' expand to '%s'\n",
-                      cmd, *al);
-        }
-        cmd.assign(*al);
-      }
-    }
+std::wstring ExpandArgv0(std::wstring_view argv0, bool disablealias,
+                         bool verbose, bool &aliasexpand) {
+  aliasexpand = false;
+  if (disablealias) {
+    return ExpandEnv(argv0);
   }
-  auto cmdline = ExpandEnv(cmd);
-  auto isconsole = AppExecuteSubsystemIsConsole(cmdline, am.verbose);
+  wsudo::AliasEngine ae;
+  if (!ae.Initialize()) {
+    return ExpandEnv(argv0);
+  }
+  auto cmd = std::wstring(argv0);
+  auto al = ae.Target(cmd);
+  if (!al) {
+    return ExpandEnv(argv0);
+  }
+  aliasexpand = true;
+  priv::Verbose(verbose, L"* App alias '%s' expand to '%s'\n", cmd, *al);
+  return ExpandEnv(*al);
+}
+
+int AppExecute(wsudo::AppMode &am) {
+  priv::ArgvBuilder ab;
+  bool aliasexpand = false;
+  auto argv0 =
+      ExpandArgv0(am.args[0], am.disablealias, am.verbose, aliasexpand);
+  if (aliasexpand) {
+    ab.assign_no_escape(argv0);
+  } else {
+    ab.assign(argv0);
+  }
+  auto isconsole = AppExecuteSubsystemIsConsole(argv0, aliasexpand, am.verbose);
   auto elevated = priv::IsUserAdministratorsGroup();
   bool waitable = false;
   if (!elevated && am.level == priv::ProcessElevated &&
@@ -368,25 +375,18 @@ int AppExecute(wsudo::AppMode &am) {
   }
   // UAC Elevated
 
-  if (am.verbose && isconsole) {
-    priv::Print(priv::fc::Yellow, L"* App subsystem is console, %s\n",
-                am.Visible());
+  if (isconsole) {
+    priv::Verbose(am.verbose, L"* App subsystem is console, %s\n",
+                  am.Visible());
   }
 
-  priv::ArgvBuilder ab;
-  ab.assign_no_escape(cmdline);
   for (size_t i = 1; i < am.args.size(); i++) {
     ab.append(am.args[i]);
   }
-
-  if (am.verbose) {
-    priv::Print(priv::fc::Yellow, L"* App real command '%s'\n", cmdline);
-  }
+  priv::Verbose(am.verbose, L"* App real command '%s'\n", argv0);
   am.envctx.Apply([&](const std::wstring &k, const std::wstring &v) {
-    if (am.verbose) {
-      priv::Print(priv::fc::Yellow, L"* App apply env '%s' = '%s'\n", k.c_str(),
+    priv::Verbose(am.verbose, L"* App apply env '%s' = '%s'\n", k.c_str(),
                   v.c_str());
-    }
   });
   if (am.level == priv::ProcessAppContainer && !am.appx.empty()) {
     priv::appcontainer p(ab.args());
@@ -396,9 +396,9 @@ int AppExecute(wsudo::AppMode &am) {
     auto appx = ExpandEnv(am.appx.data());
     p.visiblemode(am.visible);
     p.enablelpac(am.lpac);
-    if (am.verbose && am.lpac) {
-      priv::Print(
-          priv::fc::Yellow,
+    if (am.lpac) {
+      priv::Verbose(
+          am.verbose,
           L"* AppContainer: Less Privileged AppContainer Is Enabled.\n");
     }
     priv::Print(priv::fc::Yellow, L"Command: %s\n", ab.args());

@@ -69,6 +69,19 @@ ssize_t Print(int color, const wchar_t *format, Args... args) {
   return details::adapter::instance().adapterwrite(color, buffer.data(), size);
 }
 
+template <typename... Args>
+ssize_t Verbose(bool verbose, const wchar_t *format, Args... args) {
+  if (!verbose) {
+    return 0;
+  }
+  std::wstring buffer;
+  size_t size = StringPrint(nullptr, 0, format, args...);
+  buffer.resize(size);
+  size = StringPrint(&buffer[0], buffer.size() + 1, format, args...);
+  return details::adapter::instance().adapterwrite(priv::fc::Yellow,
+                                                   buffer.data(), size);
+}
+
 // ChangePrintMode todo
 inline bool ChangePrintMode(bool isstderr) {
   return details::adapter::instance().changeout(isstderr);
