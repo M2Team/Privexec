@@ -13,6 +13,8 @@
 #include <Windows.h>
 #endif
 
+#include "argvbuilder.hpp"
+
 namespace priv {
 
 // final_act
@@ -82,22 +84,12 @@ class process {
 public:
   template <typename... Args> process(std::wstring_view app, Args... args) {
     std::initializer_list<std::wstring_view> av = {args...};
-    if (app.find(L' ') != std::wstring_view::npos) {
-      cmd_.assign(L"\"").append(app.data(), app.size()).append(L"\" ");
-    } else {
-      cmd_.assign(app.data(), app.size()).append(L" ");
+    argvbuilder ab;
+    ab.assign(app);
+    for (auto c : av) {
+      ab.append(c);
     }
-    for (const auto &c : av) {
-      if (c.empty()) {
-        cmd_.append(L"\"\" ");
-        continue;
-      }
-      if (c.find(L' ') != c.end()) {
-        cmd_.assign(L"\"").append(c.data(), c.size()).append(L"\" ");
-      } else {
-        cmd_.assign(c.data(), c.size()).append(L" ");
-      }
-    }
+    cmd_ = ab.args();
   }
   process(const std::wstring &cmdline) : cmd_(cmdline) {}
   process(const process &) = delete;
@@ -140,22 +132,12 @@ public:
   template <typename... Args>
   appcontainer(std::wstring_view app, Args... args) {
     std::initializer_list<std::wstring_view> av = {args...};
-    if (app.find(L' ') != std::wstring_view::npos) {
-      cmd_.assign(L"\"").append(app.data(), app.size()).append(L"\" ");
-    } else {
-      cmd_.assign(app.data(), app.size()).append(L" ");
+    argvbuilder ab;
+    ab.assign(app);
+    for (auto c : av) {
+      ab.append(c);
     }
-    for (const auto &c : av) {
-      if (c.empty()) {
-        cmd_.append(L"\"\" ");
-        continue;
-      }
-      if (c.find(L' ') != c.end()) {
-        cmd_.assign(L"\"").append(c.data(), c.size()).append(L"\" ");
-      } else {
-        cmd_.assign(c.data(), c.size()).append(L" ");
-      }
-    }
+    cmd_ = ab.args();
   }
   appcontainer(const std::wstring &cmdline) : cmd_(cmdline) {}
   appcontainer(const appcontainer &) = delete;

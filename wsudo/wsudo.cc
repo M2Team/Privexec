@@ -354,7 +354,7 @@ std::wstring ExpandArgv0(std::wstring_view argv0, bool disablealias,
 }
 
 int AppExecute(wsudo::AppMode &am) {
-  priv::ArgvBuilder ab;
+  priv::argvbuilder ab;
   bool aliasexpand = false;
   auto argv0 =
       ExpandArgv0(am.args[0], am.disablealias, am.verbose, aliasexpand);
@@ -385,8 +385,7 @@ int AppExecute(wsudo::AppMode &am) {
   }
   priv::Verbose(am.verbose, L"* App real command '%s'\n", argv0);
   am.envctx.Apply([&](const std::wstring &k, const std::wstring &v) {
-    priv::Verbose(am.verbose, L"* App apply env '%s' = '%s'\n", k.c_str(),
-                  v.c_str());
+    priv::Verbose(am.verbose, L"* App apply env '%s' = '%s'\n", k, v);
   });
   if (am.level == priv::ProcessAppContainer && !am.appx.empty()) {
     priv::appcontainer p(ab.args());
