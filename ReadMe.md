@@ -1,8 +1,8 @@
 # Privexec
 
-[![release.badge]][release.link]
+<!--[![release.badge]][release.link]
 [![latestdownloads.badge]][latestdownloads.link]
-[![totaldownloads.badge]][totaldownloads.link]
+[![totaldownloads.badge]][totaldownloads.link]-->
 [![license.badge]][license.link]
 [![Build status](https://ci.appveyor.com/api/projects/status/2cbd4pceqbldlixx/branch/master?svg=true)](https://ci.appveyor.com/project/fcharlie/privexec/branch/master) <a href="https://996.icu"><img src="https://img.shields.io/badge/link-996.icu-red.svg"></a>
 
