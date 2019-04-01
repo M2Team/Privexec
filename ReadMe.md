@@ -160,3 +160,13 @@ see: [changelog.md](./docs/changelog.md)
 ## LICENSE
 
 This project use MIT License, and JSON use [https://github.com/nlohmann/json](https://github.com/nlohmann/json) , some API use NSudo, but rewrite it.
+
+
+[release.badge]: https://img.shields.io/github/release/M2Team/Privexec.svg
+[release.link]: https://github.com/M2Team/Privexec/releases/latest
+[latestdownloads.badge]: https://img.shields.io/github/downloads/M2Team/Privexec/latest/total.svg
+[latestdownloads.link]: https://github.com/M2Team/Privexec/releases/latest
+[totaldownloads.badge]: https://img.shields.io/github/downloads/M2Team/Privexec/total.svg
+[totaldownloads.link]: https://github.com/M2Team/Privexec/releases
+[license.badge]: https://img.shields.io/github/license/M2Team/Privexec.svg
+[license.link]: LICENSE
