@@ -26,7 +26,6 @@ target_link_libraries(Privexec
     Advapi32
 )
 
-
 install(TARGETS Privexec
-    DESTINATION bin
+    DESTINATION .
 )

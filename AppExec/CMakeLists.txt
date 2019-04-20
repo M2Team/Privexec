@@ -27,7 +27,6 @@ target_link_libraries(AppExec
     Advapi32
 )
 
-
 install(TARGETS AppExec
-    DESTINATION bin
+    DESTINATION .
 )

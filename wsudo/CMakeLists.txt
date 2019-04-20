@@ -4,12 +4,12 @@ add_executable(wsudo
     wsudo.cc
     wsudoalias.cc
     wsudo.rc
+	wsudo.manifest
 )
 
 if(lto_supported)
   set_property(TARGET wsudo PROPERTY INTERPROCEDURAL_OPTIMIZATION TRUE)
 endif()
-
 
 target_link_libraries(wsudo
     Comctl32
@@ -24,5 +24,5 @@ target_link_libraries(wsudo
 )
 
 install(TARGETS wsudo
-    DESTINATION bin
+    DESTINATION .
 )

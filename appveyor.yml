@@ -3,20 +3,8 @@ image: Visual Studio 2017
 configuration: Release
 platform: x64
 clone_depth: 1
-build:
-  project: Privexec.sln
-  verbosity: minimal
-before_build:
-- ps: >-
-    Write-Output "#define APPVEYOR_BUILD_NUMBER $env:APPVEYOR_BUILD_NUMBER`r`n#define APPVEYOR_BUILD_VERSION L`"$env:APPVEYOR_BUILD_VERSION (appveyor)`" `r`n">$env:APPVEYOR_BUILD_FOLDER\include\config.h
-after_build:
-- ps: >-
-    if ($env:PLATFORM -eq "x64") {
-        Compress-Archive -Path "Privexec\Privexec.json", "x64\${env:CONFIGURATION}\*.exe" -CompressionLevel Fastest -DestinationPath "Privexec_${env:PLATFORM}_${env:CONFIGURATION}.zip"
-    }
-
-    else {
-        Compress-Archive -Path "Privexec\Privexec.json", "${env:CONFIGURATION}\*.exe" -CompressionLevel Fastest -DestinationPath "Privexec_${env:PLATFORM}_${env:CONFIGURATION}.zip"
-    }
+clone_folder: c:\projects\Privexec
+build_script:
+- ps: '& ".\build.ps1"'
 artifacts:
-- path: Privexec_%PLATFORM%_%CONFIGURATION%.zip
+- path: build\Privexec-2.3.0-win64.zip
