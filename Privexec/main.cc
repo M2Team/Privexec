@@ -5,8 +5,9 @@
 class DotComInitialize {
 public:
   DotComInitialize() {
-    if (FAILED(CoInitialize(NULL))) {
-      throw std::runtime_error("CoInitialize failed");
+    if (FAILED(CoInitialize(nullptr))) {
+      MessageBoxW(nullptr, L"CoInitialize()", L"CoInitialize() failed",
+                  MB_OK | MB_ICONERROR);
     }
   }
   ~DotComInitialize() { CoUninitialize(); }

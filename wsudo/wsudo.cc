@@ -165,6 +165,16 @@ int AppMode::ParseArgv(int argc, wchar_t **argv) {
       appx = *ax;
       continue;
     }
+    auto an = MatchInternal(arg, L"--appname", L"--appname");
+    if (an) {
+      appname = *an;
+      continue;
+    }
+    auto aid = MatchInternal(arg, L"--appsid", L"--appsid");
+    if (aid) {
+      appsid = *aid;
+      continue;
+    }
     if (!message.empty()) {
       return AppFatal;
     }
@@ -247,6 +257,8 @@ usage: wsudo command args....
    -e|--env            Set Environment Variable.
    -L|--lpac           Less Privileged AppContainer mode.
    --disable-alias     Disable Privexec alias, By default, if Privexec exists alias, use it.
+   --appsid               Set AppContainer SID
+   --appname          Set AppContainer Name
 
 Select user can use the following flags:
    -a                  AppContainer

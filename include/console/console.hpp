@@ -1,6 +1,7 @@
 ///
 #ifndef PRIVEXEC_CONSOLE_HPP
 #define PRIVEXEC_CONSOLE_HPP
+#include <string_view>
 #include "adapter.hpp"
 
 namespace priv {
@@ -51,6 +52,10 @@ template <typename T> T Argument(T value) noexcept { return value; }
 template <typename T>
 T const *Argument(std::basic_string<T> const &value) noexcept {
   return value.c_str();
+}
+template <typename T>
+T const *Argument(std::basic_string_view<T> value) noexcept {
+  return value.data();
 }
 template <typename... Args>
 int StringPrint(wchar_t *const buffer, size_t const bufferCount,
