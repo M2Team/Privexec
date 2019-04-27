@@ -22,7 +22,7 @@ inline bool process::systemexec() {
   auto hProcess = INVALID_HANDLE_VALUE;
   auto hToken = INVALID_HANDLE_VALUE;
   auto hPrimary = INVALID_HANDLE_VALUE;
-  auto deleter = finally([&] {
+  auto deleter = base::finally([&] {
     CloseHandleEx(hProcess);
     CloseHandleEx(hToken);
     CloseHandleEx(hPrimary);

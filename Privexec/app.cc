@@ -150,7 +150,7 @@ bool App::AppExecute() {
     auto cas = appcas.Capabilities();
     auto xml = ExpandEnv(appx.Content());
     if (!xml.empty() && !priv::MergeFromAppmanifest(xml, cas)) {
-      auto ec = priv::error_code::lasterror();
+      auto ec = base::make_system_error_code();
       utils::PrivMessageBox(hWnd, L"Privexec appmanifest error",
                             ec.message.c_str(), PRIVEXEC_APPLINKE,
                             utils::kFatalWindow);
@@ -160,7 +160,7 @@ bool App::AppExecute() {
     p.enablelpac(appcas.IsLowPrivilegeAppContainer());
     p.cwd().assign(cwd_);
     if (!p.initialize(cas) || !p.execute()) {
-      auto ec = priv::error_code::lasterror();
+      auto ec = base::make_system_error_code();
       if (!p.message().empty()) {
         ec.message.append(L" (").append(p.message()).append(L")");
       }
@@ -179,7 +179,7 @@ bool App::AppExecute() {
         !priv::IsUserAdministratorsGroup()) {
       return false;
     }
-    auto ec = priv::error_code::lasterror();
+    auto ec = base::make_system_error_code();
     if (!p.message().empty()) {
       ec.message.append(L" (").append(p.message()).append(L")");
     }

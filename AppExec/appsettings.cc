@@ -1,20 +1,14 @@
 /////////////
 #include <json.hpp>
-#ifndef _WINDOWS_
-#ifndef WIN32_LEAN_AND_MEAN
-#define WIN32_LEAN_AND_MEAN //
-#endif
-#include <Windows.h>
-#endif
 #include <Shlwapi.h>
 #include <PathCch.h>
-#include <string>
-#include <fstream>
-#include <iomanip>
+#include <base.hpp>
+#include <file.hpp>
 #include "app.hpp"
 
 [[nodiscard]] inline unsigned char
-_Digit_from_char(const unsigned char _Ch) noexcept { // strengthened
+_Digit_from_char(const unsigned char _Ch) noexcept {
+  // strengthened
   // convert ['0', '9'] ['A', 'Z'] ['a', 'z'] to [0, 35], everything else to 255
   static constexpr unsigned char _Digit_from_byte[] = {
       255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255,
@@ -107,17 +101,6 @@ bool PathAppImageCombineExists(std::wstring &path, const wchar_t *file) {
   return false;
 }
 
-inline std::wstring utf8towide(std::string_view str) {
-  std::wstring wstr;
-  auto N =
-      MultiByteToWideChar(CP_UTF8, 0, str.data(), (int)str.size(), nullptr, 0);
-  if (N > 0) {
-    wstr.resize(N);
-    MultiByteToWideChar(CP_UTF8, 0, str.data(), (int)str.size(), &wstr[0], N);
-  }
-  return wstr;
-}
-
 namespace priv {
 
 bool AppJSON(nlohmann::json &j) {
@@ -126,9 +109,12 @@ bool AppJSON(nlohmann::json &j) {
     return false;
   }
   try {
-    std::ifstream fs;
-    fs.open(file);
-    j = nlohmann::json::parse(fs);
+    FD fd;
+    if (_wfopen_s(&fd.fd, file.data(), L"rb") != 0) {
+      return false;
+    }
+
+    j = nlohmann::json::parse(fd.fd);
   } catch (const std::exception &e) {
     OutputDebugStringA(e.what());
     return false;
@@ -164,8 +150,6 @@ bool AppApplySettings(const AppSettings &as) {
   try {
     nlohmann::json j;
     AppJSON(j);
-    std::ofstream o;
-    o.open(file, std::ios::out);
     auto it = j.find("AppExec");
     nlohmann::json a;
     if (it != j.end()) {
@@ -173,7 +157,12 @@ bool AppApplySettings(const AppSettings &as) {
     }
     a["Background"] = EncodeColor(as.bk);
     j["AppExec"] = a;
-    o << std::setw(4) << j << std::endl;
+    auto buf = j.dump(4);
+    FD fd;
+    if (_wfopen_s(&fd.fd, file.data(), L"w+") != 0) {
+      return false;
+    }
+    fwrite(buf.data(), 1, buf.size(), fd);
   } catch (const std::exception &e) {
     OutputDebugStringA(e.what());
     return false;

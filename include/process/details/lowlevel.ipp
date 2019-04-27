@@ -31,7 +31,7 @@ inline bool process::lowlevelexec() {
 
   TIL.Label.Attributes = SE_GROUP_INTEGRITY;
   TIL.Label.Sid = pIntegritySid;
-  auto deleter = finally([&] {
+  auto deleter = base::finally([&] {
     CloseHandle(hToken);
     CloseHandle(hNewToken);
     LocalFree(pIntegritySid);

@@ -88,14 +88,18 @@ inline std::wstring_view StripSuffix(std::wstring_view str,
 // Returns std::string_view with whitespace stripped from the beginning of the
 // given string_view.
 inline std::string_view StripLeadingAsciiWhitespace(std::string_view str) {
-  auto it = std::find_if_not(str.begin(), str.end(), std::isspace);
+  auto it = std::find_if_not(str.begin(), str.end(), [](unsigned char c) {
+    return std::isspace(c) != 0;
+  });
   return str.substr(it - str.begin());
 }
 
 // Returns std::string_view with whitespace stripped from the end of the given
 // string_view.
 inline std::string_view StripTrailingAsciiWhitespace(std::string_view str) {
-  auto it = std::find_if_not(str.rbegin(), str.rend(), std::isspace);
+  auto it = std::find_if_not(str.rbegin(), str.rend(), [](unsigned char c) {
+    return std::isspace(c) != 0;
+  });
   return str.substr(0, str.rend() - it);
 }
 
@@ -109,14 +113,16 @@ inline std::string_view StripAsciiWhitespace(std::string_view str) {
 // Returns std::wstring_view with whitespace stripped from the beginning of the
 // given string_view.
 inline std::wstring_view StripLeadingAsciiWhitespace(std::wstring_view str) {
-  auto it = std::find_if_not(str.begin(), str.end(), std::isspace);
+  auto it = std::find_if_not(str.begin(), str.end(),
+                             [](wchar_t c) { return std::isspace(c) != 0; });
   return str.substr(it - str.begin());
 }
 
 // Returns std::wstring_view with whitespace stripped from the end of the given
 // string_view.
 inline std::wstring_view StripTrailingAsciiWhitespace(std::wstring_view str) {
-  auto it = std::find_if_not(str.rbegin(), str.rend(), std::isspace);
+  auto it = std::find_if_not(str.rbegin(), str.rend(),
+                             [](wchar_t c) { return std::isspace(c) != 0; });
   return str.substr(0, str.rend() - it);
 }
 

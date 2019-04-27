@@ -1,15 +1,8 @@
 /////////
 #ifndef PRIVEXEC_READLINK_HPP
 #define PRIVEXEC_READLINK_HPP
-#ifndef _WINDOWS_
-#ifndef WIN32_LEAN_AND_MEAN
-#define WIN32_LEAN_AND_MEAN //
-#endif
-#include <Windows.h>
-#endif
+#include "base.hpp"
 #include <Dbghelp.h>
-#include <string>
-#include <string_view>
 #include <winnt.h>
 #include <winioctl.h>
 #include <ShlObj.h>
@@ -148,29 +141,6 @@ struct ReparseBuffer {
     }
   }
   REPARSE_DATA_BUFFER *data{nullptr};
-};
-
-class ErrorMessage {
-public:
-  ErrorMessage(DWORD errid) : lastError(errid) {
-    if (FormatMessageW(
-            FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_ALLOCATE_BUFFER,
-            nullptr, errid, MAKELANGID(LANG_NEUTRAL, SUBLANG_NEUTRAL),
-            (LPWSTR)&buf, 0, nullptr) == 0) {
-      buf = nullptr;
-    }
-  }
-  ~ErrorMessage() {
-    if (buf != nullptr) {
-      LocalFree(buf);
-    }
-  }
-  const wchar_t *message() const { return buf == nullptr ? L"unknwon" : buf; }
-  DWORD LastError() const { return lastError; }
-
-private:
-  DWORD lastError;
-  LPWSTR buf{nullptr};
 };
 
 inline bool readlink(const std::wstring &symfile, std::wstring &realfile) {

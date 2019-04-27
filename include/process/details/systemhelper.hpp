@@ -127,12 +127,12 @@ public:
       fprintf(stderr, "cannot open system process handle, pid %d\n", pid);
       return false;
     }
-    auto hpdeleter = finally([&] { CloseHandle(hProcess); });
+    auto hpdeleter = base::finally([&] { CloseHandle(hProcess); });
     if (OpenProcessToken(hProcess, MAXIMUM_ALLOWED, &hExistingToken) != TRUE) {
       fprintf(stderr, "cannot open system process token pid: %d\n", pid);
       return false;
     }
-    auto htdeleter = finally([&] { CloseHandle(hExistingToken); });
+    auto htdeleter = base::finally([&] { CloseHandle(hExistingToken); });
     if (DuplicateTokenEx(hExistingToken, MAXIMUM_ALLOWED, nullptr,
                          SecurityImpersonation, TokenImpersonation,
                          &hToken) != TRUE) {
@@ -154,7 +154,7 @@ public:
     if (privs == nullptr) {
       return false;
     }
-    auto pfree = finally([&] { HeapFree(GetProcessHeap(), 0, privs); });
+    auto pfree = base::finally([&] { HeapFree(GetProcessHeap(), 0, privs); });
     if (GetTokenInformation(hToken, TokenPrivileges, privs, Length, &Length) !=
         TRUE) {
       return false;
@@ -217,7 +217,7 @@ public:
     if (OpenProcessToken(GetCurrentProcess(), flags, &hToken) != TRUE) {
       return false;
     }
-    auto closer = finally([&] { CloseHandle(hToken); });
+    auto closer = base::finally([&] { CloseHandle(hToken); });
     DWORD Length = 0;
     if (GetTokenInformation(hToken, TokenSessionId, &sessionId, sizeof(DWORD),
                             &Length) != TRUE) {

@@ -88,7 +88,7 @@ inline bool process::execwithtoken(HANDLE hToken, bool desktop) {
     ::CreateEnvironmentBlock(&lpEnvironment, hProcessToken, TRUE);
     CloseHandle(hProcessToken);
   }
-  auto deleter = finally([&] {
+  auto deleter = base::finally([&] {
     if (lpEnvironment != nullptr) {
       ::DestroyEnvironmentBlock(lpEnvironment);
     }

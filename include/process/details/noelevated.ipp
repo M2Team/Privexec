@@ -27,7 +27,7 @@ inline bool process::noelevatedexec() {
   }
   auto hToken = INVALID_HANDLE_VALUE;
   auto hTokenDup = INVALID_HANDLE_VALUE;
-  auto deleter = finally([&] {
+  auto deleter = base::finally([&] {
     CloseHandleEx(hToken);
     CloseHandleEx(hTokenDup);
   });

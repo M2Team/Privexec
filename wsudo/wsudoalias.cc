@@ -3,9 +3,8 @@
 #include "wsudoalias.hpp"
 #include <Shlwapi.h>
 #include <PathCch.h>
-#include <string>
-#include <fstream>
-#include <iomanip>
+#include <file.hpp>
+#include <base.hpp>
 #include <console/console.hpp>
 
 /// PathAppImageCombineExists
@@ -29,28 +28,6 @@ bool PathAppImageCombineExists(std::wstring &path, const wchar_t *file) {
   return false;
 }
 
-inline std::wstring utf8towide(std::string_view str) {
-  std::wstring wstr;
-  auto N =
-      MultiByteToWideChar(CP_UTF8, 0, str.data(), (int)str.size(), nullptr, 0);
-  if (N > 0) {
-    wstr.resize(N);
-    MultiByteToWideChar(CP_UTF8, 0, str.data(), (int)str.size(), &wstr[0], N);
-  }
-  return wstr;
-}
-
-inline std::string wide2u8(std::wstring_view wstr) {
-  auto l = WideCharToMultiByte(CP_UTF8, 0, wstr.data(), (int)wstr.size(),
-                               nullptr, 0, nullptr, nullptr);
-  std::string s(l + 1, '\0');
-  auto N = WideCharToMultiByte(CP_UTF8, 0, wstr.data(), (int)wstr.size(), &s[0],
-                               (int)s.size(), nullptr, nullptr);
-  //
-  s.resize(N);
-  return s;
-}
-
 wsudo::AliasEngine::~AliasEngine() {
   if (updated) {
     Apply();
@@ -63,16 +40,19 @@ bool wsudo::AliasEngine::Initialize() {
     return false;
   }
   try {
-    std::ifstream fs;
-    fs.open(file);
-    auto json = nlohmann::json::parse(fs);
+
+    priv::FD fd;
+    if (_wfopen_s(&fd.fd, file.data(), L"rb") != 0) {
+      return false;
+    }
+    auto json = nlohmann::json::parse(fd.fd);
     auto cmds = json["Alias"];
     for (auto &cmd : cmds) {
       AliasTarget at;
-      auto key = utf8towide(cmd["Alias"].get<std::string>());
-      at.target = utf8towide(cmd["Target"].get<std::string>());
-      at.desc = utf8towide(cmd["Desc"].get<std::string>());
-      alias.insert(std::make_pair(key, at));
+      auto key = base::ToWide(cmd["Alias"].get<std::string>());
+      at.target = base::ToWide(cmd["Target"].get<std::string>());
+      at.desc = base::ToWide(cmd["Desc"].get<std::string>());
+      alias.emplace(key, at);
     }
   } catch (const std::exception &e) {
     fprintf(stderr, "AliasEngine::Initialize: %s\n", e.what());
@@ -99,14 +79,18 @@ bool wsudo::AliasEngine::Apply() {
     nlohmann::json root, av;
     for (const auto &i : alias) {
       nlohmann::json a;
-      a["Alias"] = wide2u8(i.first);
-      a["Target"] = wide2u8(i.second.target);
-      a["Desc"] = wide2u8(i.second.desc);
+      a["Alias"] = base::ToNarrow(i.first);
+      a["Target"] = base::ToNarrow(i.second.target);
+      a["Desc"] = base::ToNarrow(i.second.desc);
       av.push_back(a);
     }
     root["Alias"] = av;
-    std::ofstream o(file);
-    o << std::setw(4) << root << std::endl;
+    priv::FD fd;
+    if (!_wfopen_s(&fd.fd, file.data(), L"w+") != 0) {
+      return false;
+    }
+    auto buf = root.dump(4);
+    fwrite(buf.data(), 1, buf.size(), fd);
     updated = false;
   } catch (const std::exception &e) {
     fprintf(stderr, "AliasEngine::Apply: %s\n", e.what());

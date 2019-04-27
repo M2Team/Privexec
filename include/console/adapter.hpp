@@ -1,13 +1,7 @@
 //////////
 #ifndef PRIVEXEC_CONSOLE_ADAPTER_HPP
 #define PRIVEXEC_CONSOLE_ADAPTER_HPP
-#ifndef _WINDOWS_
-#ifndef WIN32_LEAN_AND_MEAN
-#define WIN32_LEAN_AND_MEAN //
-#endif
-#include <Windows.h>
-#endif
-
+#include <base.hpp>
 #include <functional>
 
 namespace priv {
@@ -31,16 +25,16 @@ public:
     static adapter adapter_;
     return adapter_;
   }
-  ssize_t adapterwrite(int color, const wchar_t *data, size_t len) {
+  ssize_t adapterwrite(int color, std::wstring_view sv) {
     switch (at) {
     case AdapterFile:
-      return writefile(color, data, len);
+      return writefile(color, sv);
     case AdapterConsole:
-      return writeoldconsole(color, data, len);
+      return writeoldconsole(color, sv);
     case AdapterConsoleTTY:
-      return writeconsole(color, data, len);
+      return writeconsole(color, sv);
     case AdapterTTY:
-      return writetty(color, data, len);
+      return writetty(color, sv);
     }
     return -1;
   }
@@ -51,12 +45,12 @@ public:
 
 private:
   adapter();
-  ssize_t writefile(int color, const wchar_t *data, size_t len);
-  ssize_t writeoldconsole(int color, const wchar_t *data, size_t len);
-  ssize_t writeconsole(int color, const wchar_t *data, size_t len);
-  ssize_t writetty(int color, const wchar_t *data, size_t len);
+  ssize_t writefile(int color, std::wstring_view sv);
+  ssize_t writeoldconsole(int color, std::wstring_view sv);
+  ssize_t writeconsole(int color, std::wstring_view sv);
+  ssize_t writetty(int color, std::wstring_view sv);
   //
-  int WriteConsoleInternal(const wchar_t *buffer, size_t len);
+  int WriteConsoleInternal(std::wstring_view sv);
   adaptermode_t at{AdapterConsole};
   HANDLE hConsole{nullptr};
   FILE *out{stdout};

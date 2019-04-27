@@ -116,7 +116,7 @@ inline bool process::tiexec() {
   if (!tip.DuplicateTiToken(&hToken)) {
     return false;
   }
-  auto deleter = finally([hToken] { CloseHandle(hToken); });
+  auto deleter = base::finally([hToken] { CloseHandle(hToken); });
   DWORD dwSessionId;
   if (!GetCurrentSessionId(dwSessionId)) {
     return false;

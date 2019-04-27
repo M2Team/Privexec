@@ -2,6 +2,7 @@
 #ifndef PRIVEXEC_CONSOLE_ADAPTER_IPP
 #define PRIVEXEC_CONSOLE_ADAPTER_IPP
 #include <charconv>
+#include <base.hpp>
 #include "adapter.hpp"
 
 #ifndef ENABLE_VIRTUAL_TERMINAL_PROCESSING
@@ -50,23 +51,14 @@ inline adapter::adapter() {
   at = AdapterTTY;
 }
 
-inline std::string wchar2utf8(const wchar_t *buf, size_t len) {
-
-  auto N = WideCharToMultiByte(CP_UTF8, 0, buf, (int)len, nullptr, 0, nullptr,
-                               nullptr);
-  std::string str(N, '\0');
-  WideCharToMultiByte(CP_UTF8, 0, buf, (int)len, &str[0], N, nullptr, nullptr);
-  return str;
-}
-
 // NOTICE, we support write file as UTF-8. GBK? not support it.
-inline ssize_t adapter::writefile(int color, const wchar_t *data, size_t len) {
-  auto buf = wchar2utf8(data, len);
+inline ssize_t adapter::writefile(int color, std::wstring_view sv) {
+  auto buf = base::ToNarrow(sv);
   //// write UTF8 to output
   return fwrite(buf.data(), 1, buf.size(), out);
 }
 
-inline ssize_t adapter::writeoldconsole(int color, const wchar_t *data, size_t len) {
+inline ssize_t adapter::writeoldconsole(int color, std::wstring_view sv) {
   CONSOLE_SCREEN_BUFFER_INFO csbi;
   GetConsoleScreenBufferInfo(hConsole, &csbi);
   WORD oldColor = csbi.wAttributes;
@@ -79,7 +71,7 @@ inline ssize_t adapter::writeoldconsole(int color, const wchar_t *data, size_t l
   }
   SetConsoleTextAttribute(hConsole, newColor);
   DWORD dwWrite;
-  WriteConsoleW(hConsole, data, (DWORD)len, &dwWrite, nullptr);
+  WriteConsoleW(hConsole, sv.data(), (DWORD)sv.size(), &dwWrite, nullptr);
   SetConsoleTextAttribute(hConsole, oldColor);
   return dwWrite;
 }
@@ -158,33 +150,27 @@ inline bool TerminalsConvertColor(int color, TerminalsColorTable &co) {
   return true;
 }
 
-inline int adapter::WriteConsoleInternal(const wchar_t *buffer, size_t len) {
+inline int adapter::WriteConsoleInternal(std::wstring_view sv) {
   DWORD dwWrite = 0;
-  if (WriteConsoleW(hConsole, buffer, (DWORD)len, &dwWrite, nullptr)) {
+  if (WriteConsoleW(hConsole, sv.data(), (DWORD)sv.size(), &dwWrite, nullptr)) {
     return static_cast<int>(dwWrite);
   }
   return 0;
 }
-inline ssize_t adapter::writeconsole(int color, const wchar_t *data, size_t len) {
+inline ssize_t adapter::writeconsole(int color, std::wstring_view sv) {
   TerminalsColorTable co;
   if (!TerminalsConvertColor(color, co)) {
-    return writeoldconsole(color, data, len);
+    return writeoldconsole(color, sv);
   }
-  std::wstring buf(L"\x1b[");
-  if (co.blod) {
-    buf.append(L"1;").append(std::to_wstring(co.index)).push_back(L'm');
-  } else {
-    buf.append(std::to_wstring(co.index)).push_back(L'm');
-  }
-  WriteConsoleInternal(buf.data(), (DWORD)buf.size());
-  auto N = WriteConsoleInternal(data, (DWORD)len);
-  WriteConsoleInternal(L"\x1b[0m", (sizeof("\x1b[0m") - 1));
+  auto buf = base::StringCat(co.blod ? L"\x1b[1;" : L"\x1b[", co.index, L"m",
+                             sv, L"\x1b[0m");
+  auto N = WriteConsoleInternal(sv);
   return N;
 }
 
-inline ssize_t adapter::writetty(int color, const wchar_t *data, size_t len) {
+inline ssize_t adapter::writetty(int color, std::wstring_view sv) {
   TerminalsColorTable co;
-  auto str = wchar2utf8(data, len);
+  auto str = base::ToNarrow(sv);
   if (!TerminalsConvertColor(color, co)) {
     return static_cast<int>(fwrite(str.data(), 1, str.size(), out));
   }

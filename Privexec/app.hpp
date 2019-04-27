@@ -85,7 +85,8 @@ struct Element {
     if (l == 0 || l > PATHCCH_MAX_CCH * 2) {
       return L"";
     }
-    std::wstring s(l + 1, L'\0');
+	size_t buflen=static_cast<size_t>(l+1);
+    std::wstring s(buflen, L'\0');
     GetWindowTextW(hInput, &s[0], l + 1); //// Null T
     s.resize(l);
     return s;

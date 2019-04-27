@@ -1,5 +1,4 @@
 ////
-#include <string>
 #include <console/console.hpp>
 #include <version.h>
 #include <pe.hpp>
@@ -7,20 +6,11 @@
 #include <parseargv.hpp>
 #include <Shellapi.h>
 #include <Shlobj.h>
+#include <apphelp.hpp>
 #include "wsudo.hpp"
 #include "wsudoalias.hpp"
 
-class dotcom_global_initializer {
-public:
-  dotcom_global_initializer() {
-    auto hr = CoInitialize(NULL);
-    if (FAILED(hr)) {
-      priv::Print(priv::fc::Red, L"initialize dotcom error: 0x%08x\n", hr);
-      exit(1);
-    }
-  }
-  ~dotcom_global_initializer() { CoUninitialize(); }
-};
+
 
 void Version() {
   priv::Print(priv::fc::Cyan, L"wsudo %s\n", PRIVEXEC_BUILD_VERSION);
@@ -288,19 +278,19 @@ int AppWait(DWORD pid) {
   auto hProcess =
       OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION | SYNCHRONIZE, FALSE, pid);
   if (hProcess == INVALID_HANDLE_VALUE) {
-    auto ec = priv::error_code::lasterror();
+    auto ec = base::make_system_error_code();
     priv::Print(priv::fc::Red, L"unable open process '%s'\n", ec.message);
     return -1;
   }
   if (WaitForSingleObject(hProcess, INFINITE) == WAIT_FAILED) {
-    auto ec = priv::error_code::lasterror();
+    auto ec = base::make_system_error_code();
     priv::Print(priv::fc::Red, L"unable wait process '%s'\n", ec.message);
     CloseHandle(hProcess);
     return -1;
   }
   DWORD exitcode = 0;
   if (GetExitCodeProcess(hProcess, &exitcode) != TRUE) {
-    auto ec = priv::error_code::lasterror();
+    auto ec = base::make_system_error_code();
     priv::Print(priv::fc::Red, L"unable get process exit code '%s'\n",
                 ec.message);
   }
@@ -391,14 +381,14 @@ int AppExecuteAppContainer(wsudo::AppMode &am) {
     ok = p.initialize(appx);
   }
   if (!ok) {
-    auto ec = priv::error_code::lasterror();
+    auto ec = base::make_system_error_code();
     priv::Print(priv::fc::Red,
                 L"initialize appconatiner process  last error %d  (%s): %s\n",
                 ec.code, p.message(), ec.message);
     return 1;
   }
   if (!p.execute()) {
-    auto ec = priv::error_code::lasterror();
+    auto ec = base::make_system_error_code();
     if (p.message().empty()) {
       priv::Print(priv::fc::Red,
                   L"create appconatiner process  last error %d : %s\n", ec.code,
@@ -465,7 +455,7 @@ int AppExecute(wsudo::AppMode &am) {
     }
     return 0;
   }
-  auto ec = priv::error_code::lasterror();
+  auto ec = base::make_system_error_code();
   if (p.message().empty()) {
     priv::Print(priv::fc::Red, L"create process  last error %d : %s\n", ec.code,
                 ec.message);
@@ -491,7 +481,7 @@ int wmain(int argc, wchar_t **argv) {
     return wsudo::AliasSubcmd(am.args, am.verbose);
   }
   am.Verbose();
-  dotcom_global_initializer di;
+  priv::dotcom_global_initializer di;
   if (am.level == priv::ProcessAppContainer) {
     return AppExecuteAppContainer(am);
   }

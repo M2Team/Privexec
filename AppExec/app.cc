@@ -8,10 +8,8 @@
 #include <commdlg.h>
 #include <objbase.h>
 #include <Shlwapi.h>
-#include <string>
 #include "apputils.hpp"
 #include "resource.h"
-
 
 namespace priv {
 
@@ -265,7 +263,7 @@ bool App::AppExecute() {
   p.name().assign(appx.AppContainerName());
   AppLookupAcl(p.alloweddirs(), p.registries());
   if (!p.initialize(cas) || !p.execute()) {
-    auto ec = priv::error_code::lasterror();
+    auto ec = base::make_system_error_code();
     if (!p.message().empty()) {
       ec.message.append(L" (").append(p.message()).append(L")");
     }

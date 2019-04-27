@@ -6,7 +6,7 @@
 #include <functional>
 #include <ShlObj.h>
 #include <memory>
-#include "../../xml.hpp"
+#include <xml.hpp>
 #include "processfwd.hpp"
 #include "acl.ipp"
 
@@ -246,7 +246,7 @@ inline bool appcontainer::initialize(const std::vector<std::wstring> &names) {
             n.c_str(), capability_group_sids.sids_ptr(),
             capability_group_sids.count_ptr(), capability_sids.sids_ptr(),
             capability_sids.count_ptr())) {
-      auto ec = error_code::lasterror();
+      auto ec = base::make_system_error_code();
       fwprintf(stderr, L"DeriveCapabilitySidsFromName: %s\n",
                ec.message.c_str());
       continue;
@@ -319,7 +319,7 @@ inline bool appcontainer::execute() {
   InitializeProcThreadAttributeList(NULL, 3, 0, &cbAttributeListSize);
   siex.lpAttributeList = reinterpret_cast<PAttribute>(
       HeapAlloc(GetProcessHeap(), 0, cbAttributeListSize));
-  auto act = finally([&] {
+  auto act = base::finally([&] {
     // delete when func exit.
     DeleteProcThreadAttributeList(siex.lpAttributeList);
   });
