@@ -63,8 +63,7 @@ struct AppMode {
   std::vector<std::wstring_view> args;
   std::wstring_view cwd;              // --cwd -c
   std::wstring_view appx;             // --appx -x
-  std::wstring_view appname; // --appname
-  std::wstring_view appsid; //--appsid
+  std::wstring_view appname;          // --appname
   int level{priv::ProcessNoElevated}; // -u --user
   bool verbose{false};                // --verbose -V
   bool disablealias{false};           // --disable-alias
@@ -84,8 +83,6 @@ struct AppMode {
     }
     return L"none";
   }
-  bool IsAppLevel(const wchar_t *arg);
-  bool IsAppLevelKey(std::wstring_view k);
   int ParseArgv(int argc, wchar_t **argv);
   void Verbose();
 };

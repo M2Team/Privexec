@@ -1,0 +1,64 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Package xmlns="http://schemas.microsoft.com/appx/manifest/foundation/windows10" xmlns:uap="http://schemas.microsoft.com/appx/manifest/uap/windows10" xmlns:uap3="http://schemas.microsoft.com/appx/manifest/uap/windows10/3" xmlns:desktop="http://schemas.microsoft.com/appx/manifest/desktop/windows10" xmlns:desktop2="http://schemas.microsoft.com/appx/manifest/desktop/windows10/2" xmlns:rescap="http://schemas.microsoft.com/appx/manifest/foundation/windows10/restrictedcapabilities" IgnorableNamespaces="uap3 desktop2" xmlns:mp="http://schemas.microsoft.com/appx/2014/phone/manifest">
+  <Identity Name="Microsoft.WinDbg" ProcessorArchitecture="neutral" Publisher="CN=Microsoft Corporation, O=Microsoft Corporation, L=Redmond, S=Washington, C=US" Version="1.1810.2001.0" />
+  <Properties>
+    <DisplayName>WinDbg Preview</DisplayName>
+    <PublisherDisplayName>Microsoft Corporation</PublisherDisplayName>
+    <Logo>Resources\WinDbg_150.png</Logo>
+  </Properties>
+  <Resources>
+    <Resource Language="en-us" />
+  </Resources>
+  <Dependencies>
+    <TargetDeviceFamily Name="Windows.Desktop" MinVersion="10.0.14257.0" MaxVersionTested="10.0.14257.0" />
+  </Dependencies>
+  <Capabilities>
+    <rescap:Capability Name="runFullTrust" />
+    <rescap:Capability Name="packageQuery" />
+  </Capabilities>
+  <Applications>
+    <Application Id="Microsoft.WinDbg.DbgSrv64" Executable="amd64\dbgsrv.exe" EntryPoint="Windows.FullTrustApplication">
+      <uap:VisualElements AppListEntry="none" DisplayName="WinDbg Preview DbgSrv 64-bit" Description="WinDbg Preview DbgSrv 64-bit" BackgroundColor="#777777" Square150x150Logo="Resources\WinDbg_150.png" Square44x44Logo="Resources\WinDbg_44.png" />
+      <Extensions>
+        <uap3:Extension Category="windows.appExecutionAlias" Executable="amd64\dbgsrv.exe" EntryPoint="Windows.FullTrustApplication">
+          <uap3:AppExecutionAlias>
+            <desktop:ExecutionAlias Alias="dbgsrv64.exe" />
+          </uap3:AppExecutionAlias>
+        </uap3:Extension>
+      </Extensions>
+    </Application>
+    <Application Id="Microsoft.WinDbg.DbgSrv32" Executable="x86\dbgsrv.exe" EntryPoint="Windows.FullTrustApplication">
+      <uap:VisualElements AppListEntry="none" DisplayName="WinDbg Preview DbgSrv 32-bit" Description="WinDbg Preview DbgSrv 32-bit" BackgroundColor="#777777" Square150x150Logo="Resources\WinDbg_150.png" Square44x44Logo="Resources\WinDbg_44.png" />
+      <Extensions>
+        <uap3:Extension Category="windows.appExecutionAlias" Executable="x86\dbgsrv.exe" EntryPoint="Windows.FullTrustApplication">
+          <uap3:AppExecutionAlias>
+            <desktop:ExecutionAlias Alias="dbgsrv32.exe" />
+          </uap3:AppExecutionAlias>
+        </uap3:Extension>
+      </Extensions>
+    </Application>
+    <Application Id="Microsoft.WinDbg" Executable="DbgX.Shell.exe" EntryPoint="Windows.FullTrustApplication">
+      <uap:VisualElements DisplayName="WinDbg Preview" Description="WinDbg Preview" BackgroundColor="#777777" Square150x150Logo="Resources\WinDbg_150.png" Square44x44Logo="Resources\WinDbg_44.png" />
+      <Extensions>
+        <uap:Extension Category="windows.fileTypeAssociation">
+          <uap3:FileTypeAssociation Name="newtypes" Parameters="-z &quot;%1&quot;" desktop2:UseUrl="true">
+            <uap:SupportedFileTypes>
+              <uap:FileType>.run</uap:FileType>
+              <uap:FileType>.dmp</uap:FileType>
+              <uap:FileType>.mdmp</uap:FileType>
+              <uap:FileType>.hdmp</uap:FileType>
+              <uap:FileType>.kdmp</uap:FileType>
+              <uap:FileType>.ndmp</uap:FileType>
+            </uap:SupportedFileTypes>
+          </uap3:FileTypeAssociation>
+        </uap:Extension>
+        <uap3:Extension Category="windows.appExecutionAlias" Executable="DbgX.Shell.exe" EntryPoint="Windows.FullTrustApplication">
+          <uap3:AppExecutionAlias>
+            <desktop:ExecutionAlias Alias="WinDbgX.exe" />
+          </uap3:AppExecutionAlias>
+        </uap3:Extension>
+      </Extensions>
+    </Application>
+  </Applications>
+  <mp:PhoneIdentity PhoneProductId="cc80b52c-c459-4524-aeab-79ffc8f0d8f0" PhonePublisherId="95d94207-0c7c-47ed-82db-d75c81153c35" />
+</Package>

@@ -4,10 +4,70 @@
 #include <version.h>
 #include <pe.hpp>
 #include <argvbuilder.hpp>
+#include <parseargv.hpp>
 #include <Shellapi.h>
 #include <Shlobj.h>
 #include "wsudo.hpp"
 #include "wsudoalias.hpp"
+
+class dotcom_global_initializer {
+public:
+  dotcom_global_initializer() {
+    auto hr = CoInitialize(NULL);
+    if (FAILED(hr)) {
+      priv::Print(priv::fc::Red, L"initialize dotcom error: 0x%08x\n", hr);
+      exit(1);
+    }
+  }
+  ~dotcom_global_initializer() { CoUninitialize(); }
+};
+
+void Version() {
+  priv::Print(priv::fc::Cyan, L"wsudo %s\n", PRIVEXEC_BUILD_VERSION);
+}
+
+void Usage(bool err = false) {
+  constexpr const wchar_t *kUsage =
+      LR"(run the program with the specified permissions
+usage: wsudo command args....
+   -v|--version        print version and exit
+   -h|--help           print help information and exit
+   -u|--user           run as user (optional), support '-uX', '-u X', '--user=X', '--user X'
+                       Supported user categories (Ignore case):
+                       AppContainer  MIC
+                       NoElevated    Administrator
+                       System        TrustedInstaller
+
+   -n|--new-console    Starts a separate window to run a specified program or command.
+   -H|--hide           Hide child process window. not wait. (CREATE_NO_WINDOW)
+   -w|--wait           Start application and wait for it to terminate.
+   -V|--verbose        Make the operation more talkative
+   -x|--appx           AppContainer AppManifest file path
+   -c|--cwd            Use a working directory to launch the process.
+   -e|--env            Set Environment Variable.
+   -L|--lpac           Less Privileged AppContainer mode.
+   --disable-alias     Disable Privexec alias, By default, if Privexec exists alias, use it.
+   --appname           Set AppContainer Name
+
+Select user can use the following flags:
+   -a                  AppContainer
+   -M                  Mandatory Integrity Control
+   -U                  No Elevated(UAC)
+   -A                  Administrator
+   -S                  System
+   -T                  TrustedInstaller
+Example:
+   wsudo -A "%SYSTEMROOT%/System32/WindowsPowerShell/v1.0/powershell.exe" -NoProfile
+   wsudo -T cmd
+   wsudo -U -V CURL_SSL_BACKEND=schannel curl --verbose  -I https://nghttp2.org
+
+Builtin 'alias' command:
+   wsudo alias add ehs "notepad %SYSTEMROOT%/System32/drivers/etc/hosts" "Edit Hosts"
+   wsudo alias delete ehs
+)";
+  priv::Print(err ? priv::fc::Red : priv::fc::Cyan, L"wsudo \x2665 %s\n",
+              kUsage);
+}
 
 namespace wsudo {
 
@@ -17,37 +77,7 @@ namespace wsudo {
 //    -A          Administrator
 //    -S          System
 //    -T          TrustedInstaller
-inline bool AppMode::IsAppLevel(const wchar_t *arg) {
-  auto l = wcslen(arg);
-  if (l != 2) {
-    return false;
-  }
-  switch (arg[1]) {
-  case L'a':
-    level = priv::ProcessAppContainer;
-    break;
-  case L'M':
-    level = priv::ProcessMandatoryIntegrityControl;
-    break;
-  case L'U':
-    level = priv::ProcessNoElevated;
-    break;
-  case L'A':
-    level = priv::ProcessElevated;
-    break;
-  case L'S':
-    level = priv::ProcessSystem;
-    break;
-  case L'T':
-    level = priv::ProcessTrustedInstaller;
-    break;
-  default:
-    return false;
-  }
-  return true;
-}
-
-bool AppMode::IsAppLevelKey(std::wstring_view k) {
+bool IsAppLevel(std::wstring_view k, int &level) {
   static struct {
     const wchar_t *s;
     int level;
@@ -68,127 +98,108 @@ bool AppMode::IsAppLevelKey(std::wstring_view k) {
       return true;
     }
   }
-  message.assign(L"unsupport user level '")
-      .append(k.data(), k.size())
-      .append(L"'");
   return false;
 }
-// ParseArgv
+
+// ParseArgv todo
 int AppMode::ParseArgv(int argc, wchar_t **argv) {
-  int i = 1;
-  // std::wstring_view ua, cwd, appx;
-  auto MatchInternal =
-      [&](const wchar_t *a, const wchar_t *s,
-          const wchar_t *l) -> std::optional<std::wstring_view> {
-    std::wstring_view v;
-    if (!MatchEx(a, s, l, v)) {
-      // ok.
-      return std::nullopt;
-    }
-    if (!v.empty()) {
-      return std::make_optional<std::wstring_view>(v);
-    }
-    if (i + 1 < argc) {
-      return std::make_optional<std::wstring_view>(argv[++i]);
-    }
-    message.assign(L"Flag '").append(a).append(L"' missing  argument");
-    return std::nullopt;
-  };
-
-  for (; i < argc; i++) {
-    auto arg = argv[i];
-    if (arg[0] != '-') {
-      if (!envctx.Appendable(arg)) {
-        break;
-      }
-      continue;
-    }
-    if (Match(arg, L"-?", L"-h", L"--help")) {
-      return AppHelp;
-    }
-    if (Match(arg, L"-v", L"--version")) {
-      return AppVersion;
-    }
-    if (Match(arg, L"-V", L"--verbose")) {
-      verbose = true;
-      continue;
-    }
-    if (Match(arg, L"-w", L"--wait")) {
-      wait = true;
-      continue;
-    }
-    if (Match(arg, L"-n", L"--new-console")) {
-      visible = priv::VisibleNewConsole;
-      continue;
-    }
-    if (Match(arg, L"-H", L"--hide")) {
-      visible = priv::VisibleHide;
-      continue;
-    }
-    if (Match(arg, L"-L", L"--lpac")) {
-      lpac = true;
-      continue;
-    }
-    if (Match(arg, L"--disable-alias")) {
-      disablealias = true;
-      continue;
-    }
-
-    auto es = MatchInternal(arg, L"-e", L"--env");
-    if (es) {
-      envctx.Append(*es);
-      continue;
-    }
-    if (!message.empty()) {
-      return AppFatal;
-    }
-    auto ul = MatchInternal(arg, L"-u", L"--user");
-    if (ul) {
-      if (!IsAppLevelKey(*ul)) {
-        return AppFatal;
-      }
-      continue;
-    }
-    if (!message.empty()) {
-      return AppFatal;
-    }
-    auto cwd_ = MatchInternal(arg, L"-c", L"--cwd");
-    if (cwd_) {
-      cwd = *cwd_;
-      continue;
-    }
-    if (!message.empty()) {
-      return AppFatal;
-    }
-    auto ax = MatchInternal(arg, L"-x", L"--appx");
-    if (ax) {
-      appx = *ax;
-      continue;
-    }
-    auto an = MatchInternal(arg, L"--appname", L"--appname");
-    if (an) {
-      appname = *an;
-      continue;
-    }
-    auto aid = MatchInternal(arg, L"--appsid", L"--appsid");
-    if (aid) {
-      appsid = *aid;
-      continue;
-    }
-    if (!message.empty()) {
-      return AppFatal;
-    }
-    // AppLevel
-    if (IsAppLevel(arg)) {
-      continue;
-    }
-    message.assign(L"unsupport flag '").append(arg).append(L"'");
-    return AppFatal;
+  av::ParseArgv pa(argc, argv, true);
+  pa.Add(L"version", av::no_argument, L'v')
+      .Add(L"help", av::no_argument, L'h')
+      .Add(L"user", av::required_argument, L'u')
+      .Add(L"new-console", av::no_argument, L'n')
+      .Add(L"hide", av::no_argument, L'H')
+      .Add(L"wait", av::no_argument, L'w')
+      .Add(L"verbose", av::no_argument, L'V')
+      .Add(L"appx", av::required_argument, L'x')
+      .Add(L"cwd", av::required_argument, L'c')
+      .Add(L"env", av::required_argument, L'e')
+      .Add(L"lpac", av::no_argument, L'L')
+      .Add(L"", av::no_argument, L'a')
+      .Add(L"", av::no_argument, L'M')
+      .Add(L"", av::no_argument, L'U')
+      .Add(L"", av::no_argument, L'A')
+      .Add(L"", av::no_argument, L'S')
+      .Add(L"", av::no_argument, L'T')
+      .Add(L"appname", av::required_argument, 1001)
+      .Add(L"disable-alias", av::no_argument, 1002);
+  av::error_code ec;
+  auto result = pa.Execute(
+      [&](int val, const wchar_t *va, const wchar_t *) {
+        switch (val) {
+        case 'v':
+          Version();
+          exit(0);
+        case 'h':
+          Usage();
+          exit(0);
+        case 'u':
+          if (!IsAppLevel(va, level)) {
+            priv::Print(priv::fc::Red, L"wsudo unsupport user level: %s\n", va);
+            return false;
+          }
+          break;
+        case 'n':
+          visible = priv::VisibleNewConsole;
+          break;
+        case 'H':
+          visible = priv::VisibleHide;
+          break;
+        case 'w':
+          wait = true;
+          break;
+        case 'V':
+          verbose = true;
+          break;
+        case 'x':
+          appx = va;
+          break;
+        case 'c':
+          cwd = va;
+          break;
+        case 'e':
+          envctx.Append(va);
+          break;
+        case 'L':
+          lpac = true;
+          break;
+        case 'a':
+          level = priv::ProcessAppContainer;
+          break;
+        case 'M':
+          level = priv::ProcessMandatoryIntegrityControl;
+          break;
+        case 'U':
+          level = priv::ProcessNoElevated;
+          break;
+        case 'A':
+          level = priv::ProcessElevated;
+          break;
+        case 'S':
+          level = priv::ProcessSystem;
+          break;
+        case 'T':
+          level = priv::ProcessTrustedInstaller;
+          break;
+        case 1001:
+          appname = va;
+          break;
+        case 1002:
+          disablealias = true;
+          break;
+        default:
+          break;
+        }
+        return true;
+      },
+      ec);
+  if (!result) {
+    priv::Print(priv::fc::Red, L"wsudo ParseArgv: %s\n", ec.message);
+    return 1;
   }
-  for (; i < argc; i++) {
-    args.push_back(argv[i]);
-  }
-  return AppNone;
+  /// Copy TO
+  args = pa.UnresolvedArgs();
+  return 0;
 }
 
 const wchar_t *AppSLevel(int l) {
@@ -231,54 +242,6 @@ void AppMode::Verbose() {
   }
 }
 } // namespace wsudo
-
-void Version() {
-  priv::Print(priv::fc::Cyan, L"wsudo %s\n", PRIVEXEC_BUILD_VERSION);
-}
-
-void Usage(bool err = false) {
-  constexpr const wchar_t *kUsage =
-      LR"(run the program with the specified permissions
-usage: wsudo command args....
-   -v|--version        print version and exit
-   -h|--help           print help information and exit
-   -u|--user           run as user (optional), support '-uX', '-u X', '--user=X', '--user X'
-                       Supported user categories (Ignore case):
-                       AppContainer  MIC
-                       NoElevated    Administrator
-                       System        TrustedInstaller
-
-   -n|--new-console    Starts a separate window to run a specified program or command.
-   -H|--hide           Hide child process window. not wait. (CREATE_NO_WINDOW)
-   -w|--wait           Start application and wait for it to terminate.
-   -V|--verbose        Make the operation more talkative
-   -x|--appx           AppContainer AppManifest file path
-   -c|--cwd            Use a working directory to launch the process.
-   -e|--env            Set Environment Variable.
-   -L|--lpac           Less Privileged AppContainer mode.
-   --disable-alias     Disable Privexec alias, By default, if Privexec exists alias, use it.
-   --appsid               Set AppContainer SID
-   --appname          Set AppContainer Name
-
-Select user can use the following flags:
-   -a                  AppContainer
-   -M                  Mandatory Integrity Control
-   -U                  No Elevated(UAC)
-   -A                  Administrator
-   -S                  System
-   -T                  TrustedInstaller
-Example:
-   wsudo -A "%SYSTEMROOT%/System32/WindowsPowerShell/v1.0/powershell.exe" -NoProfile
-   wsudo -T cmd
-   wsudo -U -V CURL_SSL_BACKEND=schannel curl --verbose  -I https://nghttp2.org
-
-Builtin 'alias' command:
-   wsudo alias add ehs "notepad %SYSTEMROOT%/System32/drivers/etc/hosts" "Edit Hosts"
-   wsudo alias delete ehs
-)";
-  priv::Print(err ? priv::fc::Red : priv::fc::Cyan, L"wsudo \x2665 %s\n",
-              kUsage);
-}
 
 // expand env
 inline std::wstring ExpandEnv(std::wstring_view s) {
@@ -365,6 +328,96 @@ std::wstring ExpandArgv0(std::wstring_view argv0, bool disablealias,
   return ExpandEnv(*al);
 }
 
+int AppExecuteAppContainer(wsudo::AppMode &am) {
+  priv::argvbuilder ab;
+  bool aliasexpand = false;
+  auto argv0 =
+      ExpandArgv0(am.args[0], am.disablealias, am.verbose, aliasexpand);
+  if (aliasexpand) {
+    ab.assign_no_escape(argv0);
+  } else {
+    ab.assign(argv0);
+  }
+  auto isconsole = AppExecuteSubsystemIsConsole(argv0, aliasexpand, am.verbose);
+  auto elevated = priv::IsUserAdministratorsGroup();
+  bool waitable = false;
+  if (!elevated && am.level == priv::ProcessElevated &&
+      am.visible == priv::VisibleNone) {
+    am.visible = priv::VisibleNewConsole; /// change visible
+  }
+  if (am.visible == priv::VisibleNone && isconsole || am.wait) {
+    waitable = true;
+  }
+  // UAC Elevated
+  if (isconsole) {
+    priv::Verbose(am.verbose, L"* App subsystem is console, %s\n",
+                  am.Visible());
+  }
+  for (size_t i = 1; i < am.args.size(); i++) {
+    ab.append(am.args[i]);
+  }
+  priv::Verbose(am.verbose, L"* App real command '%s'\n", argv0);
+  am.envctx.Apply([&](const std::wstring &k, const std::wstring &v) {
+    priv::Verbose(am.verbose, L"* App apply env '%s' = '%s'\n", k, v);
+  });
+  priv::appcontainer p(ab.args());
+  if (!am.cwd.empty()) {
+    p.cwd() = ExpandEnv(am.cwd.data());
+  }
+  if (!am.appname.empty()) {
+    p.name().assign(am.appname);
+  }
+  auto appx = ExpandEnv(am.appx.data());
+  p.visiblemode(am.visible);
+  p.enablelpac(am.lpac);
+  if (am.lpac) {
+    priv::Verbose(
+        am.verbose,
+        L"* AppContainer: Less Privileged AppContainer Is Enabled.\n");
+  }
+  if (!am.appname.empty()) {
+    p.name().assign(am.appname);
+  }
+  priv::Print(priv::fc::Yellow, L"Command: %s\n", ab.args());
+  bool ok = false;
+  if (am.appx.empty()) {
+    if (am.lpac) {
+      priv::Print(priv::fc::Yellow, L"AppContainer: LPAC mode is set but will "
+                                    L"not take effect. Appmanifest not set.\n");
+    }
+    ok = p.initialize();
+  } else {
+    auto appx = ExpandEnv(am.appx.data());
+    ok = p.initialize(appx);
+  }
+  if (!ok) {
+    auto ec = priv::error_code::lasterror();
+    priv::Print(priv::fc::Red,
+                L"initialize appconatiner process  last error %d  (%s): %s\n",
+                ec.code, p.message(), ec.message);
+    return 1;
+  }
+  if (!p.execute()) {
+    auto ec = priv::error_code::lasterror();
+    if (p.message().empty()) {
+      priv::Print(priv::fc::Red,
+                  L"create appconatiner process  last error %d : %s\n", ec.code,
+                  ec.message);
+    } else {
+      priv::Print(priv::fc::Red,
+                  L"create appconatiner process  last error %d  (%s): %s\n",
+                  ec.code, p.message(), ec.message);
+    }
+    return 1;
+  }
+  priv::Print(priv::fc::Green, L"new appcontainer process %s is running: %d\n",
+              p.strid(), p.pid());
+  if (waitable) {
+    return AppWait(p.pid());
+  }
+  return 0;
+}
+
 int AppExecute(wsudo::AppMode &am) {
   priv::argvbuilder ab;
   bool aliasexpand = false;
@@ -399,44 +452,6 @@ int AppExecute(wsudo::AppMode &am) {
   am.envctx.Apply([&](const std::wstring &k, const std::wstring &v) {
     priv::Verbose(am.verbose, L"* App apply env '%s' = '%s'\n", k, v);
   });
-  if (am.level == priv::ProcessAppContainer && !am.appx.empty()) {
-    priv::appcontainer p(ab.args());
-    if (!am.cwd.empty()) {
-      p.cwd() = ExpandEnv(am.cwd.data());
-    }
-    auto appx = ExpandEnv(am.appx.data());
-    p.visiblemode(am.visible);
-    p.enablelpac(am.lpac);
-    if (am.lpac) {
-      priv::Verbose(
-          am.verbose,
-          L"* AppContainer: Less Privileged AppContainer Is Enabled.\n");
-    }
-    priv::Print(priv::fc::Yellow, L"Command: %s\n", ab.args());
-    if (!p.initialize(appx) || !p.execute()) {
-      auto ec = priv::error_code::lasterror();
-      if (p.message().empty()) {
-        priv::Print(priv::fc::Red,
-                    L"create appconatiner process  last error %d : %s\n",
-                    ec.code, ec.message);
-      } else {
-        priv::Print(priv::fc::Red,
-                    L"create appconatiner process  last error %d  (%s): %s\n",
-                    ec.code, p.message(), ec.message);
-      }
-      return 1;
-    }
-    priv::Print(priv::fc::Green, L"new appcontainer process is running: %d\n",
-                p.pid());
-    if (waitable) {
-      return AppWait(p.pid());
-    }
-    return 0;
-  }
-  if (am.level == priv::ProcessAppContainer && am.lpac) {
-    priv::Print(priv::fc::Yellow, L"AppContainer: LPAC mode is set but will "
-                                  L"not take effect. Appmanifest not set.\n");
-  }
   priv::process p(ab.args());
   p.visiblemode(am.visible);
   if (!am.cwd.empty()) {
@@ -461,30 +476,10 @@ int AppExecute(wsudo::AppMode &am) {
   return 1;
 }
 
-class DotComInitialize {
-public:
-  DotComInitialize() {
-    if (FAILED(CoInitialize(NULL))) {
-      throw std::runtime_error("CoInitialize failed");
-    }
-  }
-  ~DotComInitialize() { CoUninitialize(); }
-};
-
 int wmain(int argc, wchar_t **argv) {
   wsudo::AppMode am;
-  switch (am.ParseArgv(argc, argv)) {
-  case wsudo::AppFatal:
-    priv::Print(priv::fc::Red, L"wsudo parse argv failed: %s\n", am.message);
+  if (am.ParseArgv(argc, argv) != 0) {
     return 1;
-  case wsudo::AppHelp:
-    Usage();
-    return 0;
-  case wsudo::AppVersion:
-    Version();
-    return 0;
-  default:
-    break;
   }
   if (am.args.empty()) {
     priv::Print(priv::fc::Red, L"wsudo missing command %s see usage:\n",
@@ -496,6 +491,9 @@ int wmain(int argc, wchar_t **argv) {
     return wsudo::AliasSubcmd(am.args, am.verbose);
   }
   am.Verbose();
-  DotComInitialize dotcom;
+  dotcom_global_initializer di;
+  if (am.level == priv::ProcessAppContainer) {
+    return AppExecuteAppContainer(am);
+  }
   return AppExecute(am);
 }
