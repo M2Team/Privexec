@@ -1,10 +1,9 @@
 # Privexec
 
-<!--[![release.badge]][release.link]
-[![latestdownloads.badge]][latestdownloads.link]
-[![totaldownloads.badge]][totaldownloads.link]-->
-[![license.badge]][license.link]
-[![Build status](https://ci.appveyor.com/api/projects/status/2cbd4pceqbldlixx/branch/master?svg=true)](https://ci.appveyor.com/project/fcharlie/privexec/branch/master) <a href="https://996.icu"><img src="https://img.shields.io/badge/link-996.icu-red.svg"></a>
+
+[![license badge](https://img.shields.io/github/license/M2Team/Privexec.svg)](LICENSE)
+[![Build status](https://ci.appveyor.com/api/projects/status/2cbd4pceqbldlixx/branch/master?svg=true)](https://ci.appveyor.com/project/fcharlie/privexec/branch/master)
+[![996.icu](https://img.shields.io/badge/link-996.icu-red.svg)](https://996.icu)
 
 
 Run the program with the specified permission level
@@ -99,6 +98,7 @@ usage: wsudo command args....
    -e|--env            Set Environment Variable.
    -L|--lpac           Less Privileged AppContainer mode.
    --disable-alias     Disable Privexec alias, By default, if Privexec exists alias, use it.
+   --appname           Set AppContainer Name
 
 Select user can use the following flags:
    -a                  AppContainer
@@ -160,13 +160,3 @@ see: [changelog.md](./docs/changelog.md)
 ## LICENSE
 
 This project use MIT License, and JSON use [https://github.com/nlohmann/json](https://github.com/nlohmann/json) , some API use NSudo, but rewrite it.
-
-
-[release.badge]: https://img.shields.io/github/release/M2Team/Privexec.svg
-[release.link]: https://github.com/M2Team/Privexec/releases/latest
-[latestdownloads.badge]: https://img.shields.io/github/downloads/M2Team/Privexec/latest/total.svg
-[latestdownloads.link]: https://github.com/M2Team/Privexec/releases/latest
-[totaldownloads.badge]: https://img.shields.io/github/downloads/M2Team/Privexec/total.svg
-[totaldownloads.link]: https://github.com/M2Team/Privexec/releases
-[license.badge]: https://img.shields.io/github/license/M2Team/Privexec.svg
-[license.link]: LICENSE
