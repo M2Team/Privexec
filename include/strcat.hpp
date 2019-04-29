@@ -1,7 +1,10 @@
 ///////
 #ifndef CLANGBUILDER_STRCAT_HPP
 #define CLANGBUILDER_STRCAT_HPP
+#include <string_view>
+#include <string>
 #include "charconv.hpp"
+
 
 namespace base {
 
@@ -53,8 +56,11 @@ public:
   }
   AlphaNum(const wchar_t *cstr) : piece_(cstr) {}
   AlphaNum(std::wstring_view sv) : piece_(sv) {}
-  AlphaNum(const std::wstring &str) : piece_(str) {}
-  AlphaNum(char c) = delete;
+  template <typename Allocator>
+  AlphaNum(  // NOLINT(runtime/explicit)
+      const std::basic_string<wchar_t, std::char_traits<wchar_t>, Allocator>& str)
+      : piece_(str) {}
+  AlphaNum(wchar_t c) = delete;
   AlphaNum(const AlphaNum &) = delete;
   AlphaNum &operator=(const AlphaNum &) = delete;
   std::wstring_view::size_type size() const { return piece_.size(); }
