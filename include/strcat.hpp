@@ -382,7 +382,7 @@ inline void StrAppend(std::wstring *dest, const AlphaNum &a) {
 
 inline void StrAppend(std::wstring *dest, const AlphaNum &a,
                       const AlphaNum &b) {
-  std::string::size_type old_size = dest->size();
+  auto old_size = dest->size();
   dest->resize(old_size + a.size() + b.size());
   wchar_t *const begin = &*dest->begin();
   wchar_t *out = begin + old_size;
@@ -392,7 +392,7 @@ inline void StrAppend(std::wstring *dest, const AlphaNum &a,
 
 inline void StrAppend(std::wstring *dest, const AlphaNum &a, const AlphaNum &b,
                       const AlphaNum &c) {
-  std::string::size_type old_size = dest->size();
+  auto old_size = dest->size();
   dest->resize(old_size + a.size() + b.size() + c.size());
   wchar_t *const begin = &*dest->begin();
   wchar_t *out = begin + old_size;
