@@ -9,6 +9,211 @@
 #include <system_error>
 
 namespace base {
+
+namespace numbers_internal {
+// Writes a two-character representation of 'i' to 'buf'. 'i' must be in the
+// range 0 <= i < 100, and buf must have space for two characters. Example:
+//   char buf[2];
+//   PutTwoDigits(42, buf);
+//   // buf[0] == '4'
+//   // buf[1] == '2'
+inline void PutTwoDigits(size_t i, wchar_t *buf) {
+  static const wchar_t two_ASCII_digits[100][2] = {
+      {'0', '0'}, {'0', '1'}, {'0', '2'}, {'0', '3'}, {'0', '4'}, {'0', '5'},
+      {'0', '6'}, {'0', '7'}, {'0', '8'}, {'0', '9'}, {'1', '0'}, {'1', '1'},
+      {'1', '2'}, {'1', '3'}, {'1', '4'}, {'1', '5'}, {'1', '6'}, {'1', '7'},
+      {'1', '8'}, {'1', '9'}, {'2', '0'}, {'2', '1'}, {'2', '2'}, {'2', '3'},
+      {'2', '4'}, {'2', '5'}, {'2', '6'}, {'2', '7'}, {'2', '8'}, {'2', '9'},
+      {'3', '0'}, {'3', '1'}, {'3', '2'}, {'3', '3'}, {'3', '4'}, {'3', '5'},
+      {'3', '6'}, {'3', '7'}, {'3', '8'}, {'3', '9'}, {'4', '0'}, {'4', '1'},
+      {'4', '2'}, {'4', '3'}, {'4', '4'}, {'4', '5'}, {'4', '6'}, {'4', '7'},
+      {'4', '8'}, {'4', '9'}, {'5', '0'}, {'5', '1'}, {'5', '2'}, {'5', '3'},
+      {'5', '4'}, {'5', '5'}, {'5', '6'}, {'5', '7'}, {'5', '8'}, {'5', '9'},
+      {'6', '0'}, {'6', '1'}, {'6', '2'}, {'6', '3'}, {'6', '4'}, {'6', '5'},
+      {'6', '6'}, {'6', '7'}, {'6', '8'}, {'6', '9'}, {'7', '0'}, {'7', '1'},
+      {'7', '2'}, {'7', '3'}, {'7', '4'}, {'7', '5'}, {'7', '6'}, {'7', '7'},
+      {'7', '8'}, {'7', '9'}, {'8', '0'}, {'8', '1'}, {'8', '2'}, {'8', '3'},
+      {'8', '4'}, {'8', '5'}, {'8', '6'}, {'8', '7'}, {'8', '8'}, {'8', '9'},
+      {'9', '0'}, {'9', '1'}, {'9', '2'}, {'9', '3'}, {'9', '4'}, {'9', '5'},
+      {'9', '6'}, {'9', '7'}, {'9', '8'}, {'9', '9'}};
+  memcpy(buf, two_ASCII_digits[i], 2 * sizeof(wchar_t));
+}
+
+inline wchar_t *FastIntToBuffer(uint32_t i, wchar_t *buffer) {
+  // Used to optimize printing a decimal number's final digit.
+  const wchar_t one_ASCII_final_digits[10][2]{
+      {'0', 0}, {'1', 0}, {'2', 0}, {'3', 0}, {'4', 0},
+      {'5', 0}, {'6', 0}, {'7', 0}, {'8', 0}, {'9', 0},
+  };
+  uint32_t digits;
+  // The idea of this implementation is to trim the number of divides to as few
+  // as possible, and also reducing memory stores and branches, by going in
+  // steps of two digits at a time rather than one whenever possible.
+  // The huge-number case is first, in the hopes that the compiler will output
+  // that case in one branch-free block of code, and only output conditional
+  // branches into it from below.
+  if (i >= 1000000000) {    // >= 1,000,000,000
+    digits = i / 100000000; //      100,000,000
+    i -= digits * 100000000;
+    PutTwoDigits(digits, buffer);
+    buffer += 2;
+  lt100_000_000:
+    digits = i / 1000000; // 1,000,000
+    i -= digits * 1000000;
+    PutTwoDigits(digits, buffer);
+    buffer += 2;
+  lt1_000_000:
+    digits = i / 10000; // 10,000
+    i -= digits * 10000;
+    PutTwoDigits(digits, buffer);
+    buffer += 2;
+  lt10_000:
+    digits = i / 100;
+    i -= digits * 100;
+    PutTwoDigits(digits, buffer);
+    buffer += 2;
+  lt100:
+    digits = i;
+    PutTwoDigits(digits, buffer);
+    buffer += 2;
+    *buffer = 0;
+    return buffer;
+  }
+
+  if (i < 100) {
+    digits = i;
+    if (i >= 10)
+      goto lt100;
+    memcpy(buffer, one_ASCII_final_digits[i], 2 * sizeof(wchar_t));
+    return buffer + 1;
+  }
+  if (i < 10000) { //    10,000
+    if (i >= 1000)
+      goto lt10_000;
+    digits = i / 100;
+    i -= digits * 100;
+    *buffer++ = static_cast<wchar_t>('0' + digits);
+    goto lt100;
+  }
+  if (i < 1000000) { //    1,000,000
+    if (i >= 100000)
+      goto lt1_000_000;
+    digits = i / 10000; //    10,000
+    i -= digits * 10000;
+    *buffer++ = static_cast<wchar_t>('0' + digits);
+    goto lt10_000;
+  }
+  if (i < 100000000) { //    100,000,000
+    if (i >= 10000000)
+      goto lt100_000_000;
+    digits = i / 1000000; //   1,000,000
+    i -= digits * 1000000;
+    *buffer++ = static_cast<wchar_t>('0' + digits);
+    goto lt1_000_000;
+  }
+  // we already know that i < 1,000,000,000
+  digits = i / 100000000; //   100,000,000
+  i -= digits * 100000000;
+  *buffer++ = static_cast<wchar_t>('0' + digits);
+  goto lt100_000_000;
+}
+
+inline wchar_t *FastIntToBuffer(int32_t i, wchar_t *buffer) {
+  uint32_t u = i;
+  if (i < 0) {
+    *buffer++ = '-';
+    // We need to do the negation in modular (i.e., "unsigned")
+    // arithmetic; MSVC++ apprently warns for plain "-u", so
+    // we write the equivalent expression "0 - u" instead.
+    u = 0 - u;
+  }
+  return FastIntToBuffer(u, buffer);
+}
+
+inline wchar_t *FastIntToBuffer(uint64_t i, wchar_t *buffer) {
+  uint32_t u32 = static_cast<uint32_t>(i);
+  if (u32 == i)
+    return FastIntToBuffer(u32, buffer);
+
+  // Here we know i has at least 10 decimal digits.
+  uint64_t top_1to11 = i / 1000000000;
+  u32 = static_cast<uint32_t>(i - top_1to11 * 1000000000);
+  uint32_t top_1to11_32 = static_cast<uint32_t>(top_1to11);
+
+  if (top_1to11_32 == top_1to11) {
+    buffer = numbers_internal::FastIntToBuffer(top_1to11_32, buffer);
+  } else {
+    // top_1to11 has more than 32 bits too; print it in two steps.
+    uint32_t top_8to9 = static_cast<uint32_t>(top_1to11 / 100);
+    uint32_t mid_2 = static_cast<uint32_t>(top_1to11 - top_8to9 * 100);
+    buffer = numbers_internal::FastIntToBuffer(top_8to9, buffer);
+    PutTwoDigits(mid_2, buffer);
+    buffer += 2;
+  }
+
+  // We have only 9 digits now, again the maximum uint32_t can handle fully.
+  uint32_t digits = u32 / 10000000; // 10,000,000
+  u32 -= digits * 10000000;
+  PutTwoDigits(digits, buffer);
+  buffer += 2;
+  digits = u32 / 100000; // 100,000
+  u32 -= digits * 100000;
+  PutTwoDigits(digits, buffer);
+  buffer += 2;
+  digits = u32 / 1000; // 1,000
+  u32 -= digits * 1000;
+  PutTwoDigits(digits, buffer);
+  buffer += 2;
+  digits = u32 / 10;
+  u32 -= digits * 10;
+  PutTwoDigits(digits, buffer);
+  buffer += 2;
+  // Used to optimize printing a decimal number's final digit.
+  const wchar_t one_ASCII_final_digits[10][2]{
+      {L'0', 0}, {L'1', 0}, {L'2', 0}, {L'3', 0}, {L'4', 0},
+      {L'5', 0}, {L'6', 0}, {L'7', 0}, {L'8', 0}, {L'9', 0},
+  };
+  memcpy(buffer, one_ASCII_final_digits[u32], 2 * sizeof(wchar_t));
+  return buffer + 1;
+}
+
+inline wchar_t *FastIntToBuffer(int64_t i, wchar_t *buffer) {
+  uint64_t u = i;
+  if (i < 0) {
+    *buffer++ = '-';
+    u = 0 - u;
+  }
+  return FastIntToBuffer(u, buffer);
+}
+
+} // namespace numbers_internal
+
+// For enums and integer types that are not an exact match for the types above,
+// use templates to call the appropriate one of the four overloads above.
+template <typename int_type>
+wchar_t *FastIntToBuffer(int_type i, wchar_t *buffer) {
+  static_assert(sizeof(i) <= 64 / 8,
+                "FastIntToBuffer works only with 64-bit-or-less integers.");
+  // TODO(jorg): This signed-ness check is used because it works correctly
+  // with enums, and it also serves to check that int_type is not a pointer.
+  // If one day something like std::is_signed<enum E> works, switch to it.
+  if (static_cast<int_type>(1) - 2 < 0) { // Signed
+    if (constexpr sizeof(i) > 32 / 8) {   // 33-bit to 64-bit
+      return numbers_internal::FastIntToBuffer(static_cast<int64_t>(i), buffer);
+    } else { // 32-bit or less
+      return numbers_internal::FastIntToBuffer(static_cast<int32_t>(i), buffer);
+    }
+  } else {                              // Unsigned
+    if (constexpr sizeof(i) > 32 / 8) { // 33-bit to 64-bit
+      return numbers_internal::FastIntToBuffer(static_cast<uint64_t>(i),
+                                               buffer);
+    } else { // 32-bit or less
+      return numbers_internal::FastIntToBuffer(static_cast<uint32_t>(i),
+                                               buffer);
+    }
+  }
+}
+
 struct to_chars_result {
   wchar_t *ptr;
   std::errc ec;
