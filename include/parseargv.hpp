@@ -23,7 +23,7 @@ struct error_code {
   }
   template <typename... Args> void Assign(int val, Args... args) {
     ec = val;
-    message = base::internal::CatPieces(
+    message = base::strings_internal::CatPieces(
         {static_cast<const base::AlphaNum &>(args).Piece()...});
   }
 };
