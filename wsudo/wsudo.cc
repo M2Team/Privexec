@@ -49,7 +49,7 @@ Select user can use the following flags:
 Example:
    wsudo -A "%SYSTEMROOT%/System32/WindowsPowerShell/v1.0/powershell.exe" -NoProfile
    wsudo -T cmd
-   wsudo -U -V CURL_SSL_BACKEND=schannel curl --verbose  -I https://nghttp2.org
+   wsudo -U -V -e CURL_SSL_BACKEND=schannel curl --verbose  -I https://nghttp2.org
 
 Builtin 'alias' command:
    wsudo alias add ehs "notepad %SYSTEMROOT%/System32/drivers/etc/hosts" "Edit Hosts"
