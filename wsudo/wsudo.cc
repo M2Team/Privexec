@@ -7,10 +7,9 @@
 #include <Shellapi.h>
 #include <Shlobj.h>
 #include <apphelp.hpp>
+//
 #include "wsudo.hpp"
 #include "wsudoalias.hpp"
-
-
 
 void Version() {
   priv::Print(priv::fc::Cyan, L"wsudo %s\n", PRIVEXEC_BUILD_VERSION);
@@ -19,14 +18,13 @@ void Version() {
 void Usage(bool err = false) {
   constexpr const wchar_t *kUsage =
       LR"(run the program with the specified permissions
-usage: wsudo command args....
+usage: wsudo command args...
    -v|--version        print version and exit
    -h|--help           print help information and exit
    -u|--user           run as user (optional), support '-uX', '-u X', '--user=X', '--user X'
                        Supported user categories (Ignore case):
-                       AppContainer  MIC
-                       NoElevated    Administrator
-                       System        TrustedInstaller
+                       AppContainer    MIC       NoElevated
+                       Administrator   System    TrustedInstaller
 
    -n|--new-console    Starts a separate window to run a specified program or command.
    -H|--hide           Hide child process window. not wait. (CREATE_NO_WINDOW)
@@ -40,23 +38,19 @@ usage: wsudo command args....
    --appname           Set AppContainer Name
 
 Select user can use the following flags:
-   -a                  AppContainer
-   -M                  Mandatory Integrity Control
-   -U                  No Elevated(UAC)
-   -A                  Administrator
-   -S                  System
-   -T                  TrustedInstaller
+   |-a  AppContainer    |-M  Mandatory Integrity Control|-U  No Elevated(UAC)|
+   |-A  Administrator   |-S  System                     |-T  TrustedInstaller|
 Example:
    wsudo -A "%SYSTEMROOT%/System32/WindowsPowerShell/v1.0/powershell.exe" -NoProfile
    wsudo -T cmd
-   wsudo -U -V -e CURL_SSL_BACKEND=schannel curl --verbose  -I https://nghttp2.org
+   wsudo -U -V --env CURL_SSL_BACKEND=schannel curl --verbose  -I https://nghttp2.org
 
 Builtin 'alias' command:
    wsudo alias add ehs "notepad %SYSTEMROOT%/System32/drivers/etc/hosts" "Edit Hosts"
    wsudo alias delete ehs
 )";
-  priv::Print(err ? priv::fc::Red : priv::fc::Cyan, L"wsudo \x2665 %s\n",
-              kUsage);
+  priv::Print(err ? priv::fc::Red : priv::fc::Cyan,
+              L"wsudo \xD83D\xDE0B \x2665 %s\n", kUsage);
 }
 
 namespace wsudo {
@@ -400,8 +394,9 @@ int AppExecuteAppContainer(wsudo::AppMode &am) {
     }
     return 1;
   }
-  priv::Print(priv::fc::Green, L"new appcontainer process %s is running: %d\n",
-              p.strid(), p.pid());
+  priv::Print(priv::fc::Green,
+              L"new appcontainer process is running: %d\nsid: %s\n", p.pid(),
+              p.strid());
   if (waitable) {
     return AppWait(p.pid());
   }
