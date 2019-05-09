@@ -273,7 +273,7 @@ private:
   wchar_t digits_[kFastToBufferSize];
 };
 
-namespace internal {
+namespace strings_internal {
 
 inline void AppendPieces(std::wstring *result,
                          std::initializer_list<std::wstring_view> pieces) {
@@ -318,7 +318,7 @@ static inline wchar_t *Append(wchar_t *out, const AlphaNum &x) {
   return after;
 }
 
-} // namespace internal
+} // namespace strings_internal
 inline std::wstring StringCat() { return std::wstring(); }
 
 inline std::wstring StringCat(const AlphaNum &a) {
@@ -330,8 +330,8 @@ inline std::wstring StringCat(const AlphaNum &a, const AlphaNum &b) {
   result.resize(a.size() + b.size());
   wchar_t *const begin = &*result.begin();
   wchar_t *out = begin;
-  out = internal::Append(out, a);
-  out = internal::Append(out, b);
+  out = strings_internal::Append(out, a);
+  out = strings_internal::Append(out, b);
   return result;
 }
 inline std::wstring StringCat(const AlphaNum &a, const AlphaNum &b,
@@ -340,9 +340,9 @@ inline std::wstring StringCat(const AlphaNum &a, const AlphaNum &b,
   result.resize(a.size() + b.size() + c.size());
   wchar_t *const begin = &*result.begin();
   wchar_t *out = begin;
-  out = internal::Append(out, a);
-  out = internal::Append(out, b);
-  out = internal::Append(out, c);
+  out = strings_internal::Append(out, a);
+  out = strings_internal::Append(out, b);
+  out = strings_internal::Append(out, c);
   return result;
 }
 inline std::wstring StringCat(const AlphaNum &a, const AlphaNum &b,
@@ -351,10 +351,10 @@ inline std::wstring StringCat(const AlphaNum &a, const AlphaNum &b,
   result.resize(a.size() + b.size() + c.size() + d.size());
   wchar_t *const begin = &*result.begin();
   wchar_t *out = begin;
-  out = internal::Append(out, a);
-  out = internal::Append(out, b);
-  out = internal::Append(out, c);
-  out = internal::Append(out, d);
+  out = strings_internal::Append(out, a);
+  out = strings_internal::Append(out, b);
+  out = strings_internal::Append(out, c);
+  out = strings_internal::Append(out, d);
   return result;
 }
 
@@ -363,17 +363,9 @@ template <typename... AV>
 inline std::wstring StringCat(const AlphaNum &a, const AlphaNum &b,
                               const AlphaNum &c, const AlphaNum &d,
                               const AlphaNum &e, const AV &... args) {
-  return internal::CatPieces({a.Piece(), b.Piece(), c.Piece(), d.Piece(),
-                              e.Piece(),
-                              static_cast<const AlphaNum &>(args).Piece()...});
-}
-
-inline wchar_t *Append(wchar_t *out, const AlphaNum &x) {
-  // memcpy is allowed to overwrite arbitrary memory, so doing this after the
-  // call would force an extra fetch of x.size().
-  wchar_t *after = out + x.size();
-  wmemcpy(out, x.data(), x.size());
-  return after;
+  return strings_internal::CatPieces(
+      {a.Piece(), b.Piece(), c.Piece(), d.Piece(), e.Piece(),
+       static_cast<const AlphaNum &>(args).Piece()...});
 }
 
 inline void StrAppend(std::wstring *dest, const AlphaNum &a) {
@@ -386,8 +378,8 @@ inline void StrAppend(std::wstring *dest, const AlphaNum &a,
   dest->resize(old_size + a.size() + b.size());
   wchar_t *const begin = &*dest->begin();
   wchar_t *out = begin + old_size;
-  out = Append(out, a);
-  out = Append(out, b);
+  out = strings_internal::Append(out, a);
+  out = strings_internal::Append(out, b);
 }
 
 inline void StrAppend(std::wstring *dest, const AlphaNum &a, const AlphaNum &b,
@@ -396,9 +388,9 @@ inline void StrAppend(std::wstring *dest, const AlphaNum &a, const AlphaNum &b,
   dest->resize(old_size + a.size() + b.size() + c.size());
   wchar_t *const begin = &*dest->begin();
   wchar_t *out = begin + old_size;
-  out = Append(out, a);
-  out = Append(out, b);
-  out = Append(out, c);
+  out = strings_internal::Append(out, a);
+  out = strings_internal::Append(out, b);
+  out = strings_internal::Append(out, c);
 }
 
 inline void StrAppend(std::wstring *dest, const AlphaNum &a, const AlphaNum &b,
@@ -407,10 +399,10 @@ inline void StrAppend(std::wstring *dest, const AlphaNum &a, const AlphaNum &b,
   dest->resize(old_size + a.size() + b.size() + c.size() + d.size());
   wchar_t *const begin = &*dest->begin();
   wchar_t *out = begin + old_size;
-  out = Append(out, a);
-  out = Append(out, b);
-  out = Append(out, c);
-  out = Append(out, d);
+  out = strings_internal::Append(out, a);
+  out = strings_internal::Append(out, b);
+  out = strings_internal::Append(out, c);
+  out = strings_internal::Append(out, d);
 }
 
 template <typename... AV>

@@ -198,13 +198,13 @@ wchar_t *FastIntToBuffer(int_type i, wchar_t *buffer) {
   // with enums, and it also serves to check that int_type is not a pointer.
   // If one day something like std::is_signed<enum E> works, switch to it.
   if (static_cast<int_type>(1) - 2 < 0) { // Signed
-    if (constexpr sizeof(i) > 32 / 8) {   // 33-bit to 64-bit
+    if (sizeof(i) > 32 / 8) {             // 33-bit to 64-bit
       return numbers_internal::FastIntToBuffer(static_cast<int64_t>(i), buffer);
     } else { // 32-bit or less
       return numbers_internal::FastIntToBuffer(static_cast<int32_t>(i), buffer);
     }
-  } else {                              // Unsigned
-    if (constexpr sizeof(i) > 32 / 8) { // 33-bit to 64-bit
+  } else {                    // Unsigned
+    if (sizeof(i) > 32 / 8) { // 33-bit to 64-bit
       return numbers_internal::FastIntToBuffer(static_cast<uint64_t>(i),
                                                buffer);
     } else { // 32-bit or less
