@@ -66,7 +66,7 @@ template <typename... Args>
 inline error_code strcat_error_code(std::wstring_view v0,
                                     const Args &... args) {
   return error_code{strings_internal::CatPieces(
-                        {static_cast<const AlphaNum &>(args).Piece()...}),
+                        {v0, static_cast<const AlphaNum &>(args).Piece()...}),
                     -1};
 }
 
