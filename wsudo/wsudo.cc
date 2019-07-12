@@ -276,12 +276,15 @@ int AppWait(DWORD pid) {
     priv::Print(priv::fc::Red, L"unable open process '%s'\n", ec.message);
     return -1;
   }
+  SetConsoleCtrlHandler(nullptr, TRUE);
   if (WaitForSingleObject(hProcess, INFINITE) == WAIT_FAILED) {
     auto ec = base::make_system_error_code();
     priv::Print(priv::fc::Red, L"unable wait process '%s'\n", ec.message);
+    SetConsoleCtrlHandler(nullptr, FALSE);
     CloseHandle(hProcess);
     return -1;
   }
+  SetConsoleCtrlHandler(nullptr, FALSE);
   DWORD exitcode = 0;
   if (GetExitCodeProcess(hProcess, &exitcode) != TRUE) {
     auto ec = base::make_system_error_code();
