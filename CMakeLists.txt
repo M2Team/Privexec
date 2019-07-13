@@ -51,6 +51,8 @@ add_definitions(
 
 include_directories(
   ./include
+  ./vendor/bela/include
+  ./vendor/pugixml
 )
 
 configure_file(
@@ -61,7 +63,7 @@ configure_file(
 install(FILES Privexec/Privexec.json
     DESTINATION .
 )
-
+add_subdirectory(vendor/bela)
 add_subdirectory(AppExec)
 add_subdirectory(Privexec)
 add_subdirectory(wsudo)

@@ -72,7 +72,8 @@ bela::error_code make_error_code(long code, const AlphaNum &a,
   return ec;
 }
 
-inline std::wstring system_error_dump(DWORD ec) {
+inline std::wstring system_error_dump(DWORD ec,
+                                      std::wstring_view prefix = L"") {
   LPWSTR buf = nullptr;
   auto rl = FormatMessageW(
       FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_ALLOCATE_BUFFER, nullptr, ec,
@@ -83,15 +84,21 @@ inline std::wstring system_error_dump(DWORD ec) {
   if (buf[rl - 1] == '\n') {
     rl--;
   }
-  std::wstring msg(buf, rl);
+  std::wstring msg;
+  if (!prefix.empty()) {
+    msg.reserve(prefix.size() + rl + 1);
+    msg.assign(prefix).append(buf, rl);
+  } else {
+    msg.assign(buf, rl);
+  }
   LocalFree(buf);
   return msg;
 }
 
-inline error_code make_system_error_code() {
+inline error_code make_system_error_code(std::wstring_view prefix = L"") {
   error_code ec;
   ec.code = GetLastError();
-  ec.message = system_error_dump(ec.code);
+  ec.message = system_error_dump(ec.code, prefix);
   return ec;
 }
 
