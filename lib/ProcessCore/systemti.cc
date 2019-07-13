@@ -298,4 +298,65 @@ bool Elevator::Elevate(const PrivilegeView *pv, std::wstring &klast) {
   return true;
 }
 
+bool Process::ExecSystem() {
+  PrivilegeView pv = {
+      {SE_TCB_NAME, SE_ASSIGNPRIMARYTOKEN_NAME, SE_INCREASE_QUOTA_NAME}};
+  Elevator eo;
+  if (!eo.Elevate(&pv, kmessage)) {
+    return false;
+  }
+  auto hProcess = INVALID_HANDLE_VALUE;
+  auto hToken = INVALID_HANDLE_VALUE;
+  auto hPrimary = INVALID_HANDLE_VALUE;
+  auto deleter = bela::finally([&] {
+    CloseHandleEx(hProcess);
+    CloseHandleEx(hToken);
+    CloseHandleEx(hPrimary);
+  });
+  if ((hProcess = OpenProcess(MAXIMUM_ALLOWED, FALSE, eo.PID())) == nullptr) {
+    kmessage = L"systemexec<OpenProcess>";
+    return false;
+  }
+  if (OpenProcessToken(hProcess, MAXIMUM_ALLOWED, &hToken) != TRUE) {
+    kmessage = L"systemexec<OpenProcessToken>";
+    return false;
+  }
+  if (DuplicateTokenEx(hToken, TOKEN_ALL_ACCESS, nullptr, SecurityImpersonation,
+                       TokenPrimary, &hPrimary) != TRUE) {
+    kmessage = L"systemexec<DuplicateTokenEx>";
+    return false;
+  }
+  auto session = eo.SID();
+  if (SetTokenInformation(hPrimary, TokenSessionId, &session,
+                          sizeof(session)) != TRUE) {
+    return false;
+  }
+  return ExecWithToken(hPrimary, true);
+}
+
+bool Process::ExecTI() {
+  Elevator eo;
+  if (!eo.Elevate(nullptr, kmessage)) {
+    return false;
+  }
+  system_internal::TiElevator te;
+  if (!te.Elevate()) {
+    return false;
+  }
+  HANDLE hToken = INVALID_HANDLE_VALUE;
+  if (!te.Duplicate(&hToken)) {
+    return false;
+  }
+  auto deleter = bela::finally([hToken] { CloseHandle(hToken); });
+  DWORD dwSessionId;
+  if (!GetCurrentSessionId(dwSessionId)) {
+    return false;
+  }
+  if (SetTokenInformation(hToken, TokenSessionId, (PVOID)&dwSessionId,
+                          sizeof(DWORD)) != TRUE) {
+    return false;
+  }
+  return ExecWithToken(hToken, true);
+}
+
 } // namespace priv
