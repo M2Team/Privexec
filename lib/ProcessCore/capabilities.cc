@@ -96,9 +96,6 @@ bool AppContainer::Initialzie(const bela::Span<std::wstring> caps) {
             n.c_str(), capability_group_sids.sids_ptr(),
             capability_group_sids.count_ptr(), capability_sids.sids_ptr(),
             capability_sids.count_ptr())) {
-      //   auto ec = base::make_system_error_code();
-      //   fwprintf(stderr, L"DeriveCapabilitySidsFromName: %s\n",
-      //            ec.message.c_str());
       continue;
     }
     if (capability_sids.count() < 1) {
@@ -130,8 +127,46 @@ bool AppContainer::Initialzie(const bela::Span<std::wstring> caps) {
 }
 
 bool AppContainer::Initialize(const bela::Span<wid_t> wids) {
-  //
-  return false;
+  if (!ca.empty()) {
+    kmessage.assign(L"capabilities is initialized");
+    return false;
+  }
+  if (wids.empty()) {
+    kmessage.assign(L"capabilities well known sid is empty");
+    return false;
+  }
+  for (auto id : wids) {
+    PSID psid = HeapAlloc(GetProcessHeap(), 0, SECURITY_MAX_SID_SIZE);
+    if (psid == nullptr) {
+      kmessage = L"alloc psid failed";
+      return false;
+    }
+    DWORD sidlistsize = SECURITY_MAX_SID_SIZE;
+    if (::CreateWellKnownSid(id, NULL, psid, &sidlistsize) != TRUE) {
+      HeapFree(GetProcessHeap(), 0, psid);
+      continue;
+    }
+    if (::IsWellKnownSid(psid, id) != TRUE) {
+      HeapFree(GetProcessHeap(), 0, psid);
+      continue;
+    }
+    SID_AND_ATTRIBUTES attr;
+    attr.Sid = psid;
+    attr.Attributes = SE_GROUP_ENABLED;
+    ca.push_back(attr);
+  }
+  constexpr const wchar_t *appid = L"Privexec.AppContainer.WellKnownSid";
+  if (name.empty()) {
+    name = appid;
+  }
+  DeleteAppContainerProfile(name.data()); // ignore error
+  if (CreateAppContainerProfile(name.data(), name.data(), name.data(),
+                                (ca.empty() ? NULL : ca.data()),
+                                (DWORD)ca.size(), &appcontainersid) != S_OK) {
+    kmessage = L"CreateAppContainerProfile";
+    return false;
+  }
+  return true;
 }
 
 bool AppContainer::InitializeNone() {

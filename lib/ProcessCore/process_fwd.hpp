@@ -58,6 +58,7 @@ public:
   }
   bool Exec(EexcLevel el = EexcLevel::None);
   const std::wstring_view Message() const { return kmessage; }
+  DWORD PID() const { return pid; }
 
 private:
   bool ExecNone();
@@ -106,10 +107,24 @@ public:
     visible = visible_;
     return visible;
   }
+
+  alloweddir_t &AllowedDirs() { return alloweddirs; }
+  const alloweddir_t &AllowedDirs() const { return alloweddirs; }
+  alloweddir_t &Registries() { return registries; }
+  const alloweddir_t &Registries() const { return registries; }
+  const std::wstring &StrID() const { return strid; }
+  const std::wstring &ConatinerFolder() const { return folder; }
+  bool EnableLPAC(bool enable) {
+    lpac = enable;
+    return lpac;
+  }
+  DWORD PID() const { return pid; }
+  const std::wstring_view Message() const { return kmessage; }
   bool InitializeNone(); // default;
   bool Initialzie(const bela::Span<std::wstring> caps);
   bool Initialize(const bela::Span<wid_t> wids);
   bool InitialzieFile(std::wstring_view file);
+  bool Exec();
 
 private:
   std::wstring cmd;
@@ -123,6 +138,8 @@ private:
   PSID appcontainersid{nullptr};
   capabilities_t ca;
   VisibleMode visible{VisibleMode::None}; ///
+  DWORD pid;
+  bool lpac{false};
 };
 
 } // namespace priv
