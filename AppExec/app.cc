@@ -1,6 +1,8 @@
 ///
 #include <process.hpp>
 #include <bela/env.hpp>
+#include <bela/path.hpp>
+#include <bela/match.hpp>
 #include "app.hpp" // included windows.h
 #include <Windowsx.h>
 // C RunTime Header Files
@@ -152,29 +154,6 @@ std::wstring App::ResolveCWD() {
   return cwd_;
 }
 
-std::vector<std::wstring_view> PathSplit(std::wstring_view sv) {
-  std::vector<std::wstring_view> output;
-  size_t first = 0;
-  while (first < sv.size()) {
-    const auto second = sv.find_first_of(L'\\', first);
-    if (first != second) {
-      auto s = sv.substr(first, second - first);
-      if (s == L"..") {
-        if (!output.empty()) {
-          output.pop_back();
-        }
-      } else if (s != L".") {
-        output.emplace_back(s);
-      }
-    }
-    if (second == std::wstring_view::npos) {
-      break;
-    }
-    first = second + 1;
-  }
-  return output;
-}
-
 std::vector<std::wstring_view> NewlineTokenize(std::wstring_view sv) {
   std::vector<std::wstring_view> output;
   size_t first = 0;
@@ -198,15 +177,15 @@ std::vector<std::wstring_view> NewlineTokenize(std::wstring_view sv) {
 }
 
 bool IsRegistryKey(std::wstring_view path) {
-  auto pv = PathSplit(path);
+  auto pv = bela::SplitPath(path);
   if (pv.empty()) {
     return false;
   }
-  const wchar_t *keys[] = {
+  constexpr std::wstring_view keys[] = {
       L"HKEY_CLASSES_ROOT",  L"HKCR", L"HKEY_CURRENT_USER", L"HKCU",
       L"HKEY_LOCAL_MACHINE", L"HKLM", L"HKEY_USERS",        L"HKU"};
   for (auto k : keys) {
-    if (_wcsnicmp(k, pv[0].data(), pv[0].size()) == 0) {
+    if (bela::EqualsIgnoreCase(k, pv[0])) {
       return true;
     }
   }
@@ -225,10 +204,10 @@ bool App::AppLookupAcl(std::vector<std::wstring> &fsdir,
   for (auto d : dirs) {
     if (IsRegistryKey(d)) {
       trace.Append(L"Registry Access", d);
-      registries.push_back(std::wstring(d));
+      registries.emplace_back(d);
     } else {
-      fsdir.push_back(std::wstring(d));
       trace.Append(L"Fs Access", d);
+      fsdir.emplace_back(d);
     }
   }
   return true;

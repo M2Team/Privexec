@@ -9,7 +9,7 @@
 
 namespace priv {
 // process execute level
-enum class ExecLevel {
+enum class ExecLevel : int {
   None = -1,
   AppContainer,
   MIC,
@@ -18,7 +18,7 @@ enum class ExecLevel {
   System,
   TrustedInstaller
 };
-enum class VisibleMode {
+enum class VisibleMode : int {
   None = 0, // not set
   NewConsole,
   Hide
