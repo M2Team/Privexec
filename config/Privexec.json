@@ -6,11 +6,6 @@
             "Target": "Notepad %windir%\\System32\\Drivers\\etc\\hosts"
         },
         {
-            "Desc": "PowerShell",
-            "Alias": "pwsh",
-            "Target": "powershell"
-        },
-        {
             "Desc": "PowerShell ISE",
             "Alias": "pwshise",
             "Target": "powershell_ise"
