@@ -23,21 +23,6 @@ struct PrivilegeView {
   }
 };
 
-inline bool IsUserAdministratorsGroup() {
-  SID_IDENTIFIER_AUTHORITY NtAuthority = SECURITY_NT_AUTHORITY;
-  PSID AdministratorsGroup;
-  if (!AllocateAndInitializeSid(&NtAuthority, 2, SECURITY_BUILTIN_DOMAIN_RID,
-                                DOMAIN_ALIAS_RID_ADMINS, 0, 0, 0, 0, 0, 0,
-                                &AdministratorsGroup)) {
-    return false;
-  }
-  BOOL b = FALSE;
-  if (!CheckTokenMembership(NULL, AdministratorsGroup, &b)) {
-    b = FALSE;
-  }
-  FreeSid(AdministratorsGroup);
-  return b == TRUE;
-}
 
 bool GetCurrentSessionId(DWORD &dwSessionId);
 // System process elavator

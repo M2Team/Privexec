@@ -2,6 +2,7 @@
 #include <bela/base.hpp>
 #include <bela/codecvt.hpp>
 //#include <bela/phmap.hpp>
+#define PUGIXML_HEADER_ONLY 1
 #include <pugixml.hpp>
 #include <sddl.h>
 #include <Userenv.h>
@@ -70,16 +71,16 @@ typedef BOOL(WINAPI *DeriveCapabilitySidsFromNameImpl)(
     LPCWSTR CapName, PSID **CapabilityGroupSids, DWORD *CapabilityGroupSidCount,
     PSID **CapabilitySids, DWORD *CapabilitySidCount);
 
-bool AppContainer::InitialzieFile(std::wstring_view file) {
+bool AppContainer::InitializeFile(std::wstring_view file) {
   std::vector<std::wstring> caps;
   if (!MergeFromAppManifest(file, caps)) {
     return false;
   }
   // Convert to bela::Span
-  return Initialzie({caps.data(), caps.size()});
+  return Initialize({caps.data(), caps.size()});
 }
 
-bool AppContainer::Initialzie(const bela::Span<std::wstring> caps) {
+bool AppContainer::Initialize(const bela::Span<std::wstring> caps) {
   //
   auto _DeriveCapabilitySidsFromName =
       (DeriveCapabilitySidsFromNameImpl)GetProcAddress(

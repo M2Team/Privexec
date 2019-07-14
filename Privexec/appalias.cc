@@ -2,7 +2,9 @@
 #include <json.hpp>
 #include <Shlwapi.h>
 #include <PathCch.h>
-#include <base.hpp>
+#include <bela/path.hpp>
+#include <bela/codecvt.hpp>
+#include <bela/env.hpp>
 #include <file.hpp>
 #include "app.hpp"
 
@@ -41,9 +43,9 @@ bool AppAliasInitialize(HWND hbox, priv::alias_t &alias) {
     auto json = nlohmann::json::parse(fd.fd);
     auto cmds = json["Alias"];
     for (auto &cmd : cmds) {
-      auto desc = base::ToWide(cmd["Desc"].get<std::string>());
-      auto target = base::ToWide(cmd["Target"].get<std::string>());
-      alias.insert(std::make_pair(desc, target));
+      auto desc = bela::ToWide(cmd["Desc"].get<std::string>());
+      alias.insert_or_assign(desc,
+                             bela::ToWide(cmd["Target"].get<std::string>()));
       ::SendMessageW(hbox, CB_ADDSTRING, 0, (LPARAM)desc.data());
     }
   } catch (const std::exception &e) {

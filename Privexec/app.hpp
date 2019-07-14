@@ -13,12 +13,12 @@
 #include <PathCch.h>
 #include <string_view>
 #include <vector>
-#include <unordered_map>
+#include <bela/phmap.hpp>
 
 namespace priv {
 
 using wid_t = WELL_KNOWN_SID_TYPE;
-using alias_t = std::unordered_map<std::wstring, std::wstring>;
+using alias_t = bela::flat_hash_map<std::wstring, std::wstring>;
 bool AppAliasInitialize(HWND hbox, priv::alias_t &alias);
 static constexpr const auto whitecolor = RGB(255, 255, 255);
 static constexpr const auto blackcolor = RGB(0, 0, 0);
@@ -85,7 +85,7 @@ struct Element {
     if (l == 0 || l > PATHCCH_MAX_CCH * 2) {
       return L"";
     }
-	size_t buflen=static_cast<size_t>(l+1);
+    size_t buflen = static_cast<size_t>(l + 1);
     std::wstring s(buflen, L'\0');
     GetWindowTextW(hInput, &s[0], l + 1); //// Null T
     s.resize(l);

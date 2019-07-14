@@ -6,8 +6,8 @@
 #include <vector>
 #include <optional>
 #include <string_view>
-#include <process/process.hpp>
 #include <bela/stdwriter.hpp>
+#include <process.hpp>
 #include "env.hpp"
 
 namespace wsudo {
@@ -62,13 +62,14 @@ struct AppMode {
   EnvContext envctx;
   std::wstring message;
   std::vector<std::wstring_view> args;
-  std::wstring_view cwd;              // --cwd -c
-  std::wstring_view appx;             // --appx -x
-  std::wstring_view appname;          // --appname
-  int level{priv::ProcessNoElevated}; // -u --user
-  bool verbose{false};                // --verbose -V
-  bool disablealias{false};           // --disable-alias
-  bool wait{false};                   // -w --wait
+  std::wstring_view cwd;     // --cwd -c
+  std::wstring_view appx;    // --appx -x
+  std::wstring_view appname; // --appname
+  // int level{priv::ProcessNoElevated}; // -u --user
+  priv::ExecLevel level{priv::ExecLevel::NoElevated};
+  bool verbose{false};      // --verbose -V
+  bool disablealias{false}; // --disable-alias
+  bool wait{false};         // -w --wait
   bool lpac{false};
   void Verbose(const wchar_t *fmt) const {
     if (verbose) {
@@ -85,14 +86,14 @@ struct AppMode {
     }
   }
 
-  priv::visiblemode_t visible{priv::VisibleNone};
+  priv::VisibleMode visible{priv::VisibleMode::None};
   const wchar_t *Visible() {
     switch (visible) {
-    case priv::VisibleNone:
+    case priv::VisibleMode::None:
       return L"shared console window";
-    case priv::VisibleNewConsole:
+    case priv::VisibleMode::NewConsole:
       return L"new console window";
-    case priv::VisibleHide:
+    case priv::VisibleMode::Hide:
       return L"no console window";
     default:
       break;

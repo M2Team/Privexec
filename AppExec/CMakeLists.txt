@@ -2,7 +2,6 @@
 
 add_executable(AppExec WIN32
     appsettings.cc
-    apputils.cc
     capabilities.cc
     app.cc
     appx.cc
@@ -16,6 +15,8 @@ if(lto_supported)
 endif()
 
 target_link_libraries(AppExec
+    ProcessCore
+    belashl
     Comctl32
     Shlwapi
     Pathcch

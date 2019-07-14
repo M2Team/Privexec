@@ -9,7 +9,7 @@
 
 namespace priv {
 // process execute level
-enum class EexcLevel {
+enum class ExecLevel {
   None = -1,
   AppContainer,
   MIC,
@@ -56,7 +56,7 @@ public:
     visible = visible_;
     return visible;
   }
-  bool Exec(EexcLevel el = EexcLevel::None);
+  bool Exec(ExecLevel el = ExecLevel::None);
   const std::wstring_view Message() const { return kmessage; }
   DWORD PID() const { return pid; }
 
@@ -99,6 +99,7 @@ public:
     cwd = dir;
     return cwd;
   }
+  std::wstring_view Name() const { return name; }
   std::wstring_view Name(std::wstring_view n) {
     name = n;
     return name;
@@ -112,7 +113,7 @@ public:
   const alloweddir_t &AllowedDirs() const { return alloweddirs; }
   alloweddir_t &Registries() { return registries; }
   const alloweddir_t &Registries() const { return registries; }
-  const std::wstring &StrID() const { return strid; }
+  const std::wstring &SSID() const { return strid; }
   const std::wstring &ConatinerFolder() const { return folder; }
   bool EnableLPAC(bool enable) {
     lpac = enable;
@@ -121,9 +122,9 @@ public:
   DWORD PID() const { return pid; }
   const std::wstring_view Message() const { return kmessage; }
   bool InitializeNone(); // default;
-  bool Initialzie(const bela::Span<std::wstring> caps);
+  bool Initialize(const bela::Span<std::wstring> caps);
   bool Initialize(const bela::Span<wid_t> wids);
-  bool InitialzieFile(std::wstring_view file);
+  bool InitializeFile(std::wstring_view file);
   bool Exec();
 
 private:
@@ -141,6 +142,22 @@ private:
   DWORD pid;
   bool lpac{false};
 };
+
+inline bool IsUserAdministratorsGroup() {
+  SID_IDENTIFIER_AUTHORITY NtAuthority = SECURITY_NT_AUTHORITY;
+  PSID AdministratorsGroup;
+  if (!AllocateAndInitializeSid(&NtAuthority, 2, SECURITY_BUILTIN_DOMAIN_RID,
+                                DOMAIN_ALIAS_RID_ADMINS, 0, 0, 0, 0, 0, 0,
+                                &AdministratorsGroup)) {
+    return false;
+  }
+  BOOL b = FALSE;
+  if (!CheckTokenMembership(NULL, AdministratorsGroup, &b)) {
+    b = FALSE;
+  }
+  FreeSid(AdministratorsGroup);
+  return b == TRUE;
+}
 
 } // namespace priv
 

@@ -186,20 +186,20 @@ bool Process::ExecWithToken(HANDLE hToken, bool desktop) {
   return true;
 }
 
-bool Process::Exec(EexcLevel el) {
-  if (el == EexcLevel::AppContainer) {
+bool Process::Exec(ExecLevel el) {
+  if (el == ExecLevel::AppContainer) {
     return true;
   }
   switch (el) {
-  case EexcLevel::MIC:
+  case ExecLevel::MIC:
     return ExecLow();
-  case EexcLevel::NoElevated:
+  case ExecLevel::NoElevated:
     return ExecNoElevated();
-  case EexcLevel::Elevated:
+  case ExecLevel::Elevated:
     return ExecElevated();
-  case EexcLevel::System:
+  case ExecLevel::System:
     return ExecSystem();
-  case EexcLevel::TrustedInstaller:
+  case ExecLevel::TrustedInstaller:
     return ExecTI();
   default:
     break;

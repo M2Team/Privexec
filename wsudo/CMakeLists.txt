@@ -12,7 +12,7 @@ if(lto_supported)
 endif()
 
 target_link_libraries(wsudo
-    belawin
+    ProcessCore
     Comctl32
     Shlwapi
     Pathcch
