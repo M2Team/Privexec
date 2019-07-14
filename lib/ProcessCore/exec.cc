@@ -6,6 +6,8 @@
 #include <PathCch.h>
 #include <userenv.h>
 #include <Sddl.h>
+#include <comdef.h>
+#include <wtsapi32.h>
 #include "process_fwd.hpp"
 #include "elevator.hpp"
 
@@ -71,7 +73,36 @@ bool Process::ExecLow() {
     kmessage = L"lowlevelexec<SetTokenInformation>";
     return false;
   }
-  return ExecWithToken(hNewToken,false);
+  return ExecWithToken(hNewToken, false);
+}
+
+bool Process::ExecNoElevated() {
+  if (!IsUserAdministratorsGroup()) {
+    return ExecNone();
+  }
+  PrivilegeView pv = {
+      {SE_TCB_NAME, SE_ASSIGNPRIMARYTOKEN_NAME, SE_INCREASE_QUOTA_NAME}};
+  Elevator eo;
+  if (!eo.Elevate(&pv, kmessage)) {
+    return false;
+  }
+  auto hToken = INVALID_HANDLE_VALUE;
+  auto hTokenDup = INVALID_HANDLE_VALUE;
+  auto deleter = bela::finally([&] {
+    CloseHandleEx(hToken);
+    CloseHandleEx(hTokenDup);
+  });
+  // get user login token
+  if (WTSQueryUserToken(eo.SID(), &hToken) != TRUE) {
+    return false;
+  }
+
+  if (DuplicateTokenEx(hToken, MAXIMUM_ALLOWED, NULL, SecurityIdentification,
+                       TokenPrimary, &hTokenDup) != TRUE) {
+    return false;
+  }
+
+  return ExecWithToken(hToken, false);
 }
 
 bool Process::ExecElevated() {
@@ -111,6 +142,7 @@ bool Process::ExecElevated() {
   }
   pid = GetProcessId(info.hProcess);
   CloseHandle(info.hProcess);
+  return true;
 }
 
 bool Process::ExecWithToken(HANDLE hToken, bool desktop) {

@@ -8,9 +8,16 @@
 namespace bela {
 
 namespace argv_internal {
-template <typename charT> std::basic_string_view<charT> empty_arg();
-template <> std::string_view empty_arg() { return "\"\""; }
-template <> std::wstring_view empty_arg() { return L"\"\""; }
+template <typename T> class Literal;
+template <> class Literal<char> {
+public:
+  static constexpr std::string_view Empty = "\"\"";
+};
+template <> class Literal<wchar_t> {
+public:
+  static constexpr std::wstring_view Empty = L"\"\"";
+};
+
 } // namespace argv_internal
 
 // basic escape argv
@@ -73,7 +80,7 @@ public:
         saver.push_back(' ');
       }
       if (ac.empty()) {
-        saver.append(argv_internal::empty_arg<charT>());
+        saver.append(argv_internal::Literal<charT>::Empty);
         continue;
       }
       if (ac.size() == avs[i].len) {
@@ -136,7 +143,7 @@ private:
       s.push_back(' ');
     }
     if (sv.empty()) {
-      s.append(argv_internal::empty_arg<charT>());
+      s.append(argv_internal::Literal<charT>::Empty);
       return;
     }
     bool hasspace = false;

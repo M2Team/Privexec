@@ -53,10 +53,11 @@ include_directories(
   ./include
   ./vendor/bela/include
   ./vendor/pugixml
+  ./lib/ProcessCore
 )
 
 configure_file(
-  "Privexec/Privexec.json"
+  "config/Privexec.json"
   "${CMAKE_BINARY_DIR}/bin/Privexec.json" COPYONLY
 )
 
@@ -64,6 +65,7 @@ install(FILES Privexec/Privexec.json
     DESTINATION .
 )
 add_subdirectory(vendor/bela)
+add_subdirectory(lib/ProcessCore)
 add_subdirectory(AppExec)
 add_subdirectory(Privexec)
 add_subdirectory(wsudo)

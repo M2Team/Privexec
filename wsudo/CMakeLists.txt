@@ -12,6 +12,7 @@ if(lto_supported)
 endif()
 
 target_link_libraries(wsudo
+    belawin
     Comctl32
     Shlwapi
     Pathcch

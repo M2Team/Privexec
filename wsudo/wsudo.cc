@@ -1,4 +1,6 @@
 ////
+#include <bela/stdwriter.hpp>
+
 #include <console/console.hpp>
 #include <version.h>
 #include <pe.hpp>
@@ -7,12 +9,13 @@
 #include <Shellapi.h>
 #include <Shlobj.h>
 #include <apphelp.hpp>
+
 //
 #include "wsudo.hpp"
 #include "wsudoalias.hpp"
 
 void Version() {
-  priv::Print(priv::fc::Cyan, L"wsudo %s\n", PRIVEXEC_BUILD_VERSION);
+  bela::FPrintF(stderr, L"\x1b[36mwsudo %s\x1b[0m\n", PRIVEXEC_BUILD_VERSION);
 }
 
 void Usage(bool err = false) {
@@ -49,8 +52,9 @@ Builtin 'alias' command:
    wsudo alias add ehs "notepad %SYSTEMROOT%/System32/drivers/etc/hosts" "Edit Hosts"
    wsudo alias delete ehs
 )";
-  priv::Print(err ? priv::fc::Red : priv::fc::Cyan,
-              L"wsudo \xD83D\xDE0B \x2665 %s\n", kUsage);
+  char32_t sh = 0x1F496; //  💖
+  bela::FPrintF(stderr, L"\x1b[%dmwsudo %c %s %s\x1b[0m\n", err ? 31 : 36, sh,
+                PRIV_VERSION_MAIN, kUsage);
 }
 
 namespace wsudo {
@@ -119,7 +123,7 @@ int AppMode::ParseArgv(int argc, wchar_t **argv) {
           exit(0);
         case 'u':
           if (!IsAppLevel(va, level)) {
-            priv::Print(priv::fc::Red, L"wsudo unsupport user level: %s\n", va);
+            bela::FPrintF(stderr, L"wsudo unsupport user level: %s\n", va);
             return false;
           }
           break;
@@ -178,7 +182,7 @@ int AppMode::ParseArgv(int argc, wchar_t **argv) {
       },
       ec);
   if (!result) {
-    priv::Print(priv::fc::Red, L"wsudo ParseArgv: %s\n", ec.message);
+    bela::FPrintF(stderr, L"\x1b[31mwsudo ParseArgv: %s\x1b[0m\n", ec.message);
     return 1;
   }
   /// Copy TO
@@ -213,16 +217,16 @@ void AppMode::Verbose() {
     return;
   }
   if (!cwd.empty()) {
-    priv::Print(priv::fc::Yellow, L"* App cwd: %s\n", cwd.data());
+    bela::FPrintF(stderr, L"\x1b[01;33m* App cwd: %s\x1b[0m\n", cwd);
   }
   if (!appx.empty()) {
-    priv::Print(priv::fc::Yellow, L"* App AppContainer Manifest: %s\n",
-                appx.data());
+    bela::FPrintF(stderr, L"\x1b[01;33m* App AppContainer Manifest: %s\x1b[0m\n",
+                  appx);
   }
-  priv::Print(priv::fc::Yellow, L"* App Launcher level: %s\n",
-              AppSLevel(level));
+  bela::FPrintF(stderr, L"\x1b[01;33m* App Launcher level: %s\x1b[0m\n",
+                AppSLevel(level));
   if (disablealias) {
-    priv::Print(priv::fc::Yellow, L"* App Alias is disabled\n");
+    bela::FPrintF(stderr, L"\x1b[01;33m* App Alias is disabled\x1b[0m\n");
   }
 }
 } // namespace wsudo
@@ -261,7 +265,7 @@ bool AppExecuteSubsystemIsConsole(const std::wstring &cmd, bool aliasexpand,
     return false;
   }
   LocalFree(Argv);
-  priv::Verbose(verbose, L"* App real path '%s'\n", exe);
+  priv::Verbose(verbose, L"\x1b[01;33m* App real path '%s'\x1b[0m\n", exe);
   return priv::PESubsystemIsConsole(exe);
 }
 
@@ -273,13 +277,13 @@ int AppWait(DWORD pid) {
       OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION | SYNCHRONIZE, FALSE, pid);
   if (hProcess == INVALID_HANDLE_VALUE) {
     auto ec = base::make_system_error_code();
-    priv::Print(priv::fc::Red, L"unable open process '%s'\n", ec.message);
+    bela::FPrintF(stderr, L"\x1b[31munable open process '%s'\x1b[0m\n", ec.message);
     return -1;
   }
   SetConsoleCtrlHandler(nullptr, TRUE);
   if (WaitForSingleObject(hProcess, INFINITE) == WAIT_FAILED) {
     auto ec = base::make_system_error_code();
-    priv::Print(priv::fc::Red, L"unable wait process '%s'\n", ec.message);
+    bela::FPrintF(stderr, L"\x1b[31munable wait process '%s'\x1b[0m\n", ec.message);
     SetConsoleCtrlHandler(nullptr, FALSE);
     CloseHandle(hProcess);
     return -1;
@@ -288,8 +292,7 @@ int AppWait(DWORD pid) {
   DWORD exitcode = 0;
   if (GetExitCodeProcess(hProcess, &exitcode) != TRUE) {
     auto ec = base::make_system_error_code();
-    priv::Print(priv::fc::Red, L"unable get process exit code '%s'\n",
-                ec.message);
+    bela::FPrintF(stderr, L"\x1b[31munable get process exit code '%s'\x1b[0m\n", ec.message);
   }
   CloseHandle(hProcess);
   return static_cast<int>(exitcode);
@@ -311,7 +314,7 @@ std::wstring ExpandArgv0(std::wstring_view argv0, bool disablealias,
     return ExpandEnv(argv0);
   }
   aliasexpand = true;
-  priv::Verbose(verbose, L"* App alias '%s' expand to '%s'\n", cmd, *al);
+  priv::Verbose(verbose, L"\x1b[01;33m* App alias '%s' expand to '%s'\x1b[0m\n", cmd, *al);
   return ExpandEnv(*al);
 }
 
@@ -337,15 +340,15 @@ int AppExecuteAppContainer(wsudo::AppMode &am) {
   }
   // UAC Elevated
   if (isconsole) {
-    priv::Verbose(am.verbose, L"* App subsystem is console, %s\n",
-                  am.Visible());
+    am.Verbose(L"\x1b[01;33m* App subsystem is console, %s\x1b[0m\n",
+               am.Visible());
   }
   for (size_t i = 1; i < am.args.size(); i++) {
     ab.append(am.args[i]);
   }
-  priv::Verbose(am.verbose, L"* App real command '%s'\n", argv0);
+  am.Verbose(L"\x1b[01;33m* App real command '%s'\x1b[0m\n", argv0);
   am.envctx.Apply([&](const std::wstring &k, const std::wstring &v) {
-    priv::Verbose(am.verbose, L"* App apply env '%s' = '%s'\n", k, v);
+    am.Verbose(L"\x1b[01;33m* App apply env '%s' = '%s'\x1b[0m\n", k, v);
   });
   priv::appcontainer p(ab.args());
   if (!am.cwd.empty()) {
@@ -358,19 +361,18 @@ int AppExecuteAppContainer(wsudo::AppMode &am) {
   p.visiblemode(am.visible);
   p.enablelpac(am.lpac);
   if (am.lpac) {
-    priv::Verbose(
-        am.verbose,
-        L"* AppContainer: Less Privileged AppContainer Is Enabled.\n");
+    am.Verbose(L"\x1b[01;33m* AppContainer: Less Privileged AppContainer Is "
+               L"Enabled.\x1b[0m\n");
   }
   if (!am.appname.empty()) {
     p.name().assign(am.appname);
   }
-  priv::Print(priv::fc::Yellow, L"Command: %s\n", ab.args());
+  bela::FPrintF(stderr, L"\x1b[01;32mCommand: %s\x1b[0m\n", ab.args());
   bool ok = false;
   if (am.appx.empty()) {
     if (am.lpac) {
-      priv::Print(priv::fc::Yellow, L"AppContainer: LPAC mode is set but will "
-                                    L"not take effect. Appmanifest not set.\n");
+      bela::FPrintF(stderr, L"\x1b[31mAppContainer: LPAC mode is set but will "
+                            L"not take effect. Appmanifest not set.\x1b[0m\n");
     }
     ok = p.initialize();
   } else {
@@ -379,27 +381,31 @@ int AppExecuteAppContainer(wsudo::AppMode &am) {
   }
   if (!ok) {
     auto ec = base::make_system_error_code();
-    priv::Print(priv::fc::Red,
-                L"initialize appconatiner process  last error %d  (%s): %s\n",
-                ec.code, p.message(), ec.message);
+    bela::FPrintF(stderr,
+                  L"\x1b[31minitialize appconatiner process  last error %d  "
+                  L"(%s): %s\x1b[0m\n",
+                  ec.code, p.message(), ec.message);
     return 1;
   }
   if (!p.execute()) {
     auto ec = base::make_system_error_code();
     if (p.message().empty()) {
-      priv::Print(priv::fc::Red,
-                  L"create appconatiner process  last error %d : %s\n", ec.code,
-                  ec.message);
+      bela::FPrintF(
+          stderr,
+          L"\x1b[31mcreate appconatiner process  last error %d : %s\x1b[0m\n",
+          ec.code, ec.message);
     } else {
-      priv::Print(priv::fc::Red,
-                  L"create appconatiner process  last error %d  (%s): %s\n",
-                  ec.code, p.message(), ec.message);
+      bela::FPrintF(stderr,
+                    L"\x1b[31mcreate appconatiner process  last error %d  "
+                    L"(%s): %s\x1b[0m\n",
+                    ec.code, p.message(), ec.message);
     }
     return 1;
   }
-  priv::Print(priv::fc::Green,
-              L"new appcontainer process is running: %d\nsid: %s\n", p.pid(),
-              p.strid());
+  bela::FPrintF(
+      stderr,
+      L"\x1b[01;32mnew appcontainer process is running: %d\nsid: %s\x1b[0m\n",
+      p.pid(), p.strid());
   if (waitable) {
     return AppWait(p.pid());
   }
@@ -429,25 +435,26 @@ int AppExecute(wsudo::AppMode &am) {
   // UAC Elevated
 
   if (isconsole) {
-    priv::Verbose(am.verbose, L"* App subsystem is console, %s\n",
-                  am.Visible());
+    am.Verbose(L"\x1b[01;33m* App subsystem is console, %s\x1b[0m\n",
+               am.Visible());
   }
 
   for (size_t i = 1; i < am.args.size(); i++) {
     ab.append(am.args[i]);
   }
-  priv::Verbose(am.verbose, L"* App real command '%s'\n", argv0);
+  am.Verbose(L"\x1b[01;33m* App real command '%s'\x1b[0m\n", argv0);
   am.envctx.Apply([&](const std::wstring &k, const std::wstring &v) {
-    priv::Verbose(am.verbose, L"* App apply env '%s' = '%s'\n", k, v);
+    am.Verbose(L"\x1b[01;33m* App apply env '%s' = '%s'\x1b[0m\n", k, v);
   });
   priv::process p(ab.args());
   p.visiblemode(am.visible);
   if (!am.cwd.empty()) {
     p.cwd() = ExpandEnv(am.cwd.data());
   }
-  priv::Print(priv::fc::Yellow, L"Command: %s\n", ab.args());
+  bela::FPrintF(stderr, L"\x1b[01;32mCommand: %s\x1b[0m\n", ab.args());
   if (p.execute(am.level)) {
-    priv::Print(priv::fc::Green, L"new process is running: %d\n", p.pid());
+    bela::FPrintF(stderr, L"\x1b[01;32mnew process is running: %d\x1b[0m\n",
+                  p.pid());
     if (waitable) {
       return AppWait(p.pid());
     }
@@ -455,11 +462,13 @@ int AppExecute(wsudo::AppMode &am) {
   }
   auto ec = base::make_system_error_code();
   if (p.message().empty()) {
-    priv::Print(priv::fc::Red, L"create process  last error %d : %s\n", ec.code,
-                ec.message);
+    bela::FPrintF(stderr,
+                  L"\x1b[31mcreate process  last error %d : %s\x1b[0m\n",
+                  ec.code, ec.message);
   } else {
-    priv::Print(priv::fc::Red, L"create process  last error %d  (%s): %s\n",
-                ec.code, p.message(), ec.message);
+    bela::FPrintF(stderr,
+                  L"\x1b[31mcreate process  last error %d  (%s): %s\x1b[0m\n",
+                  ec.code, p.message(), ec.message);
   }
   return 1;
 }
@@ -470,8 +479,9 @@ int wmain(int argc, wchar_t **argv) {
     return 1;
   }
   if (am.args.empty()) {
-    priv::Print(priv::fc::Red, L"wsudo missing command %s see usage:\n",
-                am.message);
+    bela::FPrintF(stderr,
+                  L"\x1b[31mwsudo missing command %s see usage:\x1b[0m\n",
+                  am.message);
     Usage(true);
     return 1;
   }

@@ -7,6 +7,7 @@
 #include <optional>
 #include <string_view>
 #include <process/process.hpp>
+#include <bela/stdwriter.hpp>
 #include "env.hpp"
 
 namespace wsudo {
@@ -69,6 +70,21 @@ struct AppMode {
   bool disablealias{false};           // --disable-alias
   bool wait{false};                   // -w --wait
   bool lpac{false};
+  void Verbose(const wchar_t *fmt) const {
+    if (verbose) {
+      bela::StdWrite(stderr, fmt);
+    }
+  }
+  template <typename... Args>
+  void Verbose(const wchar_t *fmt, Args... args) const {
+    if (verbose) {
+      const bela::format_internal::FormatArg arg_array[] = {args...};
+      auto str = bela::format_internal::StrFormatInternal(fmt, arg_array,
+                                                          sizeof...(args));
+      bela::StdWrite(stderr, str);
+    }
+  }
+
   priv::visiblemode_t visible{priv::VisibleNone};
   const wchar_t *Visible() {
     switch (visible) {

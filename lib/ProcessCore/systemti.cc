@@ -47,8 +47,8 @@ bool TiElevator::Elevate() {
   if (hscm == nullptr) {
     return false;
   }
-  hsrv == OpenServiceW(hscm, L"TrustedInstaller",
-                       SERVICE_QUERY_STATUS | SERVICE_START);
+  hsrv = OpenServiceW(hscm, L"TrustedInstaller",
+                      SERVICE_QUERY_STATUS | SERVICE_START);
   if (hsrv == nullptr) {
     // unable start TrustedInstaller service
     return false;
@@ -358,5 +358,4 @@ bool Process::ExecTI() {
   }
   return ExecWithToken(hToken, true);
 }
-
 } // namespace priv
