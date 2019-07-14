@@ -66,6 +66,7 @@
         "mutex": "cpp",
         "ratio": "cpp",
         "shared_mutex": "cpp",
-        "thread": "cpp"
+        "thread": "cpp",
+        "filesystem": "cpp"
     }
 }

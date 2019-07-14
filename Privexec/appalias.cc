@@ -9,6 +9,7 @@
 #include "app.hpp"
 
 /// PathAppImageCombineExists
+/// PathAppImageCombineExists
 bool PathAppImageCombineExists(std::wstring &path, const wchar_t *file) {
   if (PathFileExistsW(file)) {
     path.assign(file);
@@ -17,7 +18,7 @@ bool PathAppImageCombineExists(std::wstring &path, const wchar_t *file) {
   path.resize(PATHCCH_MAX_CCH, L'\0');
   auto N = GetModuleFileNameW(nullptr, &path[0], PATHCCH_MAX_CCH);
   path.resize(N);
-  auto pos = path.rfind(L'\\');
+  auto pos = path.find_last_of(L"\\/");
   if (pos != std::wstring::npos) {
     path.resize(pos);
   }
