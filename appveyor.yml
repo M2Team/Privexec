@@ -1,4 +1,4 @@
-version: 2.3.0.{build}
+version: 2.4.0.{build}
 image: Visual Studio 2017
 configuration: Release
 platform: x64
@@ -7,4 +7,4 @@ clone_folder: c:\projects\Privexec
 build_script:
 - ps: '& ".\build.ps1"'
 artifacts:
-- path: build\Privexec-2.3.0-win64.zip
+- path: build\Privexec-2.4.0-win64.zip

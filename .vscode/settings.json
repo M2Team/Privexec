@@ -59,6 +59,14 @@
         "iomanip": "cpp",
         "xlocmon": "cpp",
         "xloctime": "cpp",
-        "cctype": "cpp"
+        "cctype": "cpp",
+        "chrono": "cpp",
+        "condition_variable": "cpp",
+        "cwctype": "cpp",
+        "mutex": "cpp",
+        "ratio": "cpp",
+        "shared_mutex": "cpp",
+        "thread": "cpp",
+        "filesystem": "cpp"
     }
 }

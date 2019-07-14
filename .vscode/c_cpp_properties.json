@@ -10,11 +10,7 @@
                 "_DEBUG",
                 "UNICODE",
                 "_UNICODE"
-            ],
-            "windowsSdkVersion": "10.0.17763.0",
-            "compilerPath": "C:/Program Files (x86)/Microsoft Visual Studio/2019/Preview/VC/Tools/MSVC/14.16.26926/bin/Hostx64/x64/cl.exe",
-            "cStandard": "c11",
-            "intelliSenseMode": "msvc-x64"
+            ]
         }
     ],
     "version": 4

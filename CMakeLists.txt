@@ -16,7 +16,7 @@ set(EXECUTABLE_OUTPUT_PATH ${PROJECT_BINARY_DIR}/bin)
 set(LIBRARY_OUTPUT_PATH ${PROJECT_BINARY_DIR}/lib)
 
 set(PRIVEXEC_VERSION_MAJOR 2)
-set(PRIVEXEC_VERSION_MINOR 3)
+set(PRIVEXEC_VERSION_MINOR 4)
 set(PRIVEXEC_VERSION_PATCH 0)
 set(PACKAGE_VERSION "${PRIVEXEC_VERSION_MAJOR}.${PRIVEXEC_VERSION_MINOR}.${PRIVEXEC_VERSION_PATCH}")
 
@@ -51,17 +51,21 @@ add_definitions(
 
 include_directories(
   ./include
+  ./vendor/bela/include
+  ./vendor/pugixml
+  ./lib/ProcessCore
 )
 
 configure_file(
-  "Privexec/Privexec.json"
+  "config/Privexec.json"
   "${CMAKE_BINARY_DIR}/bin/Privexec.json" COPYONLY
 )
 
-install(FILES Privexec/Privexec.json
+install(FILES config/Privexec.json
     DESTINATION .
 )
-
+add_subdirectory(vendor/bela)
+add_subdirectory(lib/ProcessCore)
 add_subdirectory(AppExec)
 add_subdirectory(Privexec)
 add_subdirectory(wsudo)

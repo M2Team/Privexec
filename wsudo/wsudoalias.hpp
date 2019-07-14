@@ -6,29 +6,36 @@
 #include <string_view>
 #include <optional>
 #include <unordered_map>
+#include <bela/codecvt.hpp>
+#include <bela/phmap.hpp>
 
 namespace wsudo {
 
 struct AliasTarget {
   std::wstring target;
   std::wstring desc;
+  AliasTarget() = default;
+  AliasTarget(std::wstring_view t, std::wstring_view d) : target(t), desc(d) {}
+  AliasTarget(std::string_view t, std::string_view d)
+      : target(bela::ToWide(t)), desc(bela::ToWide(d)) {}
 };
 
 class AliasEngine {
 public:
-  using value_type = std::unordered_map<std::wstring, AliasTarget>;
+  using value_type = bela::flat_hash_map<std::wstring, AliasTarget>;
   AliasEngine() = default;
   AliasEngine(const AliasEngine &) = delete;
   AliasEngine &operator=(const AliasEngine &) = delete;
   ~AliasEngine();
-  bool Initialize();
-  std::optional<std::wstring> Target(const std::wstring &al);
-  bool Set(const wchar_t *key, const wchar_t *target, const wchar_t *desc) {
-    alias[key] = AliasTarget{target, desc};
+  bool Initialize(bool verbose = false);
+  std::optional<std::wstring> Target(std::wstring_view al);
+  bool Set(std::wstring_view key, std::wstring_view target,
+           std::wstring_view desc) {
+    alias.insert_or_assign(key, AliasTarget(target, desc));
     updated = true;
     return true;
   }
-  bool Delete(const wchar_t *key) {
+  bool Delete(std::wstring_view key) {
     auto it = alias.find(key);
     if (it == alias.end()) {
       return false;

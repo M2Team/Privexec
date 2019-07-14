@@ -1,17 +1,16 @@
 #ifndef WSUDO_ENV_HPP
 #define WSUDO_ENV_HPP
-#ifndef _WINDOWS_
-#ifndef WIN32_LEAN_AND_MEAN
-#define WIN32_LEAN_AND_MEAN //
-#endif
-#include <Windows.h>
-#endif
-#include <string>
-#include <string_view>
+#include <bela/base.hpp>
+#include <bela/phmap.hpp>
+#include <bela/ascii.hpp>
+#include <bela/env.hpp>
 #include <unordered_map>
 #include <functional>
 
 namespace wsudo {
+
+class EnvEngine{};
+
 template <typename T> std::wstring Toupper(const T &t) {
   std::wstring s;
   s.reserve(t.size());

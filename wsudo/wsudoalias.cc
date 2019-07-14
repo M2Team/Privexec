@@ -3,9 +3,9 @@
 #include "wsudoalias.hpp"
 #include <Shlwapi.h>
 #include <PathCch.h>
+#include <bela/path.hpp>
+#include <bela/stdwriter.hpp>
 #include <file.hpp>
-#include <base.hpp>
-#include <console/console.hpp>
 
 /// PathAppImageCombineExists
 bool PathAppImageCombineExists(std::wstring &path, const wchar_t *file) {
@@ -16,7 +16,7 @@ bool PathAppImageCombineExists(std::wstring &path, const wchar_t *file) {
   path.resize(PATHCCH_MAX_CCH, L'\0');
   auto N = GetModuleFileNameW(nullptr, &path[0], PATHCCH_MAX_CCH);
   path.resize(N);
-  auto pos = path.rfind(L'\\');
+  auto pos = path.find_last_of(L"\\/");
   if (pos != std::wstring::npos) {
     path.resize(pos);
   }
@@ -34,13 +34,12 @@ wsudo::AliasEngine::~AliasEngine() {
   }
 }
 
-bool wsudo::AliasEngine::Initialize() {
+bool wsudo::AliasEngine::Initialize(bool verbose) {
   std::wstring file;
   if (!PathAppImageCombineExists(file, L"Privexec.json")) {
     return false;
   }
   try {
-
     priv::FD fd;
     if (_wfopen_s(&fd.fd, file.data(), L"rb") != 0) {
       return false;
@@ -48,41 +47,40 @@ bool wsudo::AliasEngine::Initialize() {
     auto json = nlohmann::json::parse(fd.fd);
     auto cmds = json["Alias"];
     for (auto &cmd : cmds) {
-      AliasTarget at;
-      auto key = base::ToWide(cmd["Alias"].get<std::string>());
-      at.target = base::ToWide(cmd["Target"].get<std::string>());
-      at.desc = base::ToWide(cmd["Desc"].get<std::string>());
-      alias.emplace(key, at);
+      alias.emplace(bela::ToWide(cmd["Alias"].get<std::string>()),
+                    AliasTarget(cmd["Target"].get<std::string>(),
+                                cmd["Desc"].get<std::string>()));
     }
   } catch (const std::exception &e) {
-    fprintf(stderr, "AliasEngine::Initialize: %s\n", e.what());
+    bela::FPrintF(stderr, L"\x1b[31mAliasEngine::Initialize: %s\x1b[0m\n",
+                  e.what());
     return false;
   }
   return true;
 }
 
-std::optional<std::wstring> wsudo::AliasEngine::Target(const std::wstring &al) {
+std::optional<std::wstring> wsudo::AliasEngine::Target(std::wstring_view al) {
   auto it = alias.find(al);
   if (it == alias.end()) {
     return std::nullopt;
   }
-  return std::optional<std::wstring>(it->second.target);
+  return std::make_optional(it->second.target);
 }
 
 bool wsudo::AliasEngine::Apply() {
   std::wstring file;
   if (!PathAppImageCombineExists(file, L"Privexec.json")) {
-    priv::Print(priv::fc::Red, L"Privexec.json not found: %s\n", file);
+    bela::FPrintF(stderr, L"\x1b[33mPrivexec.json not found\x1b[0m\n");
     return false;
   }
   try {
     nlohmann::json root, av;
     for (const auto &i : alias) {
       nlohmann::json a;
-      a["Alias"] = base::ToNarrow(i.first);
-      a["Target"] = base::ToNarrow(i.second.target);
-      a["Desc"] = base::ToNarrow(i.second.desc);
-      av.push_back(a);
+      a["Alias"] = bela::ToNarrow(i.first);
+      a["Target"] = bela::ToNarrow(i.second.target);
+      a["Desc"] = bela::ToNarrow(i.second.desc);
+      av.emplace_back(std::move(a));
     }
     root["Alias"] = av;
     priv::FD fd;
@@ -93,7 +91,7 @@ bool wsudo::AliasEngine::Apply() {
     fwrite(buf.data(), 1, buf.size(), fd);
     updated = false;
   } catch (const std::exception &e) {
-    fprintf(stderr, "AliasEngine::Apply: %s\n", e.what());
+    bela::FPrintF(stderr, L"\x1b[31mAliasEngine::Apply: %s\x1b[0m\n", e.what());
     return false;
   }
   return true;
@@ -102,42 +100,43 @@ bool wsudo::AliasEngine::Apply() {
 int wsudo::AliasSubcmd(const std::vector<std::wstring_view> &argv,
                        bool verbose) {
   if (argv.size() < 2) {
-    priv::Print(priv::fc::Red,
-                L"wsudo alias missing argument, current have: %ld\n",
-                argv.size());
+    bela::FPrintF(
+        stderr,
+        L"\x1b[31mwsudo alias missing argument, current have: %ld\x1b[0m\n",
+        argv.size());
     return 1;
   }
   AliasEngine ae;
   if (!ae.Initialize()) {
-    priv::Print(
-        priv::fc::Red,
-        L"wsudo Alias Engine Initialize error, Please check it exists\n");
+    bela::FPrintF(stderr, L"\x1b[31mwsudo Alias Engine Initialize error, "
+                          L"Please check it exists\x1b[0m\n");
     return 1;
   }
   if (argv[1] == L"delete") {
     for (size_t i = 2; i < argv.size(); i++) {
       ae.Delete(argv[i].data());
       if (verbose) {
-        priv::Print(priv::fc::Yellow, L"wsudo alias delete: %s\n",
-                    argv[i].data());
+        bela::FPrintF(stderr, L"\x1b[31mwsudo alias delete: %s\x1b[0m\n",
+                      argv[i].data());
       }
     }
     return 0;
   }
   if (argv[1] == L"add") {
     if (argv.size() < 5) {
-      priv::Print(priv::fc::Red,
-                  L"wsudo alias add command style is:  Alias Target Des\n");
+      bela::FPrintF(stderr, L"\x1b[31mwsudo alias add command style is:  Alias "
+                            L"Target Des\x1b[0m\n");
       return 1;
     }
-    ae.Set(argv[2].data(), argv[3].data(), argv[4].data());
+    ae.Set(argv[2], argv[3], argv[4]);
     if (verbose) {
-      priv::Print(priv::fc::Yellow, L"wsudo alias set: %s to %s (%s)\n",
-                  argv[2].data(), argv[3].data(), argv[4].data());
+      bela::FPrintF(stderr, L"\x1b[33mwsudo alias set: %s to %s (%s)\x1b[0m\n",
+                    argv[2], argv[3], argv[4]);
     }
     return 0;
   }
-  priv::Print(priv::fc::Red, L"wsudo alias unsupported command '%s'\n",
-              argv[1].data());
+  bela::FPrintF(stderr,
+                L"\x1b[31mwsudo alias unsupported command '%s'\x1b[0m\n",
+                argv[1]);
   return 1;
 }

@@ -1,8 +1,9 @@
 ////
-#include <console/console.hpp>
+#include <bela/stdwriter.hpp>
+#include <bela/match.hpp>
+#include <bela/path.hpp>
+#include <bela/pe.hpp>
 #include <version.h>
-#include <pe.hpp>
-#include <argvbuilder.hpp>
 #include <parseargv.hpp>
 #include <Shellapi.h>
 #include <Shlobj.h>
@@ -12,7 +13,7 @@
 #include "wsudoalias.hpp"
 
 void Version() {
-  priv::Print(priv::fc::Cyan, L"wsudo %s\n", PRIVEXEC_BUILD_VERSION);
+  bela::FPrintF(stderr, L"\x1b[36mwsudo %s\x1b[0m\n", PRIVEXEC_BUILD_VERSION);
 }
 
 void Usage(bool err = false) {
@@ -49,8 +50,9 @@ Builtin 'alias' command:
    wsudo alias add ehs "notepad %SYSTEMROOT%/System32/drivers/etc/hosts" "Edit Hosts"
    wsudo alias delete ehs
 )";
-  priv::Print(err ? priv::fc::Red : priv::fc::Cyan,
-              L"wsudo \xD83D\xDE0B \x2665 %s\n", kUsage);
+  char32_t sh = 0x1F496; //  💖
+  bela::FPrintF(stderr, L"\x1b[%dmwsudo %c %s %s\x1b[0m\n", err ? 31 : 36, sh,
+                PRIV_VERSION_MAIN, kUsage);
 }
 
 namespace wsudo {
@@ -61,23 +63,22 @@ namespace wsudo {
 //    -A          Administrator
 //    -S          System
 //    -T          TrustedInstaller
-bool IsAppLevel(std::wstring_view k, int &level) {
+bool IsAppLevel(std::wstring_view k, priv::ExecLevel &level) {
   static struct {
-    const wchar_t *s;
-    int level;
+    const std::wstring_view s;
+    priv::ExecLevel level;
   } userlevels[] = {
       //
-      {L"appcontainer", priv::ProcessAppContainer},
-      {L"mic", priv::ProcessMandatoryIntegrityControl},
-      {L"noelevated", priv::ProcessNoElevated},
-      {L"administrator", priv::ProcessElevated},
-      {L"system", priv::ProcessSystem},
-      {L"trustedinstaller", priv::ProcessTrustedInstaller}
+      {L"appcontainer", priv::ExecLevel::AppContainer},
+      {L"mic", priv::ExecLevel::MIC},
+      {L"noelevated", priv::ExecLevel::NoElevated},
+      {L"administrator", priv::ExecLevel::Elevated},
+      {L"system", priv::ExecLevel::System},
+      {L"trustedinstaller", priv::ExecLevel::TrustedInstaller}
       //
   };
   for (const auto &u : userlevels) {
-    auto l = wcslen(u.s);
-    if (l == k.size() && _wcsnicmp(u.s, k.data(), l) == 0) {
+    if (bela::EqualsIgnoreCase(u.s, k)) {
       level = u.level;
       return true;
     }
@@ -119,15 +120,15 @@ int AppMode::ParseArgv(int argc, wchar_t **argv) {
           exit(0);
         case 'u':
           if (!IsAppLevel(va, level)) {
-            priv::Print(priv::fc::Red, L"wsudo unsupport user level: %s\n", va);
+            bela::FPrintF(stderr, L"wsudo unsupport user level: %s\n", va);
             return false;
           }
           break;
         case 'n':
-          visible = priv::VisibleNewConsole;
+          visible = priv::VisibleMode::NewConsole;
           break;
         case 'H':
-          visible = priv::VisibleHide;
+          visible = priv::VisibleMode::Hide;
           break;
         case 'w':
           wait = true;
@@ -148,22 +149,22 @@ int AppMode::ParseArgv(int argc, wchar_t **argv) {
           lpac = true;
           break;
         case 'a':
-          level = priv::ProcessAppContainer;
+          level = priv::ExecLevel::AppContainer;
           break;
         case 'M':
-          level = priv::ProcessMandatoryIntegrityControl;
+          level = priv::ExecLevel::MIC;
           break;
         case 'U':
-          level = priv::ProcessNoElevated;
+          level = priv::ExecLevel::NoElevated;
           break;
         case 'A':
-          level = priv::ProcessElevated;
+          level = priv::ExecLevel::Elevated;
           break;
         case 'S':
-          level = priv::ProcessSystem;
+          level = priv::ExecLevel::System;
           break;
         case 'T':
-          level = priv::ProcessTrustedInstaller;
+          level = priv::ExecLevel::TrustedInstaller;
           break;
         case 1001:
           appname = va;
@@ -178,7 +179,7 @@ int AppMode::ParseArgv(int argc, wchar_t **argv) {
       },
       ec);
   if (!result) {
-    priv::Print(priv::fc::Red, L"wsudo ParseArgv: %s\n", ec.message);
+    bela::FPrintF(stderr, L"\x1b[31mwsudo ParseArgv: %s\x1b[0m\n", ec.message);
     return 1;
   }
   /// Copy TO
@@ -186,18 +187,18 @@ int AppMode::ParseArgv(int argc, wchar_t **argv) {
   return 0;
 }
 
-const wchar_t *AppSLevel(int l) {
+const std::wstring_view AppSLevel(priv::ExecLevel l) {
   static struct {
     const wchar_t *s;
-    int level;
+    priv::ExecLevel level;
   } userlevels[] = {
       //
-      {L"AppContainer", priv::ProcessAppContainer},
-      {L"Mandatory Integrity Control", priv::ProcessMandatoryIntegrityControl},
-      {L"NoElevated", priv::ProcessNoElevated},
-      {L"Administrator", priv::ProcessElevated},
-      {L"System", priv::ProcessSystem},
-      {L"TrustedInstaller", priv::ProcessTrustedInstaller}
+      {L"AppContainer", priv::ExecLevel::AppContainer},
+      {L"Mandatory Integrity Control", priv::ExecLevel::MIC},
+      {L"NoElevated", priv::ExecLevel::NoElevated},
+      {L"Administrator", priv::ExecLevel::Elevated},
+      {L"System", priv::ExecLevel::System},
+      {L"TrustedInstaller", priv::ExecLevel::TrustedInstaller}
       //
   };
   for (const auto &u : userlevels) {
@@ -213,57 +214,58 @@ void AppMode::Verbose() {
     return;
   }
   if (!cwd.empty()) {
-    priv::Print(priv::fc::Yellow, L"* App cwd: %s\n", cwd.data());
+    bela::FPrintF(stderr, L"\x1b[01;33m* App cwd: %s\x1b[0m\n", cwd);
   }
   if (!appx.empty()) {
-    priv::Print(priv::fc::Yellow, L"* App AppContainer Manifest: %s\n",
-                appx.data());
+    bela::FPrintF(stderr,
+                  L"\x1b[01;33m* App AppContainer Manifest: %s\x1b[0m\n", appx);
   }
-  priv::Print(priv::fc::Yellow, L"* App Launcher level: %s\n",
-              AppSLevel(level));
+  bela::FPrintF(stderr, L"\x1b[01;33m* App Launcher level: %s\x1b[0m\n",
+                AppSLevel(level));
   if (disablealias) {
-    priv::Print(priv::fc::Yellow, L"* App Alias is disabled\n");
+    bela::FPrintF(stderr, L"\x1b[01;33m* App Alias is disabled\x1b[0m\n");
   }
 }
-} // namespace wsudo
 
-// expand env
-inline std::wstring ExpandEnv(std::wstring_view s) {
-  auto len = ExpandEnvironmentStringsW(s.data(), nullptr, 0);
-  if (len <= 0) {
-    return std::wstring(s);
-  }
-  std::wstring s2(len + 1, L'\0');
-  auto N = ExpandEnvironmentStringsW(s.data(), &s2[0], len + 1);
-  s2.resize(N - 1);
-  return s2;
-}
-
-bool AppExecuteSubsystemIsConsole(const std::wstring &cmd, bool aliasexpand,
-                                  bool verbose) {
+bool AppSubsystemIsConsole(std::wstring_view cmd, bool aliasexpand,
+                           const AppMode &am) {
   if (!aliasexpand) {
     std::wstring exe;
-    if (!priv::FindExecutableImageEx(cmd, exe)) {
+    if (!bela::ExecutableExistsInPath(cmd, exe)) {
+      // NOT FOUND
       return false;
     }
-    priv::Verbose(verbose, L"* App real argv0 '%s'\n", exe);
-    return priv::PESubsystemIsConsole(exe);
+    bela::error_code ec;
+    auto pe = bela::PESimpleDetailsAze(exe, ec);
+    if (!pe) {
+      return false;
+    }
+    am.Verbose(L"\x1b[01;33m* App real argv0 '%s'\x1b[0m\n", exe);
+    return pe->subsystem == bela::Subsytem::CUI;
   }
   int Argc;
   auto Argv = CommandLineToArgvW(cmd.data(), &Argc);
   if (Argc == 0) {
     return false;
   }
-  priv::Verbose(verbose, L"* App real argv0 '%s'\n", Argv[0]);
+  am.Verbose(L"\x1b[01;33m* App real argv0 '%s'\x1b[0m\n", Argv[0]);
   std::wstring exe;
-  if (!priv::FindExecutableImageEx(Argv[0], exe)) {
+  if (!bela::ExecutableExistsInPath(Argv[0], exe)) {
     LocalFree(Argv);
     return false;
   }
   LocalFree(Argv);
-  priv::Verbose(verbose, L"* App real path '%s'\n", exe);
-  return priv::PESubsystemIsConsole(exe);
+  am.Verbose(L"\x1b[01;33m* App real path '%s'\x1b[0m\n", exe);
+  bela::error_code ec;
+  auto pe = bela::PESimpleDetailsAze(exe, ec);
+  if (!pe) {
+    return false;
+  }
+  am.Verbose(L"\x1b[01;33m* App real argv0 '%s'\x1b[0m\n", exe);
+  return pe->subsystem == bela::Subsytem::CUI;
 }
+
+} // namespace wsudo
 
 int AppWait(DWORD pid) {
   if (pid == 0) {
@@ -272,14 +274,16 @@ int AppWait(DWORD pid) {
   auto hProcess =
       OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION | SYNCHRONIZE, FALSE, pid);
   if (hProcess == INVALID_HANDLE_VALUE) {
-    auto ec = base::make_system_error_code();
-    priv::Print(priv::fc::Red, L"unable open process '%s'\n", ec.message);
+    auto ec = bela::make_system_error_code();
+    bela::FPrintF(stderr, L"\x1b[31munable open process '%s'\x1b[0m\n",
+                  ec.message);
     return -1;
   }
   SetConsoleCtrlHandler(nullptr, TRUE);
   if (WaitForSingleObject(hProcess, INFINITE) == WAIT_FAILED) {
-    auto ec = base::make_system_error_code();
-    priv::Print(priv::fc::Red, L"unable wait process '%s'\n", ec.message);
+    auto ec = bela::make_system_error_code();
+    bela::FPrintF(stderr, L"\x1b[31munable wait process '%s'\x1b[0m\n",
+                  ec.message);
     SetConsoleCtrlHandler(nullptr, FALSE);
     CloseHandle(hProcess);
     return -1;
@@ -287,179 +291,182 @@ int AppWait(DWORD pid) {
   SetConsoleCtrlHandler(nullptr, FALSE);
   DWORD exitcode = 0;
   if (GetExitCodeProcess(hProcess, &exitcode) != TRUE) {
-    auto ec = base::make_system_error_code();
-    priv::Print(priv::fc::Red, L"unable get process exit code '%s'\n",
-                ec.message);
+    auto ec = bela::make_system_error_code();
+    bela::FPrintF(stderr, L"\x1b[31munable get process exit code '%s'\x1b[0m\n",
+                  ec.message);
   }
   CloseHandle(hProcess);
   return static_cast<int>(exitcode);
 }
 
 std::wstring ExpandArgv0(std::wstring_view argv0, bool disablealias,
-                         bool verbose, bool &aliasexpand) {
+                         const wsudo::AppMode &am, bool &aliasexpand) {
   aliasexpand = false;
   if (disablealias) {
-    return ExpandEnv(argv0);
+    return bela::ExpandEnv(argv0);
   }
   wsudo::AliasEngine ae;
   if (!ae.Initialize()) {
-    return ExpandEnv(argv0);
+    return bela::ExpandEnv(argv0);
   }
   auto cmd = std::wstring(argv0);
   auto al = ae.Target(cmd);
   if (!al) {
-    return ExpandEnv(argv0);
+    return bela::ExpandEnv(argv0);
   }
   aliasexpand = true;
-  priv::Verbose(verbose, L"* App alias '%s' expand to '%s'\n", cmd, *al);
-  return ExpandEnv(*al);
+  am.Verbose(L"\x1b[01;33m* App alias '%s' expand to '%s'\x1b[0m\n", cmd, *al);
+  return bela::ExpandEnv(*al);
 }
 
 int AppExecuteAppContainer(wsudo::AppMode &am) {
-  priv::argvbuilder ab;
+  bela::EscapeArgv ea;
   bool aliasexpand = false;
-  auto argv0 =
-      ExpandArgv0(am.args[0], am.disablealias, am.verbose, aliasexpand);
+  auto argv0 = ExpandArgv0(am.args[0], am.disablealias, am, aliasexpand);
   if (aliasexpand) {
-    ab.assign_no_escape(argv0);
+    ea.AssignNoEscape(argv0);
   } else {
-    ab.assign(argv0);
+    ea.Assign(argv0);
   }
-  auto isconsole = AppExecuteSubsystemIsConsole(argv0, aliasexpand, am.verbose);
+  auto isconsole = wsudo::AppSubsystemIsConsole(argv0, aliasexpand, am);
   auto elevated = priv::IsUserAdministratorsGroup();
   bool waitable = false;
-  if (!elevated && am.level == priv::ProcessElevated &&
-      am.visible == priv::VisibleNone) {
-    am.visible = priv::VisibleNewConsole; /// change visible
+  if (!elevated && am.level == priv::ExecLevel::Elevated &&
+      am.visible == priv::VisibleMode::None) {
+    am.visible = priv::VisibleMode::NewConsole; /// change visible
   }
-  if (am.visible == priv::VisibleNone && isconsole || am.wait) {
+  if (am.visible == priv::VisibleMode::None && isconsole || am.wait) {
     waitable = true;
   }
   // UAC Elevated
   if (isconsole) {
-    priv::Verbose(am.verbose, L"* App subsystem is console, %s\n",
-                  am.Visible());
+    am.Verbose(L"\x1b[01;33m* App subsystem is console, %s\x1b[0m\n",
+               am.Visible());
   }
   for (size_t i = 1; i < am.args.size(); i++) {
-    ab.append(am.args[i]);
+    ea.Append(am.args[i]);
   }
-  priv::Verbose(am.verbose, L"* App real command '%s'\n", argv0);
+  am.Verbose(L"\x1b[01;33m* App real command '%s'\x1b[0m\n", argv0);
   am.envctx.Apply([&](const std::wstring &k, const std::wstring &v) {
-    priv::Verbose(am.verbose, L"* App apply env '%s' = '%s'\n", k, v);
+    am.Verbose(L"\x1b[01;33m* App apply env '%s' = '%s'\x1b[0m\n", k, v);
   });
-  priv::appcontainer p(ab.args());
+  priv::AppContainer p(ea.sv());
   if (!am.cwd.empty()) {
-    p.cwd() = ExpandEnv(am.cwd.data());
+    p.Chdir(bela::ExpandEnv(am.cwd));
   }
   if (!am.appname.empty()) {
-    p.name().assign(am.appname);
+    p.Name(am.appname);
   }
-  auto appx = ExpandEnv(am.appx.data());
-  p.visiblemode(am.visible);
-  p.enablelpac(am.lpac);
+  auto appx = bela::ExpandEnv(am.appx);
+  p.ChangeVisibleMode(am.visible);
+  p.EnableLPAC(am.lpac);
   if (am.lpac) {
-    priv::Verbose(
-        am.verbose,
-        L"* AppContainer: Less Privileged AppContainer Is Enabled.\n");
+    am.Verbose(L"\x1b[01;33m* AppContainer: Less Privileged AppContainer Is "
+               L"Enabled.\x1b[0m\n");
   }
   if (!am.appname.empty()) {
-    p.name().assign(am.appname);
+    p.Name(am.appname);
   }
-  priv::Print(priv::fc::Yellow, L"Command: %s\n", ab.args());
+  bela::FPrintF(stderr, L"\x1b[01;32mCommand: %s\x1b[0m\n", ea.sv());
   bool ok = false;
   if (am.appx.empty()) {
     if (am.lpac) {
-      priv::Print(priv::fc::Yellow, L"AppContainer: LPAC mode is set but will "
-                                    L"not take effect. Appmanifest not set.\n");
+      bela::FPrintF(stderr, L"\x1b[31mAppContainer: LPAC mode is set but will "
+                            L"not take effect. Appmanifest not set.\x1b[0m\n");
     }
-    ok = p.initialize();
+    ok = p.InitializeNone();
   } else {
-    auto appx = ExpandEnv(am.appx.data());
-    ok = p.initialize(appx);
+    ok = p.InitializeFile(appx);
   }
   if (!ok) {
-    auto ec = base::make_system_error_code();
-    priv::Print(priv::fc::Red,
-                L"initialize appconatiner process  last error %d  (%s): %s\n",
-                ec.code, p.message(), ec.message);
+    auto ec = bela::make_system_error_code();
+    bela::FPrintF(stderr,
+                  L"\x1b[31minitialize appconatiner process  last error %d  "
+                  L"(%s): %s\x1b[0m\n",
+                  ec.code, p.Message(), ec.message);
     return 1;
   }
-  if (!p.execute()) {
-    auto ec = base::make_system_error_code();
-    if (p.message().empty()) {
-      priv::Print(priv::fc::Red,
-                  L"create appconatiner process  last error %d : %s\n", ec.code,
-                  ec.message);
+  if (!p.Exec()) {
+    auto ec = bela::make_system_error_code();
+    if (p.Message().empty()) {
+      bela::FPrintF(
+          stderr,
+          L"\x1b[31mcreate appconatiner process  last error %d : %s\x1b[0m\n",
+          ec.code, ec.message);
     } else {
-      priv::Print(priv::fc::Red,
-                  L"create appconatiner process  last error %d  (%s): %s\n",
-                  ec.code, p.message(), ec.message);
+      bela::FPrintF(stderr,
+                    L"\x1b[31mcreate appconatiner process  last error %d  "
+                    L"(%s): %s\x1b[0m\n",
+                    ec.code, p.Message(), ec.message);
     }
     return 1;
   }
-  priv::Print(priv::fc::Green,
-              L"new appcontainer process is running: %d\nsid: %s\n", p.pid(),
-              p.strid());
+  bela::FPrintF(
+      stderr,
+      L"\x1b[01;32mnew appcontainer process is running: %d\nsid: %s\x1b[0m\n",
+      p.PID(), p.SSID());
   if (waitable) {
-    return AppWait(p.pid());
+    return AppWait(p.PID());
   }
   return 0;
 }
 
 int AppExecute(wsudo::AppMode &am) {
-  priv::argvbuilder ab;
+  bela::EscapeArgv ea;
   bool aliasexpand = false;
-  auto argv0 =
-      ExpandArgv0(am.args[0], am.disablealias, am.verbose, aliasexpand);
+  auto argv0 = ExpandArgv0(am.args[0], am.disablealias, am, aliasexpand);
   if (aliasexpand) {
-    ab.assign_no_escape(argv0);
+    ea.AssignNoEscape(argv0);
   } else {
-    ab.assign(argv0);
+    ea.Assign(argv0);
   }
-  auto isconsole = AppExecuteSubsystemIsConsole(argv0, aliasexpand, am.verbose);
+  auto isconsole = wsudo::AppSubsystemIsConsole(argv0, aliasexpand, am);
   auto elevated = priv::IsUserAdministratorsGroup();
   bool waitable = false;
-  if (!elevated && am.level == priv::ProcessElevated &&
-      am.visible == priv::VisibleNone) {
-    am.visible = priv::VisibleNewConsole; /// change visible
+  if (!elevated && am.level == priv::ExecLevel::Elevated &&
+      am.visible == priv::VisibleMode::None) {
+    am.visible = priv::VisibleMode::NewConsole; /// change visible
   }
-  if (am.visible == priv::VisibleNone && isconsole || am.wait) {
+  if (am.visible == priv::VisibleMode::None && isconsole || am.wait) {
     waitable = true;
   }
   // UAC Elevated
 
   if (isconsole) {
-    priv::Verbose(am.verbose, L"* App subsystem is console, %s\n",
-                  am.Visible());
+    am.Verbose(L"\x1b[01;33m* App subsystem is console, %s\x1b[0m\n",
+               am.Visible());
   }
 
   for (size_t i = 1; i < am.args.size(); i++) {
-    ab.append(am.args[i]);
+    ea.Append(am.args[i]);
   }
-  priv::Verbose(am.verbose, L"* App real command '%s'\n", argv0);
+  am.Verbose(L"\x1b[01;33m* App real command '%s'\x1b[0m\n", argv0);
   am.envctx.Apply([&](const std::wstring &k, const std::wstring &v) {
-    priv::Verbose(am.verbose, L"* App apply env '%s' = '%s'\n", k, v);
+    am.Verbose(L"\x1b[01;33m* App apply env '%s' = '%s'\x1b[0m\n", k, v);
   });
-  priv::process p(ab.args());
-  p.visiblemode(am.visible);
+  priv::Process p(ea.sv());
+  p.ChangeVisibleMode(am.visible);
   if (!am.cwd.empty()) {
-    p.cwd() = ExpandEnv(am.cwd.data());
+    p.Chdir(bela::ExpandEnv(am.cwd));
   }
-  priv::Print(priv::fc::Yellow, L"Command: %s\n", ab.args());
-  if (p.execute(am.level)) {
-    priv::Print(priv::fc::Green, L"new process is running: %d\n", p.pid());
+  bela::FPrintF(stderr, L"\x1b[01;32mCommand: %s\x1b[0m\n", ea.sv());
+  if (p.Exec(am.level)) {
+    bela::FPrintF(stderr, L"\x1b[01;32mnew process is running: %d\x1b[0m\n",
+                  p.PID());
     if (waitable) {
-      return AppWait(p.pid());
+      return AppWait(p.PID());
     }
     return 0;
   }
-  auto ec = base::make_system_error_code();
-  if (p.message().empty()) {
-    priv::Print(priv::fc::Red, L"create process  last error %d : %s\n", ec.code,
-                ec.message);
+  auto ec = bela::make_system_error_code();
+  if (p.Message().empty()) {
+    bela::FPrintF(stderr,
+                  L"\x1b[31mcreate process  last error %d : %s\x1b[0m\n",
+                  ec.code, ec.message);
   } else {
-    priv::Print(priv::fc::Red, L"create process  last error %d  (%s): %s\n",
-                ec.code, p.message(), ec.message);
+    bela::FPrintF(stderr,
+                  L"\x1b[31mcreate process  last error %d  (%s): %s\x1b[0m\n",
+                  ec.code, p.Message(), ec.message);
   }
   return 1;
 }
@@ -470,8 +477,9 @@ int wmain(int argc, wchar_t **argv) {
     return 1;
   }
   if (am.args.empty()) {
-    priv::Print(priv::fc::Red, L"wsudo missing command %s see usage:\n",
-                am.message);
+    bela::FPrintF(stderr,
+                  L"\x1b[31mwsudo missing command %s see usage:\x1b[0m\n",
+                  am.message);
     Usage(true);
     return 1;
   }
@@ -480,7 +488,7 @@ int wmain(int argc, wchar_t **argv) {
   }
   am.Verbose();
   priv::dotcom_global_initializer di;
-  if (am.level == priv::ProcessAppContainer) {
+  if (am.level == priv::ExecLevel::AppContainer) {
     return AppExecuteAppContainer(am);
   }
   return AppExecute(am);

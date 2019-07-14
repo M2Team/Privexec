@@ -2,7 +2,6 @@
 
 add_executable(Privexec WIN32
     appalias.cc
-    apputils.cc
     capabilities.cc
     app.cc
     main.cc
@@ -15,6 +14,8 @@ if(lto_supported)
 endif()
 
 target_link_libraries(Privexec
+    ProcessCore
+    belashl
     Comctl32
     Shlwapi
     Pathcch

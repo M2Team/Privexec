@@ -2,10 +2,13 @@
 #include <json.hpp>
 #include <Shlwapi.h>
 #include <PathCch.h>
-#include <base.hpp>
+#include <bela/path.hpp>
+#include <bela/codecvt.hpp>
+#include <bela/env.hpp>
 #include <file.hpp>
 #include "app.hpp"
 
+/// PathAppImageCombineExists
 /// PathAppImageCombineExists
 bool PathAppImageCombineExists(std::wstring &path, const wchar_t *file) {
   if (PathFileExistsW(file)) {
@@ -15,7 +18,7 @@ bool PathAppImageCombineExists(std::wstring &path, const wchar_t *file) {
   path.resize(PATHCCH_MAX_CCH, L'\0');
   auto N = GetModuleFileNameW(nullptr, &path[0], PATHCCH_MAX_CCH);
   path.resize(N);
-  auto pos = path.rfind(L'\\');
+  auto pos = path.find_last_of(L"\\/");
   if (pos != std::wstring::npos) {
     path.resize(pos);
   }
@@ -41,9 +44,9 @@ bool AppAliasInitialize(HWND hbox, priv::alias_t &alias) {
     auto json = nlohmann::json::parse(fd.fd);
     auto cmds = json["Alias"];
     for (auto &cmd : cmds) {
-      auto desc = base::ToWide(cmd["Desc"].get<std::string>());
-      auto target = base::ToWide(cmd["Target"].get<std::string>());
-      alias.insert(std::make_pair(desc, target));
+      auto desc = bela::ToWide(cmd["Desc"].get<std::string>());
+      alias.insert_or_assign(desc,
+                             bela::ToWide(cmd["Target"].get<std::string>()));
       ::SendMessageW(hbox, CB_ADDSTRING, 0, (LPARAM)desc.data());
     }
   } catch (const std::exception &e) {
