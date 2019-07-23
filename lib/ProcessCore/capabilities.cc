@@ -28,12 +28,14 @@ bool MergeFromAppManifest(std::wstring_view file,
       caps.emplace_back(c);
     }
   };
-  auto elem = doc.child("Package").child("Capabilities");
-  for (auto it : elem.children("Capability")) {
-    auto n = it.attribute("Name").as_string();
-    CapAppend(bela::ToWide(n));
-  }
-  for (auto it : elem.children("rescap:Capability")) {
+  // Capability
+  // rescap:Capability
+  // uap:Capability
+  // uap3:Capability
+  // uap6:Capability
+  // wincap:Capability
+  // DeviceCapability
+  for (auto it : doc.child("Package").child("Capabilities")) {
     auto n = it.attribute("Name").as_string();
     CapAppend(bela::ToWide(n));
   }

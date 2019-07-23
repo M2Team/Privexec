@@ -1,0 +1,395 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Package xmlns="http://schemas.microsoft.com/appx/manifest/foundation/windows10" xmlns:mp="http://schemas.microsoft.com/appx/2014/phone/manifest" xmlns:mx="http://schemas.microsoft.com/appx/2013/xbox/manifest" xmlns:rescap="http://schemas.microsoft.com/appx/manifest/foundation/windows10/restrictedcapabilities" xmlns:uap="http://schemas.microsoft.com/appx/manifest/uap/windows10" xmlns:uap3="http://schemas.microsoft.com/appx/manifest/uap/windows10/3" xmlns:uap5="http://schemas.microsoft.com/appx/manifest/uap/windows10/5" xmlns:uap6="http://schemas.microsoft.com/appx/manifest/uap/windows10/6" xmlns:wincap="http://schemas.microsoft.com/appx/manifest/foundation/windows10/windowscapabilities" xmlns:wincap3="http://schemas.microsoft.com/appx/manifest/foundation/windows10/windowscapabilities/3" IgnorableNamespaces="mp mx rescap uap uap3 uap5 uap6 wincap wincap3">
+	<Identity Name="Microsoft.MicrosoftEdge" Publisher="CN=Microsoft Corporation, O=Microsoft Corporation, L=Redmond, S=Washington, C=US" Version="42.17134.1.0" ProcessorArchitecture="neutral"/>
+	<mp:PhoneIdentity PhoneProductId="395589fb-5884-4709-b9df-f7d558663ffd" PhonePublisherId="95d94207-0c7c-47ed-82db-d75c81153c35"/>
+	<Properties>
+		<DisplayName>ms-resource:AppName</DisplayName>
+		<PublisherDisplayName>Microsoft Corporation</PublisherDisplayName>
+		<Logo>Assets\MicrosoftEdgeSquare50x50.png</Logo>
+	</Properties>
+	<Dependencies>
+		<TargetDeviceFamily Name="Windows.Universal" MinVersion="10.0.11050.0" MaxVersionTested="12.0.0.0"/>
+	</Dependencies>
+	<Resources>
+		<Resource Language="en-US"/>
+	</Resources>
+	<Applications>
+		<Application Id="MicrosoftEdge" Executable="MicrosoftEdge.exe" EntryPoint="MicrosoftEdge.App">
+			<uap:VisualElements DisplayName="ms-resource:AppName" Square150x150Logo="Assets\MicrosoftEdgeSquare150x150.png" Square44x44Logo="Assets\MicrosoftEdgeSquare44x44.png" Description="ms-resource:AppDescription" BackgroundColor="#0078D7">
+				<uap:DefaultTile ShortName="ms-resource:AppName" Square310x310Logo="Assets\MicrosoftEdgeSquare310x310.png" Wide310x150Logo="Assets\MicrosoftEdgeWide310x150.png" Square71x71Logo="Assets\MicrosoftEdgeSquare71x71.png">
+					<uap:ShowNameOnTiles>
+						<uap:ShowOn Tile="square150x150Logo"/>
+						<uap:ShowOn Tile="wide310x150Logo"/>
+						<uap:ShowOn Tile="square310x310Logo"/>
+					</uap:ShowNameOnTiles>
+				</uap:DefaultTile>
+				<uap:SplashScreen Image="Assets\MicrosoftEdgeSplashScreen.png" BackgroundColor="#D0D0D0" uap5:Optional="true"/>
+			</uap:VisualElements>
+			<Extensions>
+				<uap:Extension Category="windows.protocol">
+					<uap:Protocol Name="http">
+						<uap:Logo>Assets\MicrosoftEdgeFile.png</uap:Logo>
+					</uap:Protocol>
+				</uap:Extension>
+				<uap:Extension Category="windows.protocol">
+					<uap:Protocol Name="https">
+						<uap:Logo>Assets\MicrosoftEdgeFile.png</uap:Logo>
+					</uap:Protocol>
+				</uap:Extension>
+				<uap:Extension Category="windows.protocol">
+					<uap:Protocol Name="read">
+						<uap:Logo>Assets\MicrosoftEdgeFile.png</uap:Logo>
+					</uap:Protocol>
+				</uap:Extension>
+				<uap:Extension Category="windows.protocol">
+					<uap:Protocol Name="microsoft-edge">
+						<uap:Logo>Assets\MicrosoftEdgeFile.png</uap:Logo>
+					</uap:Protocol>
+				</uap:Extension>
+				<uap:Extension Category="windows.protocol">
+					<uap:Protocol Name="microsoft-edge-holographic">
+						<uap:Logo>Assets\MicrosoftEdgeFile.png</uap:Logo>
+					</uap:Protocol>
+				</uap:Extension>
+				<uap:Extension Category="windows.protocol">
+					<uap:Protocol Name="ms-xbl-3d8b930f">
+						<uap:Logo>Assets\MicrosoftEdgeFile.png</uap:Logo>
+					</uap:Protocol>
+				</uap:Extension>
+				<uap:Extension Category="windows.fileTypeAssociation">
+					<uap:FileTypeAssociation Name="html">
+						<uap:SupportedFileTypes>
+							<uap:FileType ContentType="text/html">.htm</uap:FileType>
+							<uap:FileType ContentType="text/html">.html</uap:FileType>
+						</uap:SupportedFileTypes>
+						<uap:Logo>Assets\MicrosoftEdgeFile.png</uap:Logo>
+					</uap:FileTypeAssociation>
+				</uap:Extension>
+				<uap:Extension Category="windows.fileTypeAssociation">
+					<uap:FileTypeAssociation Name="pdf">
+						<uap:SupportedFileTypes>
+							<uap:FileType ContentType="application/pdf">.pdf</uap:FileType>
+						</uap:SupportedFileTypes>
+						<uap:Logo>Assets\MicrosoftEdgePDF.png</uap:Logo>
+					</uap:FileTypeAssociation>
+				</uap:Extension>
+				<uap:Extension Category="windows.fileTypeAssociation">
+					<uap:FileTypeAssociation Name="svg">
+						<uap:SupportedFileTypes>
+							<uap:FileType ContentType="image/svg+xml">.svg</uap:FileType>
+						</uap:SupportedFileTypes>
+						<uap:Logo>Assets\MicrosoftEdgeFile.png</uap:Logo>
+					</uap:FileTypeAssociation>
+				</uap:Extension>
+				<uap:Extension Category="windows.fileTypeAssociation">
+					<uap:FileTypeAssociation Name="xml">
+						<uap:SupportedFileTypes>
+							<uap:FileType ContentType="text/xml">.xml</uap:FileType>
+						</uap:SupportedFileTypes>
+						<uap:Logo>Assets\MicrosoftEdgeFile.png</uap:Logo>
+					</uap:FileTypeAssociation>
+				</uap:Extension>
+				<uap:Extension Category="windows.fileTypeAssociation">
+					<uap:FileTypeAssociation Name="epub">
+						<uap:SupportedFileTypes>
+							<uap:FileType ContentType="application/epub+zip">.epub</uap:FileType>
+						</uap:SupportedFileTypes>
+						<uap:Logo>Assets\MicrosoftEdgeEPUB.png</uap:Logo>
+					</uap:FileTypeAssociation>
+				</uap:Extension>
+				<uap:Extension Category="windows.appService">
+					<uap:AppService Name="WdagSettingsFramework"/>
+				</uap:Extension>
+				<uap:Extension Category="windows.appService" EntryPoint="SpModel.Model.RetailDemoTask">
+					<uap:AppService Name="Microsoft-RetailDemo-Provision"/>
+				</uap:Extension>
+				<uap3:Extension Category="windows.appExtensionHost">
+					<uap3:AppExtensionHost>
+						<uap3:Name>com.microsoft.edge.extension</uap3:Name>
+					</uap3:AppExtensionHost>
+				</uap3:Extension>
+				<!-- The AppUriHandler below is used by the Books library to catch sharing URLs
+                     (share.microsoft.com/book/[,BOOKID][,?PARAMS] e.g.) directly instead of using a web redirection.
+                     Thanks to server-side configuration, though we register the share.microsoft.com host, if the default browser is not Microsoft Edge:
+                        1. share.microsoft.com/book/... urls still arrive in Microsoft Edge (except if the user deactivates App For Websites);
+                        2. other [anything].microsoft.com/[anything]... urls arrive in default brother/other registered app. -->
+				<uap3:Extension Category="windows.appUriHandler">
+					<uap3:AppUriHandler>
+						<uap3:Host Name="share.microsoft.com"/>
+					</uap3:AppUriHandler>
+				</uap3:Extension>
+				<uap5:Extension Category="windows.appExecutionAlias" Executable="MicrosoftEdge.exe" EntryPoint="MicrosoftEdge.App">
+					<uap5:AppExecutionAlias>
+						<uap5:ExecutionAlias Alias="MicrosoftEdge.exe"/>
+					</uap5:AppExecutionAlias>
+				</uap5:Extension>
+				<uap5:Extension Category="windows.userActivity">
+					<uap5:UserActivity ActivitySourceHost="edge.activity.windows.com"/>
+				</uap5:Extension>
+				<mx:Extension Category="xbox.live">
+					<mx:XboxLive TitleId="3D8B930F" PrimaryServiceConfigId="e0e02fbc-4e0d-45fc-b338-69d7e25feede"/>
+				</mx:Extension>
+			</Extensions>
+		</Application>
+		<Application Id="ContentProcess" Executable="MicrosoftEdgeCP.exe" EntryPoint="ContentProcess.App">
+			<uap:VisualElements DisplayName="ms-resource:AppName" Square150x150Logo="Assets\MicrosoftEdgeSquare150x150.png" Square44x44Logo="Assets\MicrosoftEdgeSquare44x44.png" Description="ms-resource:AppDescription" BackgroundColor="#0078D7" AppListEntry="none">
+				<uap:DefaultTile ShortName="ms-resource:AppName" Square310x310Logo="Assets\MicrosoftEdgeSquare310x310.png" Wide310x150Logo="Assets\MicrosoftEdgeWide310x150.png" Square71x71Logo="Assets\MicrosoftEdgeSquare71x71.png">
+					<uap:ShowNameOnTiles>
+						<uap:ShowOn Tile="square150x150Logo"/>
+						<uap:ShowOn Tile="wide310x150Logo"/>
+						<uap:ShowOn Tile="square310x310Logo"/>
+					</uap:ShowNameOnTiles>
+				</uap:DefaultTile>
+				<uap:SplashScreen Image="Assets\MicrosoftEdgeSplashScreen.png" BackgroundColor="#D0D0D0" uap5:Optional="true"/>
+			</uap:VisualElements>
+			<Extensions>
+				<wincap3:Extension Category="windows.internal.componentUI"/>
+			</Extensions>
+		</Application>
+		<Application Id="F12" Executable="MicrosoftEdgeCP.exe" EntryPoint="F12.App">
+			<uap:VisualElements DisplayName="ms-resource:AppName" Square150x150Logo="Assets\MicrosoftEdgeSquare150x150.png" Square44x44Logo="Assets\MicrosoftEdgeSquare44x44.png" Description="ms-resource:AppDescription" BackgroundColor="#0078D7" AppListEntry="none">
+				<uap:DefaultTile ShortName="ms-resource:AppName" Square310x310Logo="Assets\MicrosoftEdgeSquare310x310.png" Wide310x150Logo="Assets\MicrosoftEdgeWide310x150.png" Square71x71Logo="Assets\MicrosoftEdgeSquare71x71.png">
+					<uap:ShowNameOnTiles>
+						<uap:ShowOn Tile="square150x150Logo"/>
+						<uap:ShowOn Tile="wide310x150Logo"/>
+						<uap:ShowOn Tile="square310x310Logo"/>
+					</uap:ShowNameOnTiles>
+				</uap:DefaultTile>
+				<uap:SplashScreen Image="Assets\MicrosoftEdgeSplashScreen.png" BackgroundColor="#D0D0D0" uap5:Optional="true"/>
+			</uap:VisualElements>
+			<Extensions>
+				<wincap3:Extension Category="windows.internal.componentUI"/>
+				<uap3:Extension Category="windows.appExtensionHost">
+					<uap3:AppExtensionHost>
+						<uap3:Name>com.microsoft.edge.f12</uap3:Name>
+					</uap3:AppExtensionHost>
+				</uap3:Extension>
+			</Extensions>
+		</Application>
+		<Application Id="BCHost" Executable="MicrosoftEdgeCP.exe" EntryPoint="BCHost.App">
+			<uap:VisualElements DisplayName="ms-resource:AppName" Square150x150Logo="Assets\MicrosoftEdgeSquare150x150.png" Square44x44Logo="Assets\MicrosoftEdgeSquare44x44.png" Description="ms-resource:AppDescription" BackgroundColor="#0078D7" AppListEntry="none">
+				<uap:DefaultTile ShortName="ms-resource:AppName" Square310x310Logo="Assets\MicrosoftEdgeSquare310x310.png" Wide310x150Logo="Assets\MicrosoftEdgeWide310x150.png" Square71x71Logo="Assets\MicrosoftEdgeSquare71x71.png">
+					<uap:ShowNameOnTiles>
+						<uap:ShowOn Tile="square150x150Logo"/>
+						<uap:ShowOn Tile="wide310x150Logo"/>
+						<uap:ShowOn Tile="square310x310Logo"/>
+					</uap:ShowNameOnTiles>
+				</uap:DefaultTile>
+				<uap:SplashScreen Image="Assets\MicrosoftEdgeSplashScreen.png" BackgroundColor="#D0D0D0" uap5:Optional="true"/>
+			</uap:VisualElements>
+			<Extensions>
+				<wincap3:Extension Category="windows.internal.componentUI"/>
+			</Extensions>
+		</Application>
+		<Application Id="PdfReader" Executable="MicrosoftPdfReader.exe" EntryPoint="PdfReader.App">
+			<uap:VisualElements DisplayName="ms-resource:AppName" Square150x150Logo="Assets\MicrosoftEdgeSquare150x150.png" Square44x44Logo="Assets\MicrosoftEdgeSquare44x44.png" Description="ms-resource:AppDescription" BackgroundColor="#0078D7" AppListEntry="none">
+				<uap:DefaultTile ShortName="ms-resource:AppName" Square310x310Logo="Assets\MicrosoftEdgeSquare310x310.png" Wide310x150Logo="Assets\MicrosoftEdgeWide310x150.png" Square71x71Logo="Assets\MicrosoftEdgeSquare71x71.png">
+					<uap:ShowNameOnTiles>
+						<uap:ShowOn Tile="square150x150Logo"/>
+						<uap:ShowOn Tile="wide310x150Logo"/>
+						<uap:ShowOn Tile="square310x310Logo"/>
+					</uap:ShowNameOnTiles>
+				</uap:DefaultTile>
+				<uap:SplashScreen Image="Assets\MicrosoftEdgeSplashScreen.png" BackgroundColor="#0078D7" uap5:Optional="true"/>
+			</uap:VisualElements>
+			<Extensions>
+				<wincap3:Extension Category="windows.internal.componentUI"/>
+			</Extensions>
+		</Application>
+	</Applications>
+	<Extensions>
+		<Extension Category="windows.activatableClass.inProcessServer">
+			<InProcessServer>
+				<Path>eModel.dll</Path>
+				<ActivatableClass ActivatableClassId="SpartanCore.BrowserFrameState" ThreadingModel="STA"/>
+				<ActivatableClass ActivatableClassId="SpartanCore.ExtensionPopupContextMenu" ThreadingModel="STA"/>
+				<ActivatableClass ActivatableClassId="SpartanCore.FileOpenPickerData" ThreadingModel="STA"/>
+				<ActivatableClass ActivatableClassId="SpartanCore.FilePickerExtensionGroup" ThreadingModel="STA"/>
+				<ActivatableClass ActivatableClassId="SpartanCore.FilePickerResults" ThreadingModel="STA"/>
+				<ActivatableClass ActivatableClassId="SpartanCore.FileSavePickerData" ThreadingModel="STA"/>
+				<ActivatableClass ActivatableClassId="SpartanCore.FolderPickerData" ThreadingModel="STA"/>
+				<ActivatableClass ActivatableClassId="SpartanCore.FormsAutoSuggestData" ThreadingModel="STA"/>
+				<ActivatableClass ActivatableClassId="SpartanCore.InformationDialogData" ThreadingModel="STA"/>
+				<ActivatableClass ActivatableClassId="SpartanCore.LayerOwner" ThreadingModel="STA"/>
+				<ActivatableClass ActivatableClassId="SpartanCore.NotificationManager" ThreadingModel="STA"/>
+				<ActivatableClass ActivatableClassId="SpartanCore.PageContextMenu" ThreadingModel="STA"/>
+				<ActivatableClass ActivatableClassId="SpartanCore.PositionTracker" ThreadingModel="STA"/>
+				<ActivatableClass ActivatableClassId="SpartanCore.PromptDialogData" ThreadingModel="STA"/>
+				<ActivatableClass ActivatableClassId="SpartanCore.SingleTabData" ThreadingModel="STA"/>
+				<ActivatableClass ActivatableClassId="SpartanCore.CortanaAssistData" ThreadingModel="STA"/>
+				<ActivatableClass ActivatableClassId="SpartanCore.CortanaAssistPageSmartsItem" ThreadingModel="STA"/>
+				<ActivatableClass ActivatableClassId="SpartanCore.CortanaAssistInstrumentation" ThreadingModel="STA"/>
+				<ActivatableClass ActivatableClassId="SpartanCore.CortanaAssistStateOverrideItem" ThreadingModel="STA"/>
+				<ActivatableClass ActivatableClassId="SpartanCore.CortanaAssistUIOverrides" ThreadingModel="STA"/>
+				<ActivatableClass ActivatableClassId="SpartanCore.EarlyBirdData" ThreadingModel="both"/>
+				<ActivatableClass ActivatableClassId="SpartanCore.TravelLogEntryData" ThreadingModel="STA"/>
+				<ActivatableClass ActivatableClassId="SpartanCore.UILayerParticipant" ThreadingModel="STA"/>
+				<ActivatableClass ActivatableClassId="SpartanCore.WebComponentView" ThreadingModel="STA"/>
+				<ActivatableClass ActivatableClassId="SpartanCore.FakeRoutedArgs" ThreadingModel="STA"/>
+				<ActivatableClass ActivatableClassId="SpartanCore.ComponentUIUtils" ThreadingModel="STA"/>
+				<ActivatableClass ActivatableClassId="WebRuntime.WebDriver" ThreadingModel="both"/>
+				<ActivatableClass ActivatableClassId="WebRuntime.WebNotificationStatics" ThreadingModel="both"/>
+				<ActivatableClass ActivatableClassId="WebRuntime.WebRuntimeInfo" ThreadingModel="both"/>
+				<ActivatableClass ActivatableClassId="WebRuntime.WebRuntimeSettings" ThreadingModel="both"/>
+			</InProcessServer>
+		</Extension>
+		<Extension Category="windows.activatableClass.inProcessServer">
+			<InProcessServer>
+				<Path>eView.dll</Path>
+				<ActivatableClass ActivatableClassId="SpModel.Model.AddressEditBoxTextFormatter" ThreadingModel="STA"/>
+				<ActivatableClass ActivatableClassId="SpModel.Model.ExtensionSettings" ThreadingModel="STA"/>
+				<ActivatableClass ActivatableClassId="SpModel.Model.ExtensionSettingsFactory" ThreadingModel="STA"/>
+				<ActivatableClass ActivatableClassId="SpModel.Model.RetailDemoTask" ThreadingModel="both"/>
+				<ActivatableClass ActivatableClassId="SpModel.Model.RoamingFavUnitHandler" ThreadingModel="STA"/>
+				<ActivatableClass ActivatableClassId="SpModel.Model.UpdateHistoryItem" ThreadingModel="STA"/>
+				<ActivatableClass ActivatableClassId="SpModel.Model.RoamingTypedUrlListHandler" ThreadingModel="STA"/>
+				<ActivatableClass ActivatableClassId="SpModel.Model.RoamingTypedUrlEntry" ThreadingModel="STA"/>
+				<ActivatableClass ActivatableClassId="SpModel.Model.RoamingSettingsListHandler" ThreadingModel="STA"/>
+				<ActivatableClass ActivatableClassId="SpModel.Model.RoamingTopSitesListHandler" ThreadingModel="STA"/>
+				<ActivatableClass ActivatableClassId="SpModel.Model.RoamingManager" ThreadingModel="STA"/>
+				<ActivatableClass ActivatableClassId="SpModel.Model.UserManager" ThreadingModel="STA"/>
+				<ActivatableClass ActivatableClassId="SpModel.Model.RoamingRLUnitHandler" ThreadingModel="STA"/>
+				<ActivatableClass ActivatableClassId="SpModel.Model.RoamingEDUnitHandler" ThreadingModel="STA"/>
+				<ActivatableClass ActivatableClassId="SpModel.Model.RoamingAFUnitHandler" ThreadingModel="STA"/>
+				<ActivatableClass ActivatableClassId="SpModel.Model.TabPeekManager" ThreadingModel="STA"/>
+				<ActivatableClass ActivatableClassId="SpModel.Model.UserData.ConnectedStorageFavoritesSource" ThreadingModel="STA"/>
+				<ActivatableClass ActivatableClassId="SpModel.Model.UserData.IUserData" ThreadingModel="STA"/>
+				<ActivatableClass ActivatableClassId="SpModel.Model.ContentIndexerManager" ThreadingModel="STA"/>
+				<ActivatableClass ActivatableClassId="SpModel.Model.DeepLinks" ThreadingModel="STA"/>
+				<ActivatableClass ActivatableClassId="SpModel.ViewModel.ActionsViewModel" ThreadingModel="STA"/>
+				<ActivatableClass ActivatableClassId="SpModel.ViewModel.AddressEditBoxTextChanged" ThreadingModel="STA"/>
+				<ActivatableClass ActivatableClassId="SpModel.ViewModel.AddressEditBoxViewModel" ThreadingModel="STA"/>
+				<ActivatableClass ActivatableClassId="SpModel.ViewModel.AnnotationViewModel" ThreadingModel="STA"/>
+				<ActivatableClass ActivatableClassId="SpModel.ViewModel.Badge" ThreadingModel="STA"/>
+				<ActivatableClass ActivatableClassId="SpModel.ViewModel.BadgeBoxViewModel" ThreadingModel="STA"/>
+				<ActivatableClass ActivatableClassId="SpModel.ViewModel.BookReaderViewModel" ThreadingModel="STA"/>
+				<ActivatableClass ActivatableClassId="SpModel.ViewModel.BrowserViewModel" ThreadingModel="STA"/>
+				<ActivatableClass ActivatableClassId="SpModel.ViewModel.CorrelationVectorViewModel" ThreadingModel="STA"/>
+				<ActivatableClass ActivatableClassId="SpModel.ViewModel.CortanaAssistViewModel" ThreadingModel="STA"/>
+				<ActivatableClass ActivatableClassId="SpModel.ViewModel.CortanaPaneContentDCompVisualPresenter" ThreadingModel="STA"/>
+				<ActivatableClass ActivatableClassId="SpModel.ViewModel.CortanaPaneViewModel" ThreadingModel="STA"/>
+				<ActivatableClass ActivatableClassId="SpModel.ViewModel.CrossTabTravelViewModel" ThreadingModel="STA"/>
+				<ActivatableClass ActivatableClassId="SpModel.ViewModel.DelegateCommand" ThreadingModel="STA"/>
+				<ActivatableClass ActivatableClassId="SpModel.ViewModel.ExtensionManagementViewModel" ThreadingModel="STA"/>
+				<ActivatableClass ActivatableClassId="SpModel.ViewModel.ExtensionPopupContextMenuViewModel" ThreadingModel="STA"/>
+				<ActivatableClass ActivatableClassId="SpModel.ViewModel.ExtensionPopupDCompVisualPresenter" ThreadingModel="STA"/>
+				<ActivatableClass ActivatableClassId="SpModel.ViewModel.F12ContentDCompVisualPresenter" ThreadingModel="STA"/>
+				<ActivatableClass ActivatableClassId="SpModel.ViewModel.F12DockedDCompVisualPresenter" ThreadingModel="STA"/>
+				<ActivatableClass ActivatableClassId="SpModel.ViewModel.F12GridSplitterViewModel" ThreadingModel="STA"/>
+				<ActivatableClass ActivatableClassId="SpModel.ViewModel.F12ViewModel" ThreadingModel="STA"/>
+				<ActivatableClass ActivatableClassId="SpModel.ViewModel.FavoritesViewModel" ThreadingModel="STA"/>
+				<ActivatableClass ActivatableClassId="SpModel.ViewModel.FeatureConfig" ThreadingModel="STA"/>
+				<ActivatableClass ActivatableClassId="SpModel.ViewModel.FeedbackViewModel" ThreadingModel="STA"/>
+				<ActivatableClass ActivatableClassId="SpModel.ViewModel.FilePickerViewModel" ThreadingModel="STA"/>
+				<ActivatableClass ActivatableClassId="SpModel.ViewModel.FindOnPageViewModel" ThreadingModel="STA"/>
+				<ActivatableClass ActivatableClassId="SpModel.ViewModel.FormsAutoSuggestViewModel" ThreadingModel="STA"/>
+				<ActivatableClass ActivatableClassId="SpModel.ViewModel.FrameViewModel" ThreadingModel="STA"/>
+				<ActivatableClass ActivatableClassId="SpModel.ViewModel.GamepadViewModel" ThreadingModel="STA"/>
+				<ActivatableClass ActivatableClassId="SpModel.ViewModel.HistoryViewModel" ThreadingModel="STA"/>
+				<ActivatableClass ActivatableClassId="SpModel.ViewModel.InformationDialogEventArgs" ThreadingModel="STA"/>
+				<ActivatableClass ActivatableClassId="SpModel.ViewModel.InputDeactivationViewModel" ThreadingModel="STA"/>
+				<ActivatableClass ActivatableClassId="SpModel.ViewModel.KeyboardShortcutViewModel" ThreadingModel="STA"/>
+				<ActivatableClass ActivatableClassId="SpModel.ViewModel.LibraryViewModel" ThreadingModel="STA"/>
+				<ActivatableClass ActivatableClassId="SpModel.ViewModel.NavigationEventArgs" ThreadingModel="STA"/>
+				<ActivatableClass ActivatableClassId="SpModel.ViewModel.NavigationViewModel" ThreadingModel="STA"/>
+				<ActivatableClass ActivatableClassId="SpModel.ViewModel.NewTabPageViewModel" ThreadingModel="STA"/>
+				<ActivatableClass ActivatableClassId="SpModel.ViewModel.NotificationViewModel" ThreadingModel="STA"/>
+				<ActivatableClass ActivatableClassId="SpModel.ViewModel.OneBoxContentDCompVisualPresenter" ThreadingModel="STA"/>
+				<ActivatableClass ActivatableClassId="SpModel.ViewModel.OneBoxLiteViewModel" ThreadingModel="STA"/>
+				<ActivatableClass ActivatableClassId="SpModel.ViewModel.OneNoteListViewModel" ThreadingModel="STA"/>
+				<ActivatableClass ActivatableClassId="SpModel.ViewModel.PageContextMenuViewModel" ThreadingModel="STA"/>
+				<ActivatableClass ActivatableClassId="SpModel.ViewModel.PageContextMenuVisibility" ThreadingModel="STA"/>
+				<ActivatableClass ActivatableClassId="SpModel.ViewModel.PageToolTipViewModel" ThreadingModel="STA"/>
+				<ActivatableClass ActivatableClassId="SpModel.ViewModel.PasswordsViewModel" ThreadingModel="STA"/>
+				<ActivatableClass ActivatableClassId="SpModel.ViewModel.FormFillDataViewModel" ThreadingModel="STA"/>
+				<ActivatableClass ActivatableClassId="SpModel.ViewModel.PaymentCardFormFillDataViewModel" ThreadingModel="STA"/>
+				<ActivatableClass ActivatableClassId="SpModel.ViewModel.PathUtilities" ThreadingModel="STA"/>
+				<ActivatableClass ActivatableClassId="SpModel.ViewModel.PdfContainerViewModel" ThreadingModel="STA"/>
+				<ActivatableClass ActivatableClassId="SpModel.ViewModel.PopupDialogViewModel" ThreadingModel="STA"/>
+				<ActivatableClass ActivatableClassId="SpModel.ViewModel.PromptDialogEventArgs" ThreadingModel="STA"/>
+				<ActivatableClass ActivatableClassId="SpModel.ViewModel.ProtocolLauncherViewModel" ThreadingModel="STA"/>
+				<ActivatableClass ActivatableClassId="SpModel.ViewModel.ReadingListViewModel" ThreadingModel="STA"/>
+				<ActivatableClass ActivatableClassId="SpModel.ViewModel.ReadingViewBarViewModel" ThreadingModel="STA"/>
+				<ActivatableClass ActivatableClassId="SpModel.ViewModel.ReadViewModel" ThreadingModel="STA"/>
+				<ActivatableClass ActivatableClassId="SpModel.ViewModel.RoamingViewModel" ThreadingModel="STA"/>
+				<ActivatableClass ActivatableClassId="SpModel.ViewModel.SettingsViewModel" ThreadingModel="STA"/>
+				<ActivatableClass ActivatableClassId="SpModel.ViewModel.SettingVisibility" ThreadingModel="STA"/>
+				<ActivatableClass ActivatableClassId="SpModel.ViewModel.ShareViewModel" ThreadingModel="STA"/>
+				<ActivatableClass ActivatableClassId="SpModel.ViewModel.StringUtilities" ThreadingModel="STA"/>
+				<ActivatableClass ActivatableClassId="SpModel.ViewModel.SubPage" ThreadingModel="STA"/>
+				<ActivatableClass ActivatableClassId="SpModel.ViewModel.SweptTabsViewModel" ThreadingModel="STA"/>
+				<ActivatableClass ActivatableClassId="SpModel.ViewModel.TabContentDCompVisualPresenter" ThreadingModel="STA"/>
+				<ActivatableClass ActivatableClassId="SpModel.ViewModel.TabItem" ThreadingModel="STA"/>
+				<ActivatableClass ActivatableClassId="SpModel.ViewModel.TabsViewModel" ThreadingModel="STA"/>
+				<ActivatableClass ActivatableClassId="SpModel.ViewModel.TravelViewModel" ThreadingModel="STA"/>
+				<ActivatableClass ActivatableClassId="SpModel.ViewModel.UrlHoverViewModel" ThreadingModel="STA"/>
+				<ActivatableClass ActivatableClassId="SpModel.ViewModel.UserActivitiesViewModel" ThreadingModel="STA"/>
+				<ActivatableClass ActivatableClassId="SpModel.ViewModel.ViewDownloadsViewModel" ThreadingModel="STA"/>
+				<ActivatableClass ActivatableClassId="SpModel.ViewModel.ViewModelBase" ThreadingModel="STA"/>
+				<ActivatableClass ActivatableClassId="SpModel.ViewModel.WebsiteCredentialItem" ThreadingModel="STA"/>
+				<ActivatableClass ActivatableClassId="SpModel.ViewModel.FormFillDataItem" ThreadingModel="STA"/>
+				<ActivatableClass ActivatableClassId="SpModel.ViewModel.PaymentCardFormFillDataItem" ThreadingModel="STA"/>
+				<ActivatableClass ActivatableClassId="SpModel.ViewModel.CountryMap" ThreadingModel="STA"/>
+				<ActivatableClass ActivatableClassId="SpModel.ViewModel.WebsitePermissionsSettingsViewModel" ThreadingModel="STA"/>
+				<ActivatableClass ActivatableClassId="SpModel.ViewModel.YesNoDialogEventArgs" ThreadingModel="STA"/>
+				<ActivatableClass ActivatableClassId="SpModel.ViewModel.CertificateInformationPaneViewModel" ThreadingModel="STA"/>
+			</InProcessServer>
+		</Extension>
+		<Extension Category="windows.activatableClass.inProcessServer">
+			<InProcessServer>
+				<Path>pickerhostutils.dll</Path>
+				<ActivatableClass ActivatableClassId="PickerHostUtils.ComponentUIUtils" ThreadingModel="both"/>
+			</InProcessServer>
+		</Extension>
+	</Extensions>
+	<Capabilities>
+		<Capability Name="internetClient"/>
+		<Capability Name="privateNetworkClientServer"/>
+		<rescap:Capability Name="childWebContent"/>
+		<rescap:Capability Name="confirmAppClose"/>
+		<rescap:Capability Name="enterpriseDataPolicy"/>
+		<rescap:Capability Name="extendedExecutionBackgroundAudio"/>
+		<rescap:Capability Name="extendedExecutionUnconstrained"/>
+		<rescap:Capability Name="featureStagingInfo"/>
+		<rescap:Capability Name="hevcPlayback"/>
+		<rescap:Capability Name="packageQuery"/>
+		<rescap:Capability Name="packageManagement"/>
+		<rescap:Capability Name="slapiQueryLicenseValue"/>
+		<rescap:Capability Name="windowsHelloCredentialAccess"/>
+		<rescap:Capability Name="registryRead"/>
+		<rescap:Capability Name="lpacWebPlatform"/>
+		<rescap:Capability Name="lpacAppExperience"/>
+		<rescap:Capability Name="lpacCryptoServices"/>
+		<rescap:Capability Name="lpacIdentityServices"/>
+		<rescap:Capability Name="lpacEnterprisePolicyChangeNotifications"/>
+		<rescap:Capability Name="lpacMedia"/>
+		<rescap:Capability Name="lpacPnPNotifications"/>
+		<rescap:Capability Name="lpacServicesManagement"/>
+		<rescap:Capability Name="lpacSessionManagement"/>
+		<rescap:Capability Name="lpacInstrumentation"/>
+		<rescap:Capability Name="lpacPrinting"/>
+		<rescap:Capability Name="lpacPayments"/>
+		<rescap:Capability Name="lpacClipboard"/>
+		<rescap:Capability Name="lpacCom"/>
+		<rescap:Capability Name="lpacIME"/>
+		<rescap:Capability Name="previewStore"/>
+		<rescap:Capability Name="lpacPackageManagerOperation"/>
+		<rescap:Capability Name="smbios"/>
+		<uap:Capability Name="enterpriseAuthentication"/>
+		<uap:Capability Name="picturesLibrary"/>
+		<uap:Capability Name="sharedUserCertificates"/>
+		<uap:Capability Name="userAccountInformation"/>
+		<uap6:Capability Name="graphicsCapture"/>
+		<wincap:Capability Name="cortanaSettings"/>
+		<wincap:Capability Name="enterpriseCloudSSO"/>
+		<wincap:Capability Name="microsoftEdgeRemoteDebugging"/>
+		<wincap:Capability Name="liveIdService"/>
+		<wincap:Capability Name="settingSyncConfiguration"/>
+		<wincap:Capability Name="storeAppInstall"/>
+		<wincap:Capability Name="storeConfiguration"/>
+		<wincap:Capability Name="targetedContent"/>
+		<DeviceCapability Name="location"/>
+		<DeviceCapability Name="microphone"/>
+		<DeviceCapability Name="webcam"/>
+	</Capabilities>
+</Package>
