@@ -19,13 +19,13 @@ zsudo 用法：
 
 |参数|类型|默认值|备注|
 |---|---|---|---|
-|`-v,--version`|Boolean|N|输出 zsudo 版本信息并退出|
-|`-h,--help`|Boolean|N|输出 zsudo 帮助信息并退出|
-|`-w,--wait`|Boolean|启动的程序子系统为 GUI 时不等待，子系统为 CUI 时等待|zsudo 等待子进程退出|
-|`-n,--new-console`|Boolean|N (仅对控制台有效)|为控制台应用启动新的控制台。|
-|`-H,--hide`|Boolean|N|隐藏控制台应用的控制台|
+|`-v, --version`|Boolean|N|输出 zsudo 版本信息并退出|
+|`-h, --help`|Boolean|N|输出 zsudo 帮助信息并退出|
+|`-w, --wait`|Boolean|启动的程序子系统为 GUI 时不等待，子系统为 CUI 时等待|zsudo 等待子进程退出|
+|`-n, --new-console`|Boolean|N (仅对控制台有效)|为控制台应用启动新的控制台。|
+|`-H, --hide`|Boolean|N|隐藏控制台应用的控制台|
 |`-c, --cwd`|String|默认为 zsudo 当前目录|设置子进程目录|
-|`-e,--env`|String|默认不设置|增加子进程环境变量|
+|`-e, --env`|String|默认不设置|增加子进程环境变量|
 |`-p, --prompt=prompt`|Charecter|`*`|密码掩码|
 
 ## ZSUDO 提权机制设计
