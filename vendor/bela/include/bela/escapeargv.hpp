@@ -15,7 +15,17 @@ public:
 };
 template <> class Literal<wchar_t> {
 public:
+#if defined(_MSC_VER) || defined(_LIBCPP_VERSION)
   static constexpr std::wstring_view Empty = L"\"\"";
+#else
+  // libstdc++ call wcslen is bad
+  static constexpr std::wstring_view Empty{L"\"\"",
+                                           sizeof(L"\"\"") - sizeof(wchar_t)};
+#endif
+};
+template <> class Literal<char16_t> {
+public:
+  static constexpr std::u16string_view Empty = u"\"\"";
 };
 
 } // namespace argv_internal
@@ -77,10 +87,10 @@ public:
     for (size_t i = 0; i < args.size(); i++) {
       auto ac = args[i];
       if (!saver.empty()) {
-        saver.push_back(' ');
+        saver += ' ';
       }
       if (ac.empty()) {
-        saver.append(argv_internal::Literal<charT>::Empty);
+        saver += argv_internal::Literal<charT>::Empty;
         continue;
       }
       if (ac.size() == avs[i].len) {
@@ -140,10 +150,10 @@ public:
 private:
   void argv_escape_internal(string_view_t sv, string_t &s) {
     if (!s.empty()) {
-      s.push_back(' ');
+      s += ' ';
     }
     if (sv.empty()) {
-      s.append(argv_internal::Literal<charT>::Empty);
+      s += argv_internal::Literal<charT>::Empty;
       return;
     }
     bool hasspace = false;
@@ -168,7 +178,7 @@ private:
       n += 2;
     }
     if (n == sv.size()) {
-      s.append(sv);
+      s += sv;
       return;
     }
     s.reserve(s.size() + sv.size() + 1);

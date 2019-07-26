@@ -35,6 +35,11 @@ inline std::wstring ToWide(const char *str, size_t len) {
 inline std::wstring ToWide(std::string_view sv) {
   return mbrtowc(reinterpret_cast<const unsigned char *>(sv.data()), sv.size());
 }
+
+// Escape Unicode Non Basic Multilingual Plane
+std::string EscapeNonBMP(std::string_view sv);
+std::wstring EscapeNonBMP(std::wstring_view sv);
+std::u16string EscapeNonBMP(std::u16string_view sv);
 } // namespace bela
 
 #endif
