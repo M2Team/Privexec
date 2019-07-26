@@ -64,7 +64,7 @@ private:
 };
 
 constexpr const size_t kFastToBufferSize = 32;
-const wchar_t *AlphaNumber(uint64_t value, wchar_t *digits, size_t width,
+const wchar_t *AlphaNum(uint64_t value, wchar_t *digits, size_t width,
                            int base, char fill, bool u = false) {
   wchar_t *const end = digits + kFastToBufferSize;
   wchar_t *writer = end;
@@ -151,11 +151,11 @@ public:
         frac = 0;
       }
     }
-    auto p = AlphaNumber(ui64, digits, width, 10, zero ? '0' : ' ');
+    auto p = AlphaNum(ui64, digits, width, 10, zero ? '0' : ' ');
     Append(p, dend - p);
     if (frac_width != 0) {
       Out('.');
-      p = AlphaNumber(frac, digits, frac_width, 10, zero ? '0' : ' ');
+      p = AlphaNum(frac, digits, frac_width, 10, zero ? '0' : ' ');
       Append(p, dend - p);
     }
   }
@@ -184,11 +184,11 @@ public:
     auto val = static_cast<uint32_t>(ch);
     if (val > 0xFFFF) {
       Append(L"U+", 2);
-      auto p = AlphaNumber(val, digits, 8, 16, '0', true);
+      auto p = AlphaNum(val, digits, 8, 16, '0', true);
       Append(p, dend - p);
     } else {
       Append(L"u+", 2);
-      auto p = AlphaNumber(val, digits, 4, 16, '0', true);
+      auto p = AlphaNum(val, digits, 4, 16, '0', true);
       Append(p, dend - p);
     }
   }
@@ -313,7 +313,7 @@ bool StrFormatInternal(Writer<T> &w, const wchar_t *fmt, const FormatArg *args,
       if (args[ca].at != ArgType::STRING) {
         bool sign = false;
         auto val = args[ca].ToInteger(&sign);
-        auto p = AlphaNumber(val, digits, width, 10, zero ? '0' : ' ');
+        auto p = AlphaNum(val, digits, width, 10, zero ? '0' : ' ');
         if (sign) {
           w.Out('-');
         }
@@ -327,7 +327,7 @@ bool StrFormatInternal(Writer<T> &w, const wchar_t *fmt, const FormatArg *args,
       }
       if (args[ca].at != ArgType::STRING) {
         auto val = args[ca].ToInteger();
-        auto p = AlphaNumber(val, digits, width, 8, zero ? '0' : ' ');
+        auto p = AlphaNum(val, digits, width, 8, zero ? '0' : ' ');
         w.Append(p, dend - p);
       }
       ca++;
@@ -338,7 +338,7 @@ bool StrFormatInternal(Writer<T> &w, const wchar_t *fmt, const FormatArg *args,
       }
       if (args[ca].at != ArgType::STRING) {
         auto val = args[ca].ToInteger();
-        auto p = AlphaNumber(val, digits, width, 16, zero ? '0' : ' ');
+        auto p = AlphaNum(val, digits, width, 16, zero ? '0' : ' ');
         w.Append(p, dend - p);
       }
       ca++;
@@ -349,7 +349,7 @@ bool StrFormatInternal(Writer<T> &w, const wchar_t *fmt, const FormatArg *args,
       }
       if (args[ca].at != ArgType::STRING) {
         auto val = args[ca].ToInteger();
-        auto p = AlphaNumber(val, digits, width, 16, zero ? '0' : ' ', true);
+        auto p = AlphaNum(val, digits, width, 16, zero ? '0' : ' ', true);
         w.Append(p, dend - p);
       }
       ca++;
@@ -390,7 +390,7 @@ bool StrFormatInternal(Writer<T> &w, const wchar_t *fmt, const FormatArg *args,
           uint64_t i;
         } x;
         x.d = args[ca].floating.d;
-        auto p = AlphaNumber(x.i, digits, width, 16, zero ? '0' : ' ', true);
+        auto p = AlphaNum(x.i, digits, width, 16, zero ? '0' : ' ', true);
         w.Append(p, dend - p);
       }
       ca++;
@@ -401,7 +401,7 @@ bool StrFormatInternal(Writer<T> &w, const wchar_t *fmt, const FormatArg *args,
       }
       if (args[ca].at == ArgType::POINTER) {
         auto ptr = reinterpret_cast<ptrdiff_t>(args[ca].ptr);
-        auto p = AlphaNumber(ptr, digits, width, 16, zero ? '0' : ' ', true);
+        auto p = AlphaNum(ptr, digits, width, 16, zero ? '0' : ' ', true);
         w.Append(L"0x", 2);    /// Force append 0x to pointer
         w.Append(p, dend - p); // 0xffff00000;
       }

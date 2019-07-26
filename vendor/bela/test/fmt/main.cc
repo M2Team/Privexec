@@ -7,7 +7,7 @@ int wmain(int argc, wchar_t **argv) {
       "\xf0\x9f\x98\x81 UTF-8 text \xE3\x8D\xA4 --> \xF0\xA0\x83\xA3 \x41 "
       "\xE7\xA0\xB4 \xE6\x99\x93"; // force encode UTF-8
   const wchar_t wx[] =
-      L"Engine \xD83D\xDEE0 中国 \x0041 \x7834 \x6653 \xD840\xDCE3";
+      L"Engine \xD83D\xDEE0 中国 \U0001F496 \x0041 \x7834 \x6653 \xD840\xDCE3";
   constexpr auto iscpp17 = __cplusplus >= 201703L;
   bela::FPrintF(stderr,
                 L"Argc: %d Arg0: \x1b[32m%s\x1b[0m W: %s UTF-8: %s "
@@ -25,5 +25,7 @@ int wmain(int argc, wchar_t **argv) {
                 blueheart, se, em, em2, s, &em);
   bela::FPrintF(stderr, L"hStderr Mode:    %s.\nhStdin Mode:     %s.\n",
                 bela::FileTypeName(stderr), bela::FileTypeName(stdin));
+  auto es = bela::EscapeNonBMP(wx);
+  bela::FPrintF(stderr, L"EscapeNonBMP: %s\n", es);
   return 0;
 }

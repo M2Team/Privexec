@@ -14,8 +14,16 @@ endif()
 
 option(ENABLE_TEST "Enable test" OFF)
 
+# include(CheckIPOSupported)
+# check_ipo_supported(RESULT lto_supported OUTPUT error)
+# if(lto_supported)
+#   message(STATUS "IPO/LTO enabled")
+# else()
+#   message(STATUS "IPO/LTO not supported: <${error}>")
+# endif()
+
 set(CMAKE_C_STANDARD 11)
-set(CMAKE_CXX_STANDARD 17) 
+set(CMAKE_CXX_STANDARD 20) # /std:c++latest
 set(CMAKE_CXX_STANDARD_REQUIRED YES)
 
 if(MSVC)

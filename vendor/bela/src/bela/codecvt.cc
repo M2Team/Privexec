@@ -243,22 +243,22 @@ bool mbrtoc16(const unsigned char *s, size_t len,
         if (skipillegal) {
           return false;
         }
-        container.push_back(static_cast<T>(UNI_REPLACEMENT_CHAR));
+        container += static_cast<T>(UNI_REPLACEMENT_CHAR);
         continue;
       }
-      container.push_back(static_cast<T>(ch));
+      container += static_cast<T>(ch);
       continue;
     }
     if (ch > UNI_MAX_UTF16) {
       if (skipillegal) {
         return false;
       }
-      container.push_back(static_cast<T>(UNI_REPLACEMENT_CHAR));
+      container += static_cast<T>(UNI_REPLACEMENT_CHAR);
       continue;
     }
     ch -= halfBase;
-    container.push_back(static_cast<T>((ch >> halfShift) + UNI_SUR_HIGH_START));
-    container.push_back(static_cast<T>((ch & halfMask) + UNI_SUR_LOW_START));
+    container += static_cast<T>((ch >> halfShift) + UNI_SUR_HIGH_START);
+    container += static_cast<T>((ch & halfMask) + UNI_SUR_LOW_START);
   }
   //
   return true;
@@ -279,4 +279,134 @@ std::u16string mbrtoc16(const unsigned char *str, size_t len,
   }
   return s;
 }
+
+template <size_t N, typename T>
+inline std::basic_string_view<T> EncodeUnicode(T (&buf)[N], char32_t ch) {
+  T *end = buf + N;
+  T *writer = end;
+  uint64_t value = ch;
+  static const char hexdigits[] = "0123456789ABCDEF";
+  do {
+    *--writer = static_cast<T>(hexdigits[value & 0xF]);
+    value >>= 4;
+  } while (value != 0);
+
+  T *beg;
+  if (end - writer < 8) {
+    beg = end - 8;
+    std::fill_n(beg, writer - beg, '0');
+  } else {
+    beg = writer;
+  }
+  return std::basic_string_view<T>(beg, end - beg);
+}
+
+// EscapeNonBMP UTF-8
+std::string EscapeNonBMP(std::string_view sv) {
+  if (sv.empty()) {
+    return "";
+  }
+  std::string s;
+  s.reserve(sv.size());
+  char ub[10] = {0};
+  auto len = sv.size();
+  auto it = reinterpret_cast<const unsigned char *>(sv.data());
+  auto end = it + len;
+
+  while (it < end) {
+    auto c = *it;
+    if (c == '\\') {
+      s += "\\\\";
+      it++;
+      continue;
+    }
+    if (c < 0x80) {
+      s += c;
+      it++;
+      continue;
+    }
+    char32_t ch = 0;
+    unsigned short nb = trailingbytesu8[*it];
+    if (nb >= end - it) {
+      return s;
+    }
+    auto cb = it;
+    switch (nb) {
+    case 5:
+      ch += *it++;
+      ch <<= 6; /* remember, illegal UTF-8 */
+      [[fallthrough]];
+    case 4:
+      ch += *it++;
+      ch <<= 6; /* remember, illegal UTF-8 */
+      [[fallthrough]];
+    case 3:
+      ch += *it++;
+      ch <<= 6;
+      [[fallthrough]];
+    case 2:
+      ch += *it++;
+      ch <<= 6;
+      [[fallthrough]];
+    case 1:
+      ch += *it++;
+      ch <<= 6;
+      [[fallthrough]];
+    case 0:
+      ch += *it++;
+    }
+    ch -= offsetfromu8[nb];
+    if (ch <= UNI_MAX_BMP) {
+      s.append(reinterpret_cast<const char *>(cb), nb + 1);
+      continue;
+    }
+    s.append("\\U").append(EncodeUnicode(ub, ch));
+  }
+  return s;
+}
+
+template <typename T>
+std::basic_string<T> EscapeNonBMPInternal(std::u16string_view sv) {
+  std::basic_string<T> s;
+  s.reserve(sv.size());
+  auto it = sv.data();
+  auto end = it + sv.size();
+  T buffer[10] = {0};
+  while (it < end) {
+    char32_t ch = *it++;
+    if (ch >= UNI_SUR_HIGH_START && ch <= UNI_SUR_HIGH_END) {
+      if (it >= end) {
+        return s;
+      }
+      char32_t ch2 = *it;
+      if (ch2 >= UNI_SUR_LOW_START && ch2 <= UNI_SUR_LOW_END) {
+        ch = ((ch - UNI_SUR_HIGH_START) << halfShift) +
+             (ch2 - UNI_SUR_LOW_START) + halfBase;
+        ++it;
+      }
+    }
+    if (ch < UNI_MAX_BMP) {
+      if (ch >= UNI_SUR_HIGH_START && ch <= UNI_SUR_HIGH_END) {
+        s += static_cast<T>(UNI_REPLACEMENT_CHAR);
+        continue;
+      }
+      s += static_cast<T>(ch);
+      continue;
+    }
+    s.push_back('\\');
+    s.push_back('U');
+    s.append(EncodeUnicode(buffer, ch));
+  }
+  return s;
+}
+
+// EscapeNonBMP UTF-16
+std::wstring EscapeNonBMP(std::wstring_view sv) {
+  return EscapeNonBMPInternal<wchar_t>(
+      {reinterpret_cast<const char16_t *>(sv.data()), sv.size()});
+}
+std::u16string EscapeNonBMP(std::u16string_view sv) {
+  return EscapeNonBMPInternal<char16_t>(sv);
+}
+
 } // namespace bela

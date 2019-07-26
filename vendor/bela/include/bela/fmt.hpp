@@ -104,7 +104,10 @@ struct FormatArg {
     floating.d = f;
     floating.width = sizeof(float);
   }
-
+  FormatArg(double f) : at(ArgType::FLOAT) {
+    floating.d = f;
+    floating.width = sizeof(double);
+  }
   // wchar_t
   // A C-style text string. and wstring_view
   FormatArg(const wchar_t *str) : at(ArgType::STRING) {
