@@ -144,7 +144,7 @@ wsudo -e "PATH=%PATH%;%TEMP%" -n -U cmd
 ## Download
 
 Download CI Build:
-[https://ci.appveyor.com/project/fcharlie/privexec/build/artifacts](https://ci.appveyor.com/project/fcharlie/privexec/build/artifacts)
+[https://ci.appveyor.com/project/fcharlie/privexec/branch/master/artifacts](https://ci.appveyor.com/project/fcharlie/privexec/branch/master/artifacts)
 
 
 ## Changelog
