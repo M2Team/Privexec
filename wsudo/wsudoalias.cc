@@ -8,7 +8,7 @@
 #include <file.hpp>
 
 /// PathAppImageCombineExists
-bool PathAppImageCombineExists(std::wstring &path, const wchar_t *file) {
+bool wsudo::PathAppImageCombineExists(std::wstring &path, const wchar_t *file) {
   if (PathFileExistsW(file)) {
     path.assign(file);
     return true;

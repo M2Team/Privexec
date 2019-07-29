@@ -2,6 +2,7 @@
 #ifndef PRIV_APPHELP_HPP
 #define PRIV_APPHELP_HPP
 #include <objbase.h>
+#include <bela/base.hpp>
 #include <bela/stdwriter.hpp>
 
 namespace priv {
@@ -17,6 +18,7 @@ public:
   }
   ~dotcom_global_initializer() { CoUninitialize(); }
 };
+
 } // namespace priv
 
 #endif

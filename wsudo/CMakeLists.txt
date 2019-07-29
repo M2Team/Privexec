@@ -27,3 +27,32 @@ target_link_libraries(wsudo
 install(TARGETS wsudo
     DESTINATION .
 )
+
+
+add_executable(wsudo-tie
+    wsudotie.cc
+    wsudo-tie.rc
+	wsudo.manifest
+)
+
+if(lto_supported)
+  set_property(TARGET wsudo-tie PROPERTY INTERPROCEDURAL_OPTIMIZATION TRUE)
+endif()
+
+target_link_libraries(wsudo-tie
+    ProcessCore
+    belashl
+    Comctl32
+    Shlwapi
+    Pathcch
+    wtsapi32
+    Userenv
+    Taskschd
+    Kernel32
+    Gdi32
+    Advapi32
+)
+
+install(TARGETS wsudo-tie
+    DESTINATION .
+)

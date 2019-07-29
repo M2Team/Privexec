@@ -407,17 +407,44 @@ int AppExecuteAppContainer(wsudo::AppMode &am) {
   return 0;
 }
 
+inline std::wstring AppGetcwd() {
+  std::wstring stack;
+  stack.resize(256);
+  auto len = GetCurrentDirectory((DWORD)stack.size(), stack.data());
+  if (len == 0) {
+    return L"";
+  }
+  stack.resize(len);
+  if (len < 256) {
+    return stack;
+  }
+  auto newlen = GetCurrentDirectory((DWORD)stack.size(), stack.data());
+  if (newlen == 0 || newlen >= len) {
+    return L"";
+  }
+  stack.resize(newlen);
+  return stack;
+}
+
 std::optional<std::wstring> AppTieExecuteExists() {
-  //
+  std::wstring wsudotie;
+  if (wsudo::PathAppImageCombineExists(wsudotie, L"wsudo-tie.exe")) {
+    return std::make_optional(std::move(wsudotie));
+  }
   return std::nullopt;
 }
 
 int AppExecuteTie(std::wstring_view tie, std::wstring_view arg0,
                   wsudo::AppMode &am) {
   bela::EscapeArgv ea;
+
   auto self = GetCurrentProcessId();
   // parent pid
   ea.Append(L"--parent").Append(bela::AlphaNum(self).Piece());
+  auto pwd = AppGetcwd();
+  if (!pwd.empty()) {
+    ea.Append(L"--pwd").Append(pwd);
+  }
   // parent work dir (wsudo-tie will chdir to)
   // env values...
   if (am.verbose) {
@@ -425,7 +452,7 @@ int AppExecuteTie(std::wstring_view tie, std::wstring_view arg0,
   }
   // spec cwd
   if (!am.cwd.empty()) {
-    ea.Append(L"--cwd").Append(am.cwd);
+    ea.Append(L"--cwd").Append(bela::ExpandEnv(am.cwd));
   }
   for (const auto &kv : am.envctx.Items()) {
     ea.Append(L"--env").Append(bela::StringCat(kv.first, L"=", kv.second));
@@ -442,7 +469,7 @@ int AppExecuteTie(std::wstring_view tie, std::wstring_view arg0,
   info.lpVerb = L"runas";
   info.cbSize = sizeof(info);
   info.hwnd = NULL;
-  info.nShow = SW_HIDE;
+  info.nShow = SW_NORMAL;
   info.fMask = SEE_MASK_DEFAULT | SEE_MASK_NOCLOSEPROCESS;
   if (ShellExecuteExW(&info) != TRUE) {
     return 1;
