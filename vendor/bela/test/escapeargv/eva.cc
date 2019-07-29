@@ -12,6 +12,7 @@ int main(int argc, char const *argv[]) {
   fprintf(stderr, "%s\n", ea.data());
 
   EscapeArgvA ea2("zzzz", "", "vvv ssdss", "-D=\"JJJJJ sb\"");
+  ea2.AppendNoEscape("jacks ome");
   fprintf(stderr, "%s\n", ea2.data());
   return 0;
 }
