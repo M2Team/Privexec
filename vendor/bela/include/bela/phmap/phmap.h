@@ -1202,6 +1202,8 @@ public:
         // compared to destruction of the elements of the container. So we pick the
         // largest bucket_count() threshold for which iteration is still fast and
         // past that we simply deallocate the array.
+        if (empty())
+            return;
         if (capacity_ > 127) {
             destroy_slots();
         } else if (capacity_) {
@@ -1541,7 +1543,7 @@ public:
         }
         // bitor is a faster way of doing `max` here. We will round up to the next
         // power-of-2-minus-1, so bitor is good enough.
-        auto m = NormalizeCapacity(n | GrowthToLowerboundCapacity(size()));
+        auto m = NormalizeCapacity(std::max(n, size()));
         // n == 0 unconditionally rehashes as per the standard.
         if (n == 0 || m > capacity_) {
             resize(m);
@@ -3008,7 +3010,12 @@ public:
         }
     }
 
-    void reserve(size_t n) { rehash(GrowthToLowerboundCapacity(n)); }
+    void reserve(size_t n) 
+    {
+        size_t target = GrowthToLowerboundCapacity(n);
+        size_t normalized = 16 * NormalizeCapacity(n / num_tables);
+        rehash(normalized > target ? normalized : target); 
+    }
 
     // Extension API: support for heterogeneous keys.
     //
@@ -4131,7 +4138,6 @@ struct HashtableDebugAccess<Set, phmap::void_t<typename Set::raw_hash_set>>
 // Its interface is similar to that of `std::unordered_set<T>` with the
 // following notable differences:
 //
-// * Requires keys that are CopyConstructible
 // * Supports heterogeneous lookup, through `find()`, `operator[]()` and
 //   `insert()`, provided that the set is provided a compatible heterogeneous
 //   hashing function and equality operator.
@@ -4139,7 +4145,7 @@ struct HashtableDebugAccess<Set, phmap::void_t<typename Set::raw_hash_set>>
 //   `rehash()`.
 // * Contains a `capacity()` member function indicating the number of element
 //   slots (open, deleted, and empty) within the hash set.
-// * Returns `void` from the `erase(iterator)` overload.
+// * Returns `void` from the `_erase(iterator)` overload.
 // -----------------------------------------------------------------------------
 template <class T, class Hash, class Eq, class Alloc> // default values in phmap_fwd_decl.h
 class flat_hash_set
@@ -4194,8 +4200,6 @@ public:
 // cases. Its interface is similar to that of `std::unordered_map<K, V>` with
 // the following notable differences:
 //
-// * Requires keys that are CopyConstructible
-// * Requires values that are MoveConstructible
 // * Supports heterogeneous lookup, through `find()`, `operator[]()` and
 //   `insert()`, provided that the map is provided a compatible heterogeneous
 //   hashing function and equality operator.
@@ -4203,7 +4207,7 @@ public:
 //   `rehash()`.
 // * Contains a `capacity()` member function indicating the number of element
 //   slots (open, deleted, and empty) within the hash map.
-// * Returns `void` from the `erase(iterator)` overload.
+// * Returns `void` from the `_erase(iterator)` overload.
 // -----------------------------------------------------------------------------
 template <class K, class V, class Hash, class Eq, class Alloc> // default values in phmap_fwd_decl.h
 class flat_hash_map : public phmap::container_internal::raw_hash_map<

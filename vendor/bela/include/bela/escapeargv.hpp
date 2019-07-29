@@ -138,6 +138,13 @@ public:
     argv_escape_internal(arg0, saver);
     return *this;
   }
+  basic_escape_argv &AppendNoEscape(string_view_t aN) {
+    if (!saver.empty()) {
+      saver += ' ';
+    }
+    saver.append(aN);
+    return *this;
+  }
   basic_escape_argv &Append(string_view_t aN) {
     argv_escape_internal(aN, saver);
     return *this;
