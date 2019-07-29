@@ -9,38 +9,17 @@
 
 namespace wsudo {
 
-class EnvEngine{};
-
-template <typename T> std::wstring Toupper(const T &t) {
-  std::wstring s;
-  s.reserve(t.size());
-  for (const auto c : t) {
-    s.push_back(::toupper(c));
-  }
-  return s;
-}
-
-inline std::wstring ExpandEnv(std::wstring_view s) {
-  auto len = ExpandEnvironmentStringsW(s.data(), nullptr, 0);
-  if (len <= 0) {
-    return std::wstring(s.data(), s.size());
-  }
-  std::wstring s2(len + 1, L'\0');
-  auto N = ExpandEnvironmentStringsW(s.data(), &s2[0], len + 1);
-  s2.resize(N - 1);
-  return s2;
-}
-
-class EnvContext {
+class EnvDerivative {
 public:
-  using value_type = std::unordered_map<std::wstring, std::wstring>;
-  EnvContext() = default;
-  EnvContext(const EnvContext &) = delete;
-  EnvContext &operator=(const EnvContext &) = delete;
+  using conatiner_t = phmap::flat_hash_map<std::wstring, std::wstring>;
+  using apply_t = std::function<void(std::wstring_view, std::wstring_view)>;
+  EnvDerivative() = default;
+  EnvDerivative(const EnvDerivative &) = delete;
+  EnvDerivative &operator=(const EnvDerivative &) = delete;
   bool Append(std::wstring_view s) {
     auto pos = s.find(L'=');
     if (pos == std::wstring_view::npos) {
-      em.insert_or_assign(Toupper(s), std::wstring());
+      em.insert_or_assign(bela::AsciiStrToUpper(s), std::wstring());
       return true;
     }
     auto k = s.substr(0, pos);
@@ -48,7 +27,7 @@ public:
       return false;
     }
     auto v = s.substr(pos + 1);
-    em.insert_or_assign(Toupper(k), ExpandEnv(v));
+    em.insert_or_assign(bela::AsciiStrToUpper(k), bela::ExpandEnv(v));
     return true;
   }
   // Normal
@@ -59,24 +38,24 @@ public:
     }
     auto k = ws.substr(0, pos);
     auto v = ws.substr(pos + 1);
-    em.insert_or_assign(Toupper(k), ExpandEnv(v));
+    em.insert_or_assign(bela::AsciiStrToUpper(k), ExpandEnv(v));
     return true;
   }
-  bool Apply(std::function<void(const std::wstring&, const std::wstring&)>
-                 callback) const {
+  bool Apply(apply_t fn) const {
     if (em.empty()) {
       return true;
     }
     for (const auto &e : em) {
-      callback(e.first, e.second); /// callback
-      SetEnvironmentVariableW(e.first.c_str(),
-                              e.second.empty() ? nullptr : e.second.c_str());
+      fn(e.first, e.second); /// callback
+      SetEnvironmentVariableW(e.first.data(),
+                              e.second.empty() ? nullptr : e.second.data());
     }
     return true;
   }
+  const conatiner_t &Items() const { return em; }
 
 private:
-  value_type em;
+  conatiner_t em;
 };
 } // namespace wsudo
 

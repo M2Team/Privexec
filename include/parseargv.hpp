@@ -32,7 +32,7 @@ enum HasArgs {
   no_argument,
   optional_argument /// -s --long --long=xx
 };
-constexpr const int NoneVal = 0;
+[[maybe_unused]] constexpr const int NoneVal = 0;
 struct option {
   std::wstring_view name;
   HasArgs has_args;

@@ -347,7 +347,7 @@ int AppExecuteAppContainer(wsudo::AppMode &am) {
     ea.Append(am.args[i]);
   }
   am.Verbose(L"\x1b[01;33m* App real command '%s'\x1b[0m\n", argv0);
-  am.envctx.Apply([&](const std::wstring &k, const std::wstring &v) {
+  am.envctx.Apply([&](std::wstring_view k, std::wstring_view v) {
     am.Verbose(L"\x1b[01;33m* App apply env '%s' = '%s'\x1b[0m\n", k, v);
   });
   priv::AppContainer p(ea.sv());
@@ -411,6 +411,16 @@ int AppExecuteAppContainer(wsudo::AppMode &am) {
   return 0;
 }
 
+std::optional<std::wstring> AppTieExecuteExists() {
+  //
+  return std::nullopt;
+}
+
+int AppExecuteTie(std::wstring_view tie, wsudo::AppMode &am) {
+  //
+  return 0;
+}
+
 int AppExecute(wsudo::AppMode &am) {
   bela::EscapeArgv ea;
   bool aliasexpand = false;
@@ -422,6 +432,13 @@ int AppExecute(wsudo::AppMode &am) {
   }
   auto isconsole = wsudo::AppSubsystemIsConsole(argv0, aliasexpand, am);
   auto elevated = priv::IsUserAdministratorsGroup();
+  // If wsudo-tie exists. we will use wsudo-tie as administrator proxy
+  if (!elevated && am.level == priv::ExecLevel::Elevated && isconsole) {
+    auto tie = AppTieExecuteExists();
+    if (tie) {
+      return AppExecuteTie(*tie, am);
+    }
+  }
   bool waitable = false;
   if (!elevated && am.level == priv::ExecLevel::Elevated &&
       am.visible == priv::VisibleMode::None) {
@@ -441,7 +458,7 @@ int AppExecute(wsudo::AppMode &am) {
     ea.Append(am.args[i]);
   }
   am.Verbose(L"\x1b[01;33m* App real command '%s'\x1b[0m\n", argv0);
-  am.envctx.Apply([&](const std::wstring &k, const std::wstring &v) {
+  am.envctx.Apply([&](std::wstring_view k, std::wstring_view v) {
     am.Verbose(L"\x1b[01;33m* App apply env '%s' = '%s'\x1b[0m\n", k, v);
   });
   priv::Process p(ea.sv());
