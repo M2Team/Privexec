@@ -47,9 +47,9 @@ bool wsudo::AliasEngine::Initialize(bool verbose) {
     auto json = nlohmann::json::parse(fd.fd);
     auto cmds = json["Alias"];
     for (auto &cmd : cmds) {
-      alias.emplace(bela::ToWide(cmd["Alias"].get<std::string>()),
-                    AliasTarget(cmd["Target"].get<std::string>(),
-                                cmd["Desc"].get<std::string>()));
+      alias.emplace(bela::ToWide(cmd["Alias"].get<std::string_view>()),
+                    AliasTarget(cmd["Target"].get<std::string_view>(),
+                                cmd["Desc"].get<std::string_view>()));
     }
   } catch (const std::exception &e) {
     bela::FPrintF(stderr, L"\x1b[31mAliasEngine::Initialize: %s\x1b[0m\n",
