@@ -444,7 +444,7 @@ int AppExecuteTie(std::wstring_view tie, std::wstring_view arg0,
   if (ShellExecuteExW(&info) != TRUE) {
     return 1;
   }
-  pid = GetProcessId(info.hProcess);
+  auto pid = GetProcessId(info.hProcess);
   CloseHandle(info.hProcess);
   return AppWait(pid);
 }
