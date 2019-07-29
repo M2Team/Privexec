@@ -38,7 +38,7 @@ public:
     }
     auto k = ws.substr(0, pos);
     auto v = ws.substr(pos + 1);
-    em.insert_or_assign(bela::AsciiStrToUpper(k), ExpandEnv(v));
+    em.insert_or_assign(bela::AsciiStrToUpper(k), bela::ExpandEnv(v));
     return true;
   }
   bool Apply(apply_t fn) const {
