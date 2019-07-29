@@ -1,9 +1,6 @@
 /// Env helper
 #ifndef BELA_ENV_HPP
 #define BELA_ENV_HPP
-#ifndef NOMINMAX
-#define NOMINMAX 1
-#endif
 #include <string>
 #include <string_view>
 #include <shared_mutex>
