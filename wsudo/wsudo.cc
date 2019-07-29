@@ -329,16 +329,12 @@ int AppExecuteAppContainer(wsudo::AppMode &am) {
     ea.Assign(argv0);
   }
   auto isconsole = wsudo::AppSubsystemIsConsole(argv0, aliasexpand, am);
-  auto elevated = priv::IsUserAdministratorsGroup();
   bool waitable = false;
-  if (!elevated && am.level == priv::ExecLevel::Elevated &&
-      am.visible == priv::VisibleMode::None) {
-    am.visible = priv::VisibleMode::NewConsole; /// change visible
-  }
+
   if (am.visible == priv::VisibleMode::None && isconsole || am.wait) {
     waitable = true;
   }
-  // UAC Elevated
+
   if (isconsole) {
     am.Verbose(L"\x1b[01;33m* App subsystem is console, %s\x1b[0m\n",
                am.Visible());
@@ -416,9 +412,41 @@ std::optional<std::wstring> AppTieExecuteExists() {
   return std::nullopt;
 }
 
-int AppExecuteTie(std::wstring_view tie, wsudo::AppMode &am) {
-  //
-  return 0;
+int AppExecuteTie(std::wstring_view tie, std::wstring_view arg0,
+                  wsudo::AppMode &am) {
+  bela::EscapeArgv ea;
+  auto self = GetCurrentProcessId();
+  // parent pid
+  ea.Append(L"--parent").Append(bela::AlphaNum(self).Piece());
+  // parent work dir (wsudo-tie will chdir to)
+  // env values...
+  // spec cwd
+  if (!am.cwd.empty()) {
+    ea.Append(L"--cwd").Append(am.cwd);
+  }
+  for (const auto &kv : am.envctx.Items()) {
+    ea.Append(L"--env").Append(bela::StringCat(kv.first, L"=", kv.second));
+  }
+  ea.AppendNoEscape(arg0);
+  for (size_t i = 1; i < am.args.size(); i++) {
+    ea.Append(am.args[i]);
+  }
+
+  SHELLEXECUTEINFOW info;
+  ZeroMemory(&info, sizeof(info));
+  info.lpFile = tie.data();
+  info.lpParameters = ea.data();
+  info.lpVerb = L"runas";
+  info.cbSize = sizeof(info);
+  info.hwnd = NULL;
+  info.nShow = SW_HIDE;
+  info.fMask = SEE_MASK_DEFAULT | SEE_MASK_NOCLOSEPROCESS;
+  if (ShellExecuteExW(&info) != TRUE) {
+    return 1;
+  }
+  pid = GetProcessId(info.hProcess);
+  CloseHandle(info.hProcess);
+  return AppWait(pid);
 }
 
 int AppExecute(wsudo::AppMode &am) {
@@ -433,10 +461,11 @@ int AppExecute(wsudo::AppMode &am) {
   auto isconsole = wsudo::AppSubsystemIsConsole(argv0, aliasexpand, am);
   auto elevated = priv::IsUserAdministratorsGroup();
   // If wsudo-tie exists. we will use wsudo-tie as administrator proxy
-  if (!elevated && am.level == priv::ExecLevel::Elevated && isconsole) {
+  if (!elevated && am.level == priv::ExecLevel::Elevated && isconsole &&
+      am.visible == priv::VisibleMode::None) {
     auto tie = AppTieExecuteExists();
     if (tie) {
-      return AppExecuteTie(*tie, am);
+      return AppExecuteTie(*tie, ea.sv(), am);
     }
   }
   bool waitable = false;
@@ -447,7 +476,6 @@ int AppExecute(wsudo::AppMode &am) {
   if (am.visible == priv::VisibleMode::None && isconsole || am.wait) {
     waitable = true;
   }
-  // UAC Elevated
 
   if (isconsole) {
     am.Verbose(L"\x1b[01;33m* App subsystem is console, %s\x1b[0m\n",
