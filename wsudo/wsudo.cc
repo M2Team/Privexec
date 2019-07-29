@@ -420,6 +420,9 @@ int AppExecuteTie(std::wstring_view tie, std::wstring_view arg0,
   ea.Append(L"--parent").Append(bela::AlphaNum(self).Piece());
   // parent work dir (wsudo-tie will chdir to)
   // env values...
+  if (am.verbose) {
+    ea.Append(L"--verbose");
+  }
   // spec cwd
   if (!am.cwd.empty()) {
     ea.Append(L"--cwd").Append(am.cwd);

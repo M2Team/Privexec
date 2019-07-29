@@ -5,6 +5,7 @@
 // -e --env tables
 // other's command line
 #include <parseargv.hpp>
+#include "env.hpp"
 // FreeConsole
 // AttachConsole to parent process
 // CreateProcessW cmdline cwd env...
