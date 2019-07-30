@@ -9,7 +9,7 @@
 #define IDS_APPCONTAINER_NAME 1001
 #define IDE_APPCONTAINER_NAME 1002
 #define IDC_ENABLE_LPAC 1003
-#define IDS_ENABLE_LPAC  1004
+#define IDS_ENABLE_LPAC 1004
 #define IDC_COMMAND_STATIC 1005
 #define IDC_COMMAND_EDIT 1006
 #define IDB_COMMAND_TARGET 1007
@@ -39,8 +39,6 @@
 #define CS_EDIT                                                                \
   ES_MULTILINE | ES_AUTOVSCROLL | ES_AUTOHSCROLL | ES_WANTRETURN | ES_LEFT |   \
       WS_VSCROLL
-
-#define COPYSTR L"Copyright \xA9 2019. Force Charlie. All Rights Reserved."
 
 // Next default values for new objects
 //
