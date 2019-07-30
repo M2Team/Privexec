@@ -227,6 +227,16 @@ void AppMode::Verbose() {
   }
 }
 
+bool IsConsoleSuffix(std::wstring_view path) {
+  constexpr std::wstring_view suffixs[] = {L".bat", L".cmd", L".com"};
+  for (auto s : suffixs) {
+    if (bela::EndsWithIgnoreCase(path, s)) {
+      return true;
+    }
+  }
+  return false;
+}
+
 bool AppSubsystemIsConsole(std::wstring_view cmd, bool aliasexpand,
                            const AppMode &am) {
   if (!aliasexpand) {
@@ -238,7 +248,8 @@ bool AppSubsystemIsConsole(std::wstring_view cmd, bool aliasexpand,
     bela::error_code ec;
     auto pe = bela::PESimpleDetailsAze(exe, ec);
     if (!pe) {
-      return false;
+      am.Verbose(L"\x1b[01;33m* Not PE File '%s'\x1b[0m\n", exe);
+      return IsConsoleSuffix(exe);
     }
     am.Verbose(L"\x1b[01;33m* App real argv0 '%s'\x1b[0m\n", exe);
     return pe->subsystem == bela::Subsytem::CUI;
@@ -259,7 +270,8 @@ bool AppSubsystemIsConsole(std::wstring_view cmd, bool aliasexpand,
   bela::error_code ec;
   auto pe = bela::PESimpleDetailsAze(exe, ec);
   if (!pe) {
-    return false;
+    am.Verbose(L"\x1b[01;33m* Not PE File '%s'\x1b[0m\n", exe);
+    return IsConsoleSuffix(exe);
   }
   am.Verbose(L"\x1b[01;33m* App real argv0 '%s'\x1b[0m\n", exe);
   return pe->subsystem == bela::Subsytem::CUI;

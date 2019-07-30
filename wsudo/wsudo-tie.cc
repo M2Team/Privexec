@@ -16,6 +16,8 @@ usage: wsudo-tie command args...
 #include <bela/stdwriter.hpp>
 #include <bela/escapeargv.hpp>
 #include <bela/picker.hpp>
+#include <bela/str_split.hpp>
+#include <bela/path.hpp>
 #include <version.h>
 #include "env.hpp"
 
@@ -59,7 +61,7 @@ usage: wsudo-tie command args...
    -h|--help           print help information and exit
    -p|--parent         wsudo prcocess pid.
    -V|--verbose        Make the operation more talkative
-   -d|--pwd           wsudo-tie switch to workdir
+   -d|--pwd            wsudo-tie switch to workdir
    -c|--cwd            Use a working directory to launch the process.
    -e|--env            Set Environment Variable.
 
@@ -157,6 +159,15 @@ void AppMode::Verbose() {
 
 } // namespace wsudo::tie
 
+void dumpPathEnv() {
+  auto path = bela::GetEnv(L"PATH");
+  std::vector<std::wstring_view> pv =
+      bela::StrSplit(path, bela::ByChar(L';'), bela::SkipEmpty());
+  for (auto p : pv) {
+    bela::FPrintF(stderr, L"\x1b[01;33m%s\x1b[0m\n", p);
+  }
+}
+
 // FreeConsole
 // AttachConsole to parent process
 // CreateProcessW cmdline cwd env...
@@ -179,23 +190,31 @@ int wmain(int argc, wchar_t **argv) {
   for (auto s : am.args) {
     ea.Append(s);
   }
-  am.Verbose(L"\x1b[01;33m* App real command '%s'\x1b[0m\n", am.args[0]);
   am.envctx.Apply([&](std::wstring_view k, std::wstring_view v) {
     am.Verbose(L"\x1b[01;33m* App apply env '%s' = '%s'\x1b[0m\n", k, v);
   });
-
+  std::wstring exe;
+  // CreateProcessW search path maybe failed.
+  if (bela::ExecutableExistsInPath(am.args[0], exe)) {
+    am.Verbose(L"\x1b[01;33m* App execute path '%s'\x1b[0m\n", exe);
+  }
+  am.Verbose(L"\x1b[01;33m* App real argv0 '%s'\x1b[0m\n", am.args[0]);
   STARTUPINFOW si;
   ZeroMemory(&si, sizeof(si));
   si.cb = sizeof(si);
   PROCESS_INFORMATION pi;
   ZeroMemory(&pi, sizeof(pi));
   DWORD createflags = CREATE_UNICODE_ENVIRONMENT;
-  if (CreateProcessW(nullptr, ea.data(), nullptr, nullptr, FALSE, createflags,
-                     nullptr, am.cwd.empty() ? nullptr : am.cwd.data(), &si,
+  if (CreateProcessW(exe.empty() ? nullptr : exe.data(), ea.data(), nullptr,
+                     nullptr, FALSE, createflags, nullptr,
+                     am.cwd.empty() ? nullptr : am.cwd.data(), &si,
                      &pi) != TRUE) {
     auto ec = bela::make_system_error_code();
-    bela::FPrintF(stderr, L"\x1b[31mwsudo-tie unable chdir %s\x1b[0m\n",
-                  ec.message);
+    bela::FPrintF(stderr,
+                  L"\x1b[31mwsudo-tie unable CreateProcessW "
+                  L"%s\x1b[0m\n\x1b[31mcommand: [%s]\x1b[0m\n",
+                  ec.message, ea.sv());
+    dumpPathEnv();
     return 1;
   }
   bela::FPrintF(stderr,
@@ -220,5 +239,5 @@ int wmain(int argc, wchar_t **argv) {
   }
   CloseHandle(pi.hThread);
   CloseHandle(pi.hProcess);
-  return 0;
+  return static_cast<int>(exitcode);
 }
