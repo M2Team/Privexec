@@ -30,7 +30,7 @@ install(TARGETS wsudo
 
 
 add_executable(wsudo-tie
-    wsudotie.cc
+    wsudo-tie.cc
     wsudo-tie.rc
 	wsudo.manifest
 )
