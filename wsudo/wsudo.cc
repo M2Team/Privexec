@@ -495,6 +495,9 @@ int AppExecute(wsudo::AppMode &am) {
       am.visible == priv::VisibleMode::None) {
     auto tie = AppTieExecuteExists();
     if (tie) {
+      am.Verbose(L"\x1b[01;33m* App subsystem is console, use %s as "
+                 L"middleware.\x1b[0m\n",
+                 *tie);
       return AppExecuteTie(*tie, ea.sv(), am);
     }
   }

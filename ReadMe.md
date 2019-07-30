@@ -115,9 +115,14 @@ Builtin 'alias' command:
 
 ## WSUDO Details
 
-wsudo support `--new-console` flag. when a PE subsystem is `WINDOWS CUI`, wsudo will wait child process exit, unless wsudo(administrator) start `NoElevated` process or wsudo(No Elevated) start `Elevated` process. If you add `--new-console` flag, will create new console and not wait.
+The wsudo visible and wait related parameters are `--hide` `--wait` `--new-console`. The corresponding situation is as follows:
 
-If your add `-wait` flag, wsudo will wait all process(Include GUI/CUI process), Unless process use `TaskScheduled API` startup.
+|PE Subsystem|`No relevant parameters`|`--new-console`|`--hide`|
+|---|---|---|---
+|Windows CUI|wait/Inheritance console|no wait/New console|no wait/No console|
+|Windows GUI|no wait/New UI|no wait/New UI|no wait/ignore|
+|Windows CUI `-wait`|wait/Inheritance console|wait/New console|wait/No console|
+|Windows GUI `-wait`|wait/New UI|wait/New UI|wait/No ignore|
 
 ### WSUDO Environment
 

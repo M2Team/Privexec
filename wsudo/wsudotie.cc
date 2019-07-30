@@ -1,8 +1,16 @@
 // wsudotie.cc
-// usage
-// -P process id
-// -c --wd work dir
-// -e --env tables
+/*
+wsudo-tie wsudo administrator level permission middleware.
+usage: wsudo-tie command args...
+ -v|--version        print version and exit
+ -h|--help           print help information and exit
+ -p|--parent         wsudo prcocess pid.
+ -V|--verbose        Make the operation more talkative
+ -d|--pwd           wsudo-tie switch to workdir
+ -c|--cwd            Use a working directory to launch the process.
+ -e|--env            Set Environment Variable.
+
+*/
 // other's command line
 #include <parseargv.hpp>
 #include <bela/stdwriter.hpp>
@@ -44,7 +52,8 @@ void Version() {
 }
 
 void Usage(bool err = false) {
-  constexpr const wchar_t *kUsage = LR"(wsudo administrator proxy.
+  constexpr const wchar_t *kUsage =
+      LR"(wsudo-tie wsudo administrator level permission middleware.
 usage: wsudo-tie command args...
    -v|--version        print version and exit
    -h|--help           print help information and exit
@@ -81,7 +90,9 @@ int AppMode::ParseArgv(int argc, wchar_t **argv) {
           exit(0);
         case 'P': // parent
           if (!bela::SimpleAtoi(va, &parentid)) {
-            bela::FPrintF(stderr, L"bad parent process id: %s\n", va);
+            bela::BelaMessageBox(nullptr,
+                                 L"Parent process PID format is incorrect", va,
+                                 nullptr, bela::mbs_t::FATAL);
           }
           break;
         case 'V':
