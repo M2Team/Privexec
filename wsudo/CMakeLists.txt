@@ -4,7 +4,7 @@ add_executable(wsudo
     wsudo.cc
     wsudoalias.cc
     wsudo.rc
-	wsudo.manifest
+    wsudo.manifest
 )
 
 if(lto_supported)
