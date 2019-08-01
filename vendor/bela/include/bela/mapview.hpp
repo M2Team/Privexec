@@ -15,18 +15,23 @@ public:
     data_ = other.data_;
     size_ = other.size_;
   }
-  template <typename T, size_t ArrayLen>
-  bool StartsWith(const T (&bv)[ArrayLen]) const {
-    return ArrayLen * sizeof(T) <= size_ &&
-           (memcmp(data_, bv, ArrayLen * sizeof(T)) == 0);
+  MemView &operator=(const MemView &other) {
+    data_ = other.data_;
+    size_ = other.size_;
+    return *this;
   }
-  template <typename T> bool StartsWith(std::basic_string_view<T> sv) const {
-    return sv.size() * sizeof(T) <= size_ &&
-           (memcmp(data_, sv.data(), sv.size() * sizeof(T)) == 0);
+  template <size_t ArrayLen>
+  bool StartsWith(const uint8_t (&bv)[ArrayLen]) const {
+    return ArrayLen * sizeof(uint8_t) <= size_ &&
+           (memcmp(data_, bv, ArrayLen * sizeof(uint8_t)) == 0);
   }
 
-  bool StartsWith(MemView mv) const {
-    return mv.size_ <= size_ && (memcmp(data_, mv.data_, mv.size_) == 0);
+  bool StartsWith(std::string_view sv) const {
+    return sv.size() <= size_ && (memcmp(data_, sv.data(), sv.size()) == 0);
+  }
+
+  bool StartsWith(const void *p, size_t n) {
+    return (n <= size_ && memcmp(data_, p, n) == 0);
   }
 
   template <typename T, size_t ArrayLen>
