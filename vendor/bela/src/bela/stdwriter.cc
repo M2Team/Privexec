@@ -35,8 +35,7 @@ bool IsCygwinPipe(HANDLE hFile) {
     return false;
   }
   auto pb = reinterpret_cast<FILE_NAME_INFO *>(buffer);
-  auto pipename = std::wstring_view(pb->FileName, pb->FileNameLength / 2);
-
+  std::wstring_view pipename{pb->FileName, pb->FileNameLength / 2};
   std::vector<std::wstring_view> pvv =
       bela::StrSplit(pipename, bela::ByChar(L'-'), bela::SkipEmpty());
   if (pvv.size() < 5) {
@@ -65,36 +64,6 @@ bool IsCygwinPipe(HANDLE hFile) {
   }
   return true;
 }
-
-// Remove all color string
-// ssize_t WriteToLegacy(HANDLE hConsole, std::wstring_view sv) {
-//   // L"\x1b[0mzzz"
-//   constexpr const wchar_t sep = 0x1b;
-//   std::wstring buf;
-//   buf.reserve(sv.size());
-//   do {
-//     auto pos = sv.find(sep);
-//     if (pos == std::wstring_view::npos) {
-//       buf.append(sv);
-//       break;
-//     }
-//     buf.append(sv.substr(0, pos));
-//     sv.remove_prefix(pos + 1);
-//     pos = sv.find('m');
-//     if (pos == std::wstring::npos) {
-//       buf.push_back(sep);
-//       buf.append(sv);
-//       break;
-//     }
-//     sv.remove_prefix(pos + 1);
-//   } while (!sv.empty());
-//   DWORD dwWrite = 0;
-//   if (!WriteConsoleW(hConsole, buf.data(), (DWORD)buf.size(), &dwWrite,
-//                      nullptr)) {
-//     return -1;
-//   }
-//   return static_cast<ssize_t>(dwWrite);
-// }
 
 static inline ssize_t WriteToTTY(FILE *out, std::wstring_view sv) {
   auto s = bela::ToNarrow(sv);
@@ -219,7 +188,7 @@ std::wstring FileTypeModeName(HANDLE hFile) {
     break;
   }
   DWORD dwMode = 0;
-  if (GetConsoleMode(hFile, &dwMode) &&
+  if (GetConsoleMode(hFile, &dwMode) == TRUE &&
       (dwMode & ENABLE_VIRTUAL_TERMINAL_PROCESSING) != 0) {
     return L"VT Mode Console";
   }
@@ -233,12 +202,10 @@ std::wstring FileTypeModeName(FILE *file) {
 
 std::wstring Adapter::FileTypeName(FILE *file) const {
   if (file == stderr) {
-    auto m = FileTypeModeName(hStderr);
-    return m;
+    return FileTypeModeName(hStderr);
   }
   if (file == stdout) {
-    auto m = FileTypeModeName(hStdout);
-    return m;
+    return FileTypeModeName(hStdout);
   }
   return FileTypeModeName(file);
 }

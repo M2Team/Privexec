@@ -90,7 +90,7 @@ inline signed int bswap(signed int v) {
   return static_cast<signed int>(swap32(static_cast<uint32_t>(v)));
 }
 
-unsigned long bswap(unsigned long v) {
+inline unsigned long bswap(unsigned long v) {
   if constexpr (sizeof(unsigned long) == 8) {
     return static_cast<unsigned long>(swap64(static_cast<uint64_t>(v)));
   } else if constexpr (sizeof(unsigned long) != 4) {
@@ -99,7 +99,7 @@ unsigned long bswap(unsigned long v) {
   }
   return static_cast<unsigned long>(swap32(static_cast<uint32_t>(v)));
 }
-signed long bswap(signed long v) {
+inline signed long bswap(signed long v) {
   if constexpr (sizeof(signed long) == 8) {
     return static_cast<signed long>(swap64(static_cast<uint64_t>(v)));
   } else if constexpr (sizeof(signed long) != 4) {
@@ -109,10 +109,11 @@ signed long bswap(signed long v) {
   return static_cast<signed long>(swap32(static_cast<uint32_t>(v)));
 }
 
-unsigned long long bswap(unsigned long long v) {
+inline unsigned long long bswap(unsigned long long v) {
   return static_cast<unsigned long long>(swap64(static_cast<uint64_t>(v)));
 }
-signed long long bswap(signed long long v) {
+
+inline signed long long bswap(signed long long v) {
   return static_cast<signed long long>(swap64(static_cast<uint64_t>(v)));
 }
 
@@ -132,7 +133,7 @@ template <typename T> inline T ntohs(T v) {
   return bswap(v);
 }
 
-template <typename T> T swaple(T i) {
+template <typename T> inline T swaple(T i) {
   static_assert(std::is_integral<T>::value, "Integral required.");
   if constexpr (IsBigEndianHost) {
     return bswap(i);
@@ -140,7 +141,7 @@ template <typename T> T swaple(T i) {
   return i;
 }
 
-template <typename T> T swapbe(T i) {
+template <typename T> inline T swapbe(T i) {
   static_assert(std::is_integral<T>::value, "Integral required.");
   if constexpr (IsBigEndianHost) {
     return i;
