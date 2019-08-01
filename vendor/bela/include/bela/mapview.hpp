@@ -22,8 +22,7 @@ public:
   }
   template <size_t ArrayLen>
   bool StartsWith(const uint8_t (&bv)[ArrayLen]) const {
-    return ArrayLen * sizeof(uint8_t) <= size_ &&
-           (memcmp(data_, bv, ArrayLen * sizeof(uint8_t)) == 0);
+    return ArrayLen <= size_ && (memcmp(data_, bv, ArrayLen) == 0);
   }
 
   bool StartsWith(std::string_view sv) const {
@@ -34,20 +33,18 @@ public:
     return (n <= size_ && memcmp(data_, p, n) == 0);
   }
 
-  template <typename T, size_t ArrayLen>
-  bool IndexsWith(size_t pos, const T (&bv)[ArrayLen]) const {
-    return ArrayLen * sizeof(T) + pos <= size_ &&
-           (memcmp(data_ + pos, bv, ArrayLen * sizeof(T)) == 0);
-  }
-  template <typename T>
-  bool IndexsWith(size_t pos, std::basic_string_view<T> sv) const {
-    return sv.size() * sizeof(T) + pos <= size_ &&
-           (memcmp(data_ + pos, sv.data(), sv.size() * sizeof(T)) == 0);
+  template <size_t ArrayLen>
+  bool IndexsWith(size_t pos, const uint8_t (&bv)[ArrayLen]) const {
+    return ArrayLen + pos <= size_ && (memcmp(data_ + pos, bv, ArrayLen) == 0);
   }
 
-  bool IndexsWith(size_t pos, MemView mv) const {
-    return mv.size_ + pos <= size_ &&
-           (memcmp(data_ + pos, mv.data_, mv.size_) == 0);
+  bool IndexsWith(size_t pos, std::string_view sv) const {
+    return sv.size() + pos <= size_ &&
+           (memcmp(data_ + pos, sv.data(), sv.size()) == 0);
+  }
+
+  bool IndexsWith(size_t pos, const void *p, size_t n) const {
+    return n + pos <= size_ && (memcmp(data_ + pos, p, n) == 0);
   }
 
   MemView submv(std::size_t pos, std::size_t n = npos) {
