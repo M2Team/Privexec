@@ -79,6 +79,10 @@ static inline ssize_t WriteToConsole(HANDLE hConsole, std::wstring_view sv) {
   return static_cast<ssize_t>(dwWrite);
 }
 
+static inline bool IsToConsole(ConsoleMode cm) {
+  return (cm == ConsoleMode::Conhost || cm == ConsoleMode::ConPTY);
+}
+
 class Adapter {
 public:
   Adapter(const Adapter &) = delete;
@@ -96,12 +100,10 @@ public:
     return WriteToConsole(hFile, sv);
   }
   ssize_t StdWrite(FILE *out, std::wstring_view sv) const {
-    if (out == stderr &&
-        (em == ConsoleMode::Conhost || em == ConsoleMode::ConPTY)) {
+    if (out == stderr && IsToConsole(em)) {
       return StdWriteConsole(hStderr, sv, em);
     }
-    if (out == stdout &&
-        (om == ConsoleMode::Conhost || em == ConsoleMode::ConPTY)) {
+    if (out == stdout && IsToConsole(om)) {
       return StdWriteConsole(hStdout, sv, om);
     }
     return WriteToTTY(out, sv);
