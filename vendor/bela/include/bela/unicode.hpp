@@ -9,9 +9,19 @@
 namespace bela {
 namespace unicode {
 // http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2018/p0482r6.html R6
-#if !defined(__cpp_char8_t)
-using char8_t = unsigned char; // char8_t
-#endif
+#ifndef _BELA_HAS_CHAR8_T // TRANSITION, LLVM#41063
+// Clang can't mangle char8_t on Windows, but the feature-test macro is defined.
+// This issue has been fixed for the 8.0.1 release.
+#if defined(__cpp_char8_t) && __cpp_char8_t >= 201811L \
+    && !(defined(__clang__) && __clang_major__ == 8 && __clang_minor__ == 0 && __clang_patchlevel__ == 0)
+#define _BELA_HAS_CHAR8_T 1
+// char8_t exists
+#else // ^^^ Compiler supports char8_t / doesn't support char8_t vvv
+#define _BELA_HAS_CHAR8_T 0
+using char8_t=unsigned char;
+#endif // Detect char8_t
+#endif // _BELA_HAS_CHAR8_T
+
 using std::ptrdiff_t;
 namespace details {
 enum CharClass : uint8_t {

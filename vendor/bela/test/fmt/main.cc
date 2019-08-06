@@ -27,5 +27,28 @@ int wmain(int argc, wchar_t **argv) {
                 bela::FileTypeName(stderr), bela::FileTypeName(stdin));
   auto es = bela::EscapeNonBMP(wx);
   bela::FPrintF(stderr, L"EscapeNonBMP: %s\n", es);
+  bela::FPrintF(stderr, L"[%-20s]\n", bela::FileTypeName(stdout));
+  bela::FPrintF(stderr, L"[%20s]\n", bela::FileTypeName(stdout));
+  bela::FPrintF(stderr, L"[%-10d]\n", argc);
+  bela::FPrintF(stderr, L"[%10d]\n", argc);
+  bela::FPrintF(stderr, L"[%010d]\n", argc);
+  int n = -1999;
+  bela::FPrintF(stderr, L"[%-10d]\n", n);
+  bela::FPrintF(stderr, L"[%10d]\n", n);
+  bela::FPrintF(stderr, L"[%010d]\n", n);
+  bela::FPrintF(stderr, L"[%-60d]\n", n);
+  bela::FPrintF(stderr, L"[%60d]\n", n);
+  bela::FPrintF(stderr, L"[%060d]\n", n);
+  int n2 = 2999;
+  bela::FPrintF(stderr, L"[%-10d]\n", n2);
+  bela::FPrintF(stderr, L"[%10d]\n", n2);
+  bela::FPrintF(stderr, L"[%010d]\n", n2);
+  double ddd = 000192.15777411;
+  bela::FPrintF(stderr, L"[%08.7f]\n", ddd);
+  long xl = 18256444;
+  bela::FPrintF(stderr, L"[%-16x]\n", xl);
+  bela::FPrintF(stderr, L"[%016X]\n", xl);
+  bela::FPrintF(stderr, L"[%16X]\n", xl);
+  bela::FPrintF(stderr, L"%%pointer: [%p]\n", (void *)argv);
   return 0;
 }

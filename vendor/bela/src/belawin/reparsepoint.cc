@@ -45,6 +45,7 @@ static bool NtSymbolicLink(const ReparseBuffer *buf, facv_t &av) {
     }
   }
   target.append(wstr, wlen);
+  av.emplace_back(L"Description", L"SymbolicLink");
   av.emplace_back(L"Target", target);
   return true;
 }
@@ -67,6 +68,7 @@ static bool AppExecLink(const ReparseBuffer *buf, facv_t &av) {
     strv.push_back(szString);
     szString += wcslen(szString) + 1;
   }
+  av.emplace_back(L"Description", L"AppExecLink");
   av.emplace_back(L"PackageID", strv[0]);
   av.emplace_back(L"AppUserID", strv[1]);
   av.emplace_back(L"Target", strv[2]);
@@ -94,17 +96,20 @@ static bool MountPoint(const ReparseBuffer *buf, facv_t &av) {
   /* Remove leading \??\ */
   wstr += 4;
   wlen -= 4;
+  av.emplace_back(L"Description", L"MountPoint");
   av.emplace_back(L"Target", std::wstring(wstr, wlen));
   return true;
 }
 
 static bool AFUnix(const ReparseBuffer *buf, facv_t &av) {
   //
+  av.emplace_back(L"Description", L"AF_UNIX");
   return true;
 }
 
 static bool LxSymbolicLink(const ReparseBuffer *buf, facv_t &av) {
   // Not implemented
+  av.emplace_back(L"Description", L"LxSymbolicLink");
   return true;
 }
 
@@ -160,6 +165,7 @@ bool ReparsePoint::Analyze(std::wstring_view file, bela::error_code &ec) {
   }
   auto hex = bela::StringCat(L"0x", bela::Hex(tagvalue, bela::kZeroPad8));
   values.emplace_back(L"TAG", hex);
+  values.emplace_back(L"Description", L"UNKNOWN");
   return true;
 }
 
