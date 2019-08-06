@@ -491,6 +491,14 @@ int AppExecuteTie(std::wstring_view tie, std::wstring_view arg0,
   return AppWait(pid);
 }
 
+bool IsConhosted() {
+  auto h = GetStdHandle(STD_OUTPUT_HANDLE);
+  if (h == nullptr || h == INVALID_HANDLE_VALUE) {
+    return false;
+  }
+  return (GetFileType(h) == FILE_TYPE_CHAR);
+}
+
 int AppExecute(wsudo::AppMode &am) {
   bela::EscapeArgv ea;
   bool aliasexpand = false;
@@ -504,7 +512,7 @@ int AppExecute(wsudo::AppMode &am) {
   auto elevated = priv::IsUserAdministratorsGroup();
   // If wsudo-tie exists. we will use wsudo-tie as administrator proxy
   if (!elevated && am.level == priv::ExecLevel::Elevated && isconsole &&
-      am.visible == priv::VisibleMode::None) {
+      am.visible == priv::VisibleMode::None && IsConhosted()) {
     auto tie = AppTieExecuteExists();
     if (tie) {
       am.Verbose(L"\x1b[01;33m* App subsystem is console, use %s as "
