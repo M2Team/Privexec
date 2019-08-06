@@ -491,12 +491,24 @@ int AppExecuteTie(std::wstring_view tie, std::wstring_view arg0,
   return AppWait(pid);
 }
 
-bool IsConhosted() {
+bool IsConhosted(wsudo::AppMode &am) {
   auto h = GetStdHandle(STD_OUTPUT_HANDLE);
   if (h == nullptr || h == INVALID_HANDLE_VALUE) {
+    am.Verbose(L"unable get std handle\n");
     return false;
   }
-  return (GetFileType(h) == FILE_TYPE_CHAR);
+  if (GetFileType(h) == FILE_TYPE_CHAR) {
+    return true;
+  }
+  constexpr unsigned int pipemaxlen = 512;
+  WCHAR buffer[pipemaxlen] = {0};
+  if (GetFileInformationByHandleEx(h, FileNameInfo, buffer, pipemaxlen * 2) ==
+      TRUE) {
+    auto pb = reinterpret_cast<FILE_NAME_INFO *>(buffer);
+    std::wstring_view pipename{pb->FileName, pb->FileNameLength / 2};
+    am.Verbose(L"\x1b[1;33m* App stdout: '%s'\x1b[0m\n", pipename);
+  }
+  return false;
 }
 
 int AppExecute(wsudo::AppMode &am) {
@@ -512,7 +524,7 @@ int AppExecute(wsudo::AppMode &am) {
   auto elevated = priv::IsUserAdministratorsGroup();
   // If wsudo-tie exists. we will use wsudo-tie as administrator proxy
   if (!elevated && am.level == priv::ExecLevel::Elevated && isconsole &&
-      am.visible == priv::VisibleMode::None && IsConhosted()) {
+      am.visible == priv::VisibleMode::None && IsConhosted(am)) {
     auto tie = AppTieExecuteExists();
     if (tie) {
       am.Verbose(L"\x1b[01;33m* App subsystem is console, use %s as "
