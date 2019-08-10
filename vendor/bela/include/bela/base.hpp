@@ -83,6 +83,9 @@ inline std::wstring system_error_dump(DWORD ec) {
   if (buf[rl - 1] == '\n') {
     rl--;
   }
+  if (rl > 0 && buf[rl - 1] == '\r') {
+    rl--;
+  }
   std::wstring msg(buf, rl);
   LocalFree(buf);
   return msg;
