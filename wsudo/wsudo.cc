@@ -481,7 +481,7 @@ int AppExecuteTie(std::wstring_view tie, std::wstring_view arg0,
   info.lpVerb = L"runas";
   info.cbSize = sizeof(info);
   info.hwnd = NULL;
-  info.nShow = SW_NORMAL;
+  info.nShow = SW_HIDE;
   info.fMask = SEE_MASK_DEFAULT | SEE_MASK_NOCLOSEPROCESS;
   if (ShellExecuteExW(&info) != TRUE) {
     return 1;
@@ -497,17 +497,23 @@ bool IsConhosted(wsudo::AppMode &am) {
     am.Verbose(L"unable get std handle\n");
     return false;
   }
-  if (GetFileType(h) == FILE_TYPE_CHAR) {
+  auto t = GetFileType(h);
+  if (t == FILE_TYPE_CHAR) {
     return true;
   }
-  constexpr unsigned int pipemaxlen = 512;
-  WCHAR buffer[pipemaxlen] = {0};
-  if (GetFileInformationByHandleEx(h, FileNameInfo, buffer, pipemaxlen * 2) ==
-      TRUE) {
-    auto pb = reinterpret_cast<FILE_NAME_INFO *>(buffer);
-    std::wstring_view pipename{pb->FileName, pb->FileNameLength / 2};
-    am.Verbose(L"\x1b[1;33m* App stdout: '%s'\x1b[0m\n", pipename);
+  if (t == FILE_TYPE_PIPE) {
+    constexpr unsigned int pipemaxlen = 512;
+    WCHAR buffer[pipemaxlen] = {0};
+    if (GetFileInformationByHandleEx(h, FileNameInfo, buffer, pipemaxlen * 2) ==
+        TRUE) {
+      auto pb = reinterpret_cast<FILE_NAME_INFO *>(buffer);
+      std::wstring_view pipename{pb->FileName, pb->FileNameLength / 2};
+      auto pn = bela::StringCat(L"\\\\.\\pipe", pipename);
+      am.Verbose(L"\x1b[1;33m* App stdout: '%s'\x1b[0m\n", pn);
+    }
+    return false;
   }
+
   return false;
 }
 
