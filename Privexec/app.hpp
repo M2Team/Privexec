@@ -159,7 +159,7 @@ private:
   bool InitializeCapabilities();
   bool SelChanged();
   std::wstring ResolveCMD();
-  std::wstring ResolveCWD();
+  std::wstring ResolveCWD(bool allowempty = false);
   bool AppLookupExecute();
   bool AppLookupManifest();
   bool AppLookupCWD();

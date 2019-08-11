@@ -56,6 +56,9 @@ bool AppContainer::Exec() {
   PWSTR pszfolder;
   if (SUCCEEDED(::GetAppContainerFolderPath(pszstr, &pszfolder))) {
     folder = pszfolder;
+    if (cwd.empty()) {
+      cwd = folder;
+    }
     ::CoTaskMemFree(pszfolder);
   }
   ::LocalFree(pszstr);

@@ -144,14 +144,7 @@ std::wstring App::ResolveCWD() {
     /// resolved cwd  valid
     return cwd_;
   }
-  auto N = GetCurrentDirectoryW(0, nullptr);
-  if (N <= 0) {
-    return L"";
-  }
-  cwd_.resize(N + 1);
-  N = GetCurrentDirectoryW(N + 1, &cwd_[0]);
-  cwd_.resize(N);
-  return cwd_;
+  return L"";
 }
 
 std::vector<std::wstring_view> NewlineTokenize(std::wstring_view sv) {

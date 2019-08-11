@@ -106,12 +106,15 @@ std::wstring App::ResolveCMD() {
   return bela::ExpandEnv(cmd_);
 }
 
-std::wstring App::ResolveCWD() {
+std::wstring App::ResolveCWD(bool allowempty) {
   auto cwd_ = bela::ExpandEnv(cwd.Content());
   if (!cwd_.empty() &&
       (GetFileAttributesW(cwd_.data()) & FILE_ATTRIBUTE_DIRECTORY) != 0) {
     /// resolved cwd  valid
     return cwd_;
+  }
+  if (allowempty) {
+    return L"";
   }
   auto N = GetCurrentDirectoryW(0, nullptr);
   if (N <= 0) {
@@ -132,7 +135,6 @@ bool App::AppExecute() {
                          PRIVEXEC_APPLINKE, bela::mbs_t::FATAL);
     return false;
   }
-  auto cwd_ = ResolveCWD(); // app startup directory
 
   if (appindex == (int)priv::ExecLevel::AppContainer) {
     //// TODO app container.
@@ -147,6 +149,7 @@ bool App::AppExecute() {
     }
     priv::AppContainer p(cmd_);
     p.EnableLPAC(appcas.IsLowPrivilegeAppContainer());
+    auto cwd_ = ResolveCWD(true); // app startup directory
     p.Chdir(cwd_);
     if (!p.Initialize({cas.data(), cas.size()}) || !p.Exec()) {
       auto ec = bela::make_system_error_code();
@@ -162,6 +165,7 @@ bool App::AppExecute() {
   }
 
   priv::Process p(cmd_);
+  auto cwd_ = ResolveCWD(); // app startup directory
   p.Chdir(cwd_);
   if (!p.Exec((priv::ExecLevel)appindex)) {
     if (appindex == (int)priv::ExecLevel::Elevated &&
