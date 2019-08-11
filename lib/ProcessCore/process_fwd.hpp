@@ -158,7 +158,7 @@ inline bool IsUserAdministratorsGroup() {
   FreeSid(AdministratorsGroup);
   return b == TRUE;
 }
-
+bool GetNoElevatedToken(PHANDLE hNewToken);
 } // namespace priv
 
 #endif

@@ -36,36 +36,63 @@ bool Process::ExecNone() {
   return true;
 }
 
+bool GetNoElevatedToken(PHANDLE hNewToken) {
+  if (IsUserAdministratorsGroup()) {
+    PrivilegeView pv = {
+        {SE_TCB_NAME, SE_ASSIGNPRIMARYTOKEN_NAME, SE_INCREASE_QUOTA_NAME}};
+    Elevator eo;
+    std::wstring msg;
+    if (!eo.Elevate(&pv, msg)) {
+      return false;
+    }
+    auto hToken = INVALID_HANDLE_VALUE;
+    auto deleter = bela::finally([&] { CloseHandleEx(hToken); });
+    // get user login token
+    if (WTSQueryUserToken(eo.SID(), &hToken) != TRUE) {
+      return false;
+    }
+    if (DuplicateTokenEx(hToken, MAXIMUM_ALLOWED, NULL, SecurityIdentification,
+                         TokenPrimary, hNewToken) != TRUE) {
+      return false;
+    }
+    return true;
+  }
+  // when not administrator
+  HANDLE hCurrentToken = INVALID_HANDLE_VALUE;
+  if (!OpenProcessToken(GetCurrentProcess(), MAXIMUM_ALLOWED, &hCurrentToken)) {
+    return false;
+  }
+  if (!DuplicateTokenEx(hCurrentToken, MAXIMUM_ALLOWED, NULL,
+                        SecurityImpersonation, TokenPrimary, hNewToken)) {
+    CloseHandle(hCurrentToken);
+    return false;
+  }
+  CloseHandle(hCurrentToken);
+  return true;
+}
+
 bool Process::ExecLow() {
-  HANDLE hToken;
   HANDLE hNewToken;
   LPCWSTR szIntegritySid = L"S-1-16-4096";
-  PSID pIntegritySid = NULL;
+  PSID pIntegritySid = nullptr;
   TOKEN_MANDATORY_LABEL TIL = {0};
-  if (!OpenProcessToken(GetCurrentProcess(), MAXIMUM_ALLOWED, &hToken)) {
-    kmessage = L"lowlevelexec<OpenProcessToken>";
-    return false;
-  }
-  if (!DuplicateTokenEx(hToken, MAXIMUM_ALLOWED, NULL, SecurityImpersonation,
-                        TokenPrimary, &hNewToken)) {
-    kmessage = L"lowlevelexec<DuplicateTokenEx>";
-    CloseHandle(hToken);
-    return false;
-  }
+
+  auto deleter = bela::finally([&] {
+    CloseHandleEx(hNewToken);
+    if (pIntegritySid != nullptr) {
+      LocalFree(pIntegritySid);
+    }
+  });
   if (!ConvertStringSidToSidW(szIntegritySid, &pIntegritySid)) {
-    CloseHandle(hToken);
-    CloseHandle(hNewToken);
     kmessage = L"lowlevelexec<ConvertStringSidToSidW>";
     return false;
   }
-
   TIL.Label.Attributes = SE_GROUP_INTEGRITY;
   TIL.Label.Sid = pIntegritySid;
-  auto deleter = bela::finally([&] {
-    CloseHandle(hToken);
-    CloseHandle(hNewToken);
-    LocalFree(pIntegritySid);
-  });
+  if (!GetNoElevatedToken(&hNewToken)) {
+    kmessage = L"lowlevelexec<GetNoElevatedToken>";
+    return false;
+  }
   // Set process integrity levels
   if (!SetTokenInformation(hNewToken, TokenIntegrityLevel, &TIL,
                            sizeof(TOKEN_MANDATORY_LABEL) +
@@ -77,61 +104,35 @@ bool Process::ExecLow() {
 }
 
 bool Process::ExecNoElevated() {
-  if (!IsUserAdministratorsGroup()) {
-    return ExecNone();
-  }
-  PrivilegeView pv = {
-      {SE_TCB_NAME, SE_ASSIGNPRIMARYTOKEN_NAME, SE_INCREASE_QUOTA_NAME}};
-  Elevator eo;
-  if (!eo.Elevate(&pv, kmessage)) {
-    return false;
-  }
-  auto hToken = INVALID_HANDLE_VALUE;
-  TOKEN_LINKED_TOKEN linkToken{INVALID_HANDLE_VALUE};
-  auto hTokenDup = INVALID_HANDLE_VALUE;
-  // https://en.wikipedia.org/wiki/Mandatory_Integrity_Control wiki. Medium
+  HANDLE hNewToken;
   LPCWSTR szIntegritySid = L"S-1-16-8192";
   PSID pIntegritySid = nullptr;
   TOKEN_MANDATORY_LABEL TIL = {0};
+
   auto deleter = bela::finally([&] {
-    CloseHandleEx(hToken);
-    CloseHandleEx(linkToken.LinkedToken);
-    CloseHandleEx(hTokenDup);
+    CloseHandleEx(hNewToken);
     if (pIntegritySid != nullptr) {
       LocalFree(pIntegritySid);
     }
   });
   if (!ConvertStringSidToSidW(szIntegritySid, &pIntegritySid)) {
-    kmessage = L"Medium convert ntegritySid <ConvertStringSidToSidW>";
+    kmessage = L"NoElevated <ConvertStringSidToSidW>";
     return false;
   }
-
   TIL.Label.Attributes = SE_GROUP_INTEGRITY;
   TIL.Label.Sid = pIntegritySid;
-
-  // get user login token
-  if (WTSQueryUserToken(eo.SID(), &hToken) != TRUE) {
-    return false;
-  }
-  DWORD dwlen = 0;
-  if (GetTokenInformation(hToken, TokenLinkedToken, &linkToken,
-                          sizeof(TOKEN_LINKED_TOKEN), &dwlen) != TRUE) {
-    return false;
-  }
-
-  if (DuplicateTokenEx(linkToken.LinkedToken, MAXIMUM_ALLOWED, NULL,
-                       SecurityIdentification, TokenPrimary,
-                       &hTokenDup) != TRUE) {
+  if (!GetNoElevatedToken(&hNewToken)) {
+    kmessage = L"NoElevated <GetNoElevatedToken>";
     return false;
   }
   // Set process integrity levels
-  if (!SetTokenInformation(hTokenDup, TokenIntegrityLevel, &TIL,
+  if (!SetTokenInformation(hNewToken, TokenIntegrityLevel, &TIL,
                            sizeof(TOKEN_MANDATORY_LABEL) +
                                GetLengthSid(pIntegritySid))) {
-    kmessage = L"Medium Level<SetTokenInformation>";
+    kmessage = L"NoElevated <SetTokenInformation>";
     return false;
   }
-  return ExecWithToken(hToken, false);
+  return ExecWithToken(hNewToken, false);
 }
 
 bool Process::ExecElevated() {
