@@ -87,21 +87,50 @@ bool Process::ExecNoElevated() {
     return false;
   }
   auto hToken = INVALID_HANDLE_VALUE;
+  TOKEN_LINKED_TOKEN linkToken{INVALID_HANDLE_VALUE};
   auto hTokenDup = INVALID_HANDLE_VALUE;
+  // https://en.wikipedia.org/wiki/Mandatory_Integrity_Control wiki. Medium
+  LPCWSTR szIntegritySid = L"S-1-16-8192";
+  PSID pIntegritySid = nullptr;
+  TOKEN_MANDATORY_LABEL TIL = {0};
   auto deleter = bela::finally([&] {
     CloseHandleEx(hToken);
+    CloseHandleEx(linkToken.LinkedToken);
     CloseHandleEx(hTokenDup);
+    if (pIntegritySid != nullptr) {
+      LocalFree(pIntegritySid);
+    }
   });
+  if (!ConvertStringSidToSidW(szIntegritySid, &pIntegritySid)) {
+    kmessage = L"Medium convert ntegritySid <ConvertStringSidToSidW>";
+    return false;
+  }
+
+  TIL.Label.Attributes = SE_GROUP_INTEGRITY;
+  TIL.Label.Sid = pIntegritySid;
+
   // get user login token
   if (WTSQueryUserToken(eo.SID(), &hToken) != TRUE) {
     return false;
   }
-
-  if (DuplicateTokenEx(hToken, MAXIMUM_ALLOWED, NULL, SecurityIdentification,
-                       TokenPrimary, &hTokenDup) != TRUE) {
+  DWORD dwlen = 0;
+  if (GetTokenInformation(hToken, TokenLinkedToken, &linkToken,
+                          sizeof(TOKEN_LINKED_TOKEN), &dwlen) != TRUE) {
     return false;
   }
 
+  if (DuplicateTokenEx(linkToken.LinkedToken, MAXIMUM_ALLOWED, NULL,
+                       SecurityIdentification, TokenPrimary,
+                       &hTokenDup) != TRUE) {
+    return false;
+  }
+  // Set process integrity levels
+  if (!SetTokenInformation(hTokenDup, TokenIntegrityLevel, &TIL,
+                           sizeof(TOKEN_MANDATORY_LABEL) +
+                               GetLengthSid(pIntegritySid))) {
+    kmessage = L"Medium Level<SetTokenInformation>";
+    return false;
+  }
   return ExecWithToken(hToken, false);
 }
 
