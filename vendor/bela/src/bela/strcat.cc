@@ -78,7 +78,7 @@ static wchar_t *Append(wchar_t *out, const AlphaNum &x) {
 std::wstring StringCat(const AlphaNum &a, const AlphaNum &b) {
   std::wstring result;
   result.resize(a.size() + b.size());
-  wchar_t *const begin = &*result.begin();
+  wchar_t *const begin = &result[0];
   wchar_t *out = begin;
   out = Append(out, a);
   out = Append(out, b);
@@ -90,7 +90,7 @@ std::wstring StringCat(const AlphaNum &a, const AlphaNum &b,
                        const AlphaNum &c) {
   std::wstring result;
   result.resize(a.size() + b.size() + c.size());
-  wchar_t *const begin = &*result.begin();
+  wchar_t *const begin = &result[0];
   wchar_t *out = begin;
   out = Append(out, a);
   out = Append(out, b);
@@ -103,7 +103,7 @@ std::wstring StringCat(const AlphaNum &a, const AlphaNum &b, const AlphaNum &c,
                        const AlphaNum &d) {
   std::wstring result;
   result.resize(a.size() + b.size() + c.size() + d.size());
-  wchar_t *const begin = &*result.begin();
+  wchar_t *const begin = &result[0];
   wchar_t *out = begin;
   out = Append(out, a);
   out = Append(out, b);
@@ -123,7 +123,7 @@ std::wstring CatPieces(std::initializer_list<std::wstring_view> pieces) {
     total_size += piece.size();
   result.resize(total_size);
 
-  wchar_t *const begin = &*result.begin();
+  wchar_t *const begin = &result[0];
   wchar_t *out = begin;
   for (const std::wstring_view piece : pieces) {
     const size_t this_size = piece.size();
@@ -152,7 +152,7 @@ void AppendPieces(std::wstring *dest,
   }
   dest->resize(total_size);
 
-  wchar_t *const begin = &*dest->begin();
+  wchar_t *const begin = &(*dest)[0];
   wchar_t *out = begin + old_size;
   for (const std::wstring_view piece : pieces) {
     const size_t this_size = piece.size();
@@ -174,7 +174,7 @@ void StrAppend(std::wstring *dest, const AlphaNum &a, const AlphaNum &b) {
   ASSERT_NO_OVERLAP(*dest, b);
   std::string::size_type old_size = dest->size();
   dest->resize(old_size + a.size() + b.size());
-  wchar_t *const begin = &*dest->begin();
+  wchar_t *const begin = &(*dest)[0];
   wchar_t *out = begin + old_size;
   out = Append(out, a);
   out = Append(out, b);
@@ -188,7 +188,7 @@ void StrAppend(std::wstring *dest, const AlphaNum &a, const AlphaNum &b,
   ASSERT_NO_OVERLAP(*dest, c);
   std::wstring::size_type old_size = dest->size();
   dest->resize(old_size + a.size() + b.size() + c.size());
-  wchar_t *const begin = &*dest->begin();
+  wchar_t *const begin = &(*dest)[0];
   wchar_t *out = begin + old_size;
   out = Append(out, a);
   out = Append(out, b);
@@ -204,7 +204,7 @@ void StrAppend(std::wstring *dest, const AlphaNum &a, const AlphaNum &b,
   ASSERT_NO_OVERLAP(*dest, d);
   std::wstring::size_type old_size = dest->size();
   dest->resize(old_size + a.size() + b.size() + c.size() + d.size());
-  wchar_t *const begin = &*dest->begin();
+  wchar_t *const begin = &(*dest)[0];
   wchar_t *out = begin + old_size;
   out = Append(out, a);
   out = Append(out, b);

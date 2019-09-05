@@ -2,6 +2,7 @@
 
 add_library(bela STATIC
   ascii.cc
+  ucwidth.cc
   codecvt.cc
   escaping.cc
   fmt.cc

@@ -289,7 +289,7 @@ inline __m128i _mm_cmpgt_epi8_fixed(__m128i a, __m128i b) {
   #pragma GCC diagnostic ignored "-Woverflow"
 
   if (std::is_unsigned<char>::value) {
-    const __m128i mask = _mm_set1_epi8(0x80);
+    const __m128i mask = _mm_set1_epi8(static_cast<char>(0x80));
     const __m128i diff = _mm_subs_epi8(b, a);
     return _mm_cmpeq_epi8(_mm_and_si128(diff, mask), mask);
   }
@@ -1534,6 +1534,14 @@ public:
         }
     }
 
+#ifndef PHMAP_NON_DETERMINISTIC
+    template<typename OutputArchive>
+    bool dump(OutputArchive&);
+
+    template<typename InputArchive>
+    bool load(InputArchive&);
+#endif
+
     void rehash(size_t n) {
         if (n == 0 && capacity_ == 0) return;
         if (n == 0 && size_ == 0) {
@@ -2246,14 +2254,16 @@ public:
     template <class K = key_type, class P = Policy>
     MappedReference<P> at(const key_arg<K>& key) {
         auto it = this->find(key);
-        if (it == this->end()) std::abort();
+        if (it == this->end()) 
+            phmap::base_internal::ThrowStdOutOfRange("phmap at(): lookup non-existent key");
         return Policy::value(&*it);
     }
 
     template <class K = key_type, class P = Policy>
     MappedConstReference<P> at(const key_arg<K>& key) const {
         auto it = this->find(key);
-        if (it == this->end()) std::abort();
+        if (it == this->end())
+            phmap::base_internal::ThrowStdOutOfRange("phmap at(): lookup non-existent key");
         return Policy::value(&*it);
     }
 
@@ -3139,6 +3149,14 @@ public:
         a.swap(b);
     }
 
+#ifndef PHMAP_NON_DETERMINISTIC
+    template<typename OutputArchive>
+    bool dump(OutputArchive& ar);
+
+    template<typename InputArchive>
+    bool load(InputArchive& ar);
+#endif
+
 private:
     template <class Container, typename Enabler>
     friend struct phmap::container_internal::hashtable_debug_internal::HashtableDebugAccess;
@@ -3394,14 +3412,16 @@ public:
     template <class K = key_type, class P = Policy>
     MappedReference<P> at(const key_arg<K>& key) {
         auto it = this->find(key);
-        if (it == this->end()) std::abort();
+        if (it == this->end()) 
+            phmap::base_internal::ThrowStdOutOfRange("phmap at(): lookup non-existent key");
         return Policy::value(&*it);
     }
 
     template <class K = key_type, class P = Policy>
     MappedConstReference<P> at(const key_arg<K>& key) const {
         auto it = this->find(key);
-        if (it == this->end()) std::abort();
+        if (it == this->end()) 
+            phmap::base_internal::ThrowStdOutOfRange("phmap at(): lookup non-existent key");
         return Policy::value(&*it);
     }
 

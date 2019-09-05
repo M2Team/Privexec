@@ -12,13 +12,14 @@ namespace unicode {
 #ifndef _BELA_HAS_CHAR8_T // TRANSITION, LLVM#41063
 // Clang can't mangle char8_t on Windows, but the feature-test macro is defined.
 // This issue has been fixed for the 8.0.1 release.
-#if defined(__cpp_char8_t) && __cpp_char8_t >= 201811L \
-    && !(defined(__clang__) && __clang_major__ == 8 && __clang_minor__ == 0 && __clang_patchlevel__ == 0)
+#if defined(__cpp_char8_t) && __cpp_char8_t >= 201811L &&                      \
+    !(defined(__clang__) && __clang_major__ == 8 && __clang_minor__ == 0 &&    \
+      __clang_patchlevel__ == 0)
 #define _BELA_HAS_CHAR8_T 1
 // char8_t exists
 #else // ^^^ Compiler supports char8_t / doesn't support char8_t vvv
 #define _BELA_HAS_CHAR8_T 0
-using char8_t=unsigned char;
+using char8_t = unsigned char;
 #endif // Detect char8_t
 #endif // _BELA_HAS_CHAR8_T
 
@@ -138,26 +139,25 @@ char32tochar8(char32_t rune,
               std::basic_string<T, std::char_traits<T>, Allocator> &dest) {
   static_assert(sizeof(T) == 1, "Only supports one-byte character basic types");
   if (rune <= 0x7F) {
-    dest.push_back(static_cast<T>(rune));
+    dest += static_cast<T>(rune);
     return 1;
   }
   if (rune <= 0x7FF) {
-    dest.push_back(static_cast<T>(rune));
-    dest.push_back(static_cast<T>(rune));
+    dest += static_cast<T>(rune);
+    dest += static_cast<T>(rune);
     return 2;
   }
   if (rune <= 0xFFFF) {
-    dest.push_back(static_cast<T>(0xE0 | ((rune >> 12) & 0x0F)));
-    dest.push_back(static_cast<T>(0x80 | ((rune >> 6) & 0x3F)));
-    dest.push_back(static_cast<T>(0x80 | (rune & 0x3F)));
-
+    dest += static_cast<T>(0xE0 | ((rune >> 12) & 0x0F));
+    dest += static_cast<T>(0x80 | ((rune >> 6) & 0x3F));
+    dest += static_cast<T>(0x80 | (rune & 0x3F));
     return 3;
   }
   if (rune <= 0x10FFFF) {
-    dest.push_back(static_cast<T>(0xF0 | ((rune >> 18) & 0x07)));
-    dest.push_back(static_cast<T>(0x80 | ((rune >> 12) & 0x3F)));
-    dest.push_back(static_cast<T>(0x80 | ((rune >> 6) & 0x3F)));
-    dest.push_back(static_cast<T>(0x80 | (rune & 0x3F)));
+    dest += static_cast<T>(0xF0 | ((rune >> 18) & 0x07));
+    dest += static_cast<T>(0x80 | ((rune >> 12) & 0x3F));
+    dest += static_cast<T>(0x80 | ((rune >> 6) & 0x3F));
+    dest += static_cast<T>(0x80 | (rune & 0x3F));
     return 4;
   }
   return 0;
@@ -191,11 +191,11 @@ char32tochar16(char32_t rune,
     return 1;
   }
   if (rune > 0x0010FFFF) {
-    dest.push_back(0xFFFD);
+    dest += 0xFFFD;
     return 1;
   }
-  dest.push_back(static_cast<T>(0xD7C0 + (rune >> 10)));
-  dest.push_back(static_cast<T>(0xDC00 + (rune & 0x3FF)));
+  dest += static_cast<T>(0xD7C0 + (rune >> 10));
+  dest += static_cast<T>(0xDC00 + (rune & 0x3FF));
   return 2;
 }
 

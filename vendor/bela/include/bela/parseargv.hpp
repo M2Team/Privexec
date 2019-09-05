@@ -14,6 +14,9 @@ enum HasArgs {
 };
 
 struct option {
+  option() = default;
+  option(std::wstring_view n, HasArgs ha, int va)
+      : name(n), has_args(ha), val(va) {} /// emplace_back
   std::wstring_view name;
   HasArgs has_args;
   int val;
@@ -29,7 +32,7 @@ public:
   ParseArgv(const ParseArgv &) = delete;
   ParseArgv &operator=(const ParseArgv &) = delete;
   ParseArgv &Add(std::wstring_view name, HasArgs a, int val) {
-    options_.push_back({name, a, val});
+    options_.emplace_back(name, a, val);
     return *this;
   }
   bool Execute(const invoke_t &v, bela::error_code &ec);
@@ -60,13 +63,14 @@ inline bool ParseArgv::Execute(const invoke_t &v, bela::error_code &ec) {
   for (; index < argc_; index++) {
     std::wstring_view a = argv_[index];
     if (a.empty() || a.front() != '-') {
+      // if subcmd mode. save all args
       if (subcmdmode_) {
         for (int i = index; i < argc_; i++) {
-          uargs.push_back(argv_[i]);
+          uargs.emplace_back(argv_[i]);
         }
         return true;
       }
-      uargs.push_back(a);
+      uargs.emplace_back(a);
       continue;
     }
     // parse ---

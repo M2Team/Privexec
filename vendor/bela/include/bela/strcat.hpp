@@ -203,8 +203,8 @@ public:
   }
   AlphaNum(char32_t ch)
       : piece_(digits_,
-               bela::char32tochar16(reinterpret_cast<char16_t *>(digits_),
-                                    numbers_internal::kFastToBufferSize, ch)) {}
+               bela::char32tochar16(ch, reinterpret_cast<char16_t *>(digits_),
+                                    numbers_internal::kFastToBufferSize)) {}
 
   AlphaNum(const AlphaNum &) = delete;
   AlphaNum &operator=(const AlphaNum &) = delete;

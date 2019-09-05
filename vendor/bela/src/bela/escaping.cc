@@ -7,11 +7,11 @@ namespace bela {
 constexpr wchar_t uhc[] = L"0123456789ABCDEF";
 // 0xFFFF
 inline void char16encodehex(uint16_t ch, std::wstring &dest) {
-  dest.append(L"\\x");
-  dest.push_back(uhc[ch / 4096]);
-  dest.push_back(uhc[(ch % 4096) / 256]);
-  dest.push_back(uhc[(ch % 256) / 16]);
-  dest.push_back(uhc[ch % 16]);
+  dest += L"\\x";
+  dest += uhc[ch / 4096];
+  dest += uhc[(ch % 4096) / 256];
+  dest += uhc[(ch % 256) / 16];
+  dest += uhc[ch % 16];
 }
 
 inline bool is_octal_digit(wchar_t c) { return (L'0' <= c) && (c <= L'7'); }
@@ -289,22 +289,22 @@ std::wstring CEscape(std::wstring_view src) {
     bool is_hex_escape = false;
     switch (c) {
     case L'\n':
-      dest.append(L"\\n");
+      dest += L"\\n";
       break;
     case L'\r':
-      dest.append(L"\\r");
+      dest += L"\\r";
       break;
     case L'\t':
-      dest.append(L"\\t");
+      dest += L"\\t";
       break;
     case L'\"':
-      dest.append(L"\\\"");
+      dest += L"\\\"";
       break;
     case L'\'':
-      dest.append(L"\\'");
+      dest += L"\\'";
       break;
     case '\\':
-      dest.append(L"\\\\");
+      dest += L"\\\\";
       break;
     default:
       /// because 0xD800~0xDFFF is
@@ -314,13 +314,13 @@ std::wstring CEscape(std::wstring_view src) {
       if (c < 0x80 && (!bela::ascii_isprint(c) ||
                        (last_hex_escape && bela::ascii_isxdigit(c)))) {
         auto ch = static_cast<uint8_t>(c);
-        dest.append(L"\\x");
-        dest.push_back(uhc[ch / 16]);
-        dest.push_back(uhc[ch % 16]);
+        dest += L"\\x";
+        dest += uhc[ch / 16];
+        dest += uhc[ch % 16];
         is_hex_escape = true;
         continue;
       }
-      dest.push_back(c);
+      dest += c;
       break;
     }
     last_hex_escape = is_hex_escape;
