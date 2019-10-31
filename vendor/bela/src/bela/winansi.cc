@@ -121,19 +121,27 @@ public:
   ssize_t WriteAnsi(HANDLE hDev, std::wstring_view msg);
 
 private:
-  WinAnsiWriter() noexcept = default;
+  WinAnsiWriter() {
+    //
+    memset(es_argv, 0, sizeof(es_argv));
+    memset(ChBuffer, 0, sizeof(ChBuffer));
+    memset(Pt_arg, 0, sizeof(Pt_arg));
+    memset(&grm, 0, sizeof(grm));
+    SavePos.X = 0;
+    SavePos.Y = 0;
+  }
   void FlushBuffer();
   void PushBuffer(wchar_t c);
   void SendSequence(std::wstring_view seq);
   void InterpretEscSeq();
   int state{0};
-  wchar_t prefix;
-  wchar_t prefix2;
-  wchar_t suffix;               // escape sequence suffix
-  int es_argc;                  // escape sequence args count
+  wchar_t prefix{0};
+  wchar_t prefix2{0};
+  wchar_t suffix{0};            // escape sequence suffix
+  int es_argc{0};               // escape sequence args count
   int es_argv[MAX_ARG];         // escape sequence args
   wchar_t Pt_arg[MAX_PATH * 2]; // text parameter for Operating System Command
-  int Pt_len;
+  int Pt_len{0};
   bool shifted{false};
   GraphicRenditionMode grm;
   COORD SavePos;

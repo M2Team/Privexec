@@ -35,7 +35,7 @@ public:
       : copy_(other.copy_),
         value_(other.IsSelfReferential() ? copy_ : other.value_) {}
 
-  ConvertibleToStringView(ConvertibleToStringView &&other) {
+  ConvertibleToStringView(ConvertibleToStringView &&other) noexcept {
     StealMembers(std::move(other));
   }
 

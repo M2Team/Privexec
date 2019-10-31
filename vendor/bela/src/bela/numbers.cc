@@ -13,68 +13,10 @@
 #include <bela/numbers.hpp>
 #include <bela/memutil.hpp>
 #include <bela/match.hpp>
-
-// Clang on Windows has __builtin_clzll; otherwise we need to use the
-// windows intrinsic functions.
-#if defined(_MSC_VER)
-#include <intrin.h>
-#if defined(_M_X64)
-#pragma intrinsic(_BitScanReverse64)
-#pragma intrinsic(_BitScanForward64)
-#endif
-#pragma intrinsic(_BitScanReverse)
-#pragma intrinsic(_BitScanForward)
-#endif
+#include <bela/bits.hpp>
 
 namespace bela {
-inline int CountLeadingZeros64Slow(uint64_t n) {
-  int zeroes = 60;
-  if (n >> 32)
-    zeroes -= 32, n >>= 32;
-  if (n >> 16)
-    zeroes -= 16, n >>= 16;
-  if (n >> 8)
-    zeroes -= 8, n >>= 8;
-  if (n >> 4)
-    zeroes -= 4, n >>= 4;
-  return "\4\3\2\2\1\1\1\1\0\0\0\0\0\0\0"[n] + zeroes;
-}
 
-inline int CountLeadingZeros64(uint64_t n) {
-#if defined(_MSC_VER) && defined(_M_X64)
-  // MSVC does not have __buitin_clzll. Use _BitScanReverse64.
-  unsigned long result = 0; // NOLINT(runtime/int)
-  if (_BitScanReverse64(&result, n) != 0) {
-    return 63 - result;
-  }
-  return 64;
-#elif defined(_MSC_VER)
-  // MSVC does not have __buitin_clzll. Compose two calls to _BitScanReverse
-  unsigned long result = 0; // NOLINT(runtime/int)
-  if ((n >> 32) && _BitScanReverse(&result, n >> 32) != 0) {
-    return 31 - result;
-  }
-  if (_BitScanReverse(&result, n) != 0) {
-    return 63 - result;
-  }
-  return 64;
-#elif defined(__GNUC__)
-  // Use __builtin_clzll, which uses the following instructions:
-  //  x86: bsr
-  //  ARM64: clz
-  //  PPC: cntlzd
-  static_assert(sizeof(unsigned long long) == sizeof(n), // NOLINT(runtime/int)
-                "__builtin_clzll does not take 64-bit arg");
-
-  // Handle 0 as a special case because __builtin_clzll(0) is undefined.
-  if (n == 0) {
-    return 64;
-  }
-  return __builtin_clzll(n);
-#else
-  return CountLeadingZeros64Slow(n);
-#endif
-}
 inline void PutTwoDigits(size_t i, wchar_t *buf) {
   static const wchar_t two_ASCII_digits[100][2] = {
       {'0', '0'}, {'0', '1'}, {'0', '2'}, {'0', '3'}, {'0', '4'}, {'0', '5'},
@@ -295,7 +237,7 @@ inline std::pair<uint64_t, uint64_t> Mul32(std::pair<uint64_t, uint64_t> num,
   if (bits128_up == 0)
     return {bits64_127, bits0_63};
 
-  int shift = 64 - CountLeadingZeros64(bits128_up);
+  int shift = 64 - bela::base_internal::CountLeadingZeros64(bits128_up);
   uint64_t lo = (bits0_63 >> shift) + (bits64_127 << (64 - shift));
   uint64_t hi = (bits64_127 >> shift) + (bits128_up << (64 - shift));
   return {hi, lo};
@@ -325,7 +267,7 @@ inline std::pair<uint64_t, uint64_t> PowFive(uint64_t num, int expfive) {
                                       5 * 5 * 5 * 5 * 5 * 5 * 5 * 5 * 5 * 5 *
                                           5 * 5};
   result = Mul32(result, powers_of_five[expfive & 15]);
-  int shift = CountLeadingZeros64(result.first);
+  int shift = bela::base_internal::CountLeadingZeros64(result.first);
   if (shift != 0) {
     result.first = (result.first << shift) + (result.second >> (64 - shift));
     result.second = (result.second << shift);

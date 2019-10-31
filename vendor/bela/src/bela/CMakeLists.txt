@@ -14,5 +14,6 @@ add_library(bela STATIC
   str_split.cc
   str_replace.cc
   strcat.cc
+  strcat_narrow.cc
   subsitute.cc
 )

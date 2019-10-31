@@ -206,13 +206,16 @@ struct FormatArg {
         return static_cast<uint64_t>(i);
       }
       if (integer.width == 1) {
-        return static_cast<uint32_t>(0 - static_cast<int8_t>(i));
+        auto i8_ = static_cast<int8_t>(i);
+        return static_cast<uint32_t>(0 - i8_);
       }
       if (integer.width == 2) {
-        return static_cast<uint32_t>(0 - static_cast<int16_t>(i));
+        auto i16_ = static_cast<int16_t>(i);
+        return static_cast<uint32_t>(0 - i16_);
       }
       if (integer.width == 4) {
-        return static_cast<uint32_t>(0 - static_cast<int32_t>(i));
+        auto i32_ = static_cast<int32_t>(i);
+        return static_cast<uint32_t>(0 - i32_);
       }
       return static_cast<uint64_t>(0 - i);
     }
