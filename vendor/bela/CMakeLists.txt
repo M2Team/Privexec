@@ -1,5 +1,5 @@
 # top cmake
-cmake_minimum_required(VERSION 3.12)
+cmake_minimum_required(VERSION 3.14)
 
 project(bela CXX)
 
@@ -13,16 +13,6 @@ Please delete them.")
 endif()
 
 option(ENABLE_TEST "Enable test" OFF)
-
-# include(CheckIPOSupported)
-# check_ipo_supported(RESULT lto_supported OUTPUT error)
-# if(lto_supported)
-#   message(STATUS "IPO/LTO enabled")
-# else()
-#   message(STATUS "IPO/LTO not supported: <${error}>")
-# endif()
-
-set(CMAKE_C_STANDARD 11)
 
 if(NOT (DEFINED CMAKE_CXX_STANDARD))
     set(CMAKE_CXX_STANDARD 20) # /std:c++latest
