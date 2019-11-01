@@ -38,18 +38,21 @@ bool LookupAppExecLinkTarget(std::wstring_view src, AppExecTarget &ae) {
   if (buf->ReparseTag != IO_REPARSE_TAG_APPEXECLINK) {
     return false;
   }
-  if (buf->AppExecLinkReparseBuffer.StringCount < 3) {
-    return false;
-  }
   LPWSTR szString = (LPWSTR)buf->AppExecLinkReparseBuffer.StringList;
   std::vector<LPWSTR> strv;
   for (ULONG i = 0; i < buf->AppExecLinkReparseBuffer.StringCount; i++) {
     strv.push_back(szString);
     szString += wcslen(szString) + 1;
   }
-  ae.pkid = strv[0];
-  ae.appuserid = strv[1];
-  ae.target = strv[2];
+  if (!strv.empty()) {
+    ae.pkid = strv[0];
+  }
+  if (strv.size() > 1) {
+    ae.appuserid = strv[1];
+  }
+  if (strv.size() > 2) {
+    ae.target = strv[2];
+  }
   return true;
 }
 } // namespace bela
