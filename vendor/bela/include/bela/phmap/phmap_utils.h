@@ -23,6 +23,7 @@
 
 #include <cstdint>
 #include <functional>
+#include <tuple>
 #include "phmap_bits.h"
 
 namespace phmap
@@ -115,14 +116,18 @@ private:
     typedef std::true_type yes;
     typedef std::false_type no;
 
-    template<typename U> static auto test(int) -> decltype(U::hash_value(std::declval<U&>()) == 1, yes());
+    template<typename U> static auto test(int) -> decltype(hash_value(std::declval<U&>()) == 1, yes());
 
     template<typename> static no test(...);
 
 public:
     static constexpr bool value = std::is_same<decltype(test<T>(0)), yes>::value;
 };
- 
+
+#if defined(PHMAP_USE_ABSL_HASH) && !defined(phmap_fwd_decl_h_guard_)
+    namespace absl { template <class T> struct Hash; };
+    template <class T> using Hash = absl::Hash<T>;
+#else
 // ---------------------------------------------------------------
 //               phmap::Hash
 // ---------------------------------------------------------------
@@ -132,7 +137,7 @@ struct Hash
     template <class U, typename std::enable_if<has_hash_value<U>::value, int>::type = 0>
     size_t _hash(const T& val) const
     {
-        return U::hash_value(val);
+        return hash_value(val);
     }
  
     template <class U, typename std::enable_if<!has_hash_value<U>::value, int>::type = 0>
@@ -264,6 +269,8 @@ struct Hash<double> : public phmap_unary_function<double, size_t>
     }
 };
 
+#endif
+
 template <class H, int sz> struct Combiner
 {
     H operator()(H seed, size_t value);
@@ -285,7 +292,7 @@ template <class H> struct Combiner<H, 8>
     }
 };
 
-
+// define HashState to combine member hashes... see example below
 // -----------------------------------------------------------------------------
 template <typename H>
 class HashStateBase {
@@ -301,10 +308,51 @@ template <typename T, typename... Ts>
 H HashStateBase<H>::combine(H seed, const T& v, const Ts&... vs)
 {
     return HashStateBase<H>::combine(Combiner<H, sizeof(H)>()(
-                                         seed, phmap::Hash<T>()(v)),  vs...);
+                                         seed, phmap::Hash<T>()(v)), 
+                                     vs...);
 }
 
 using HashState = HashStateBase<size_t>;
+
+// -----------------------------------------------------------------------------
+
+#if !defined(PHMAP_USE_ABSL_HASH)
+
+// define Hash for std::pair
+// -------------------------
+template<class T1, class T2> 
+struct Hash<std::pair<T1, T2>> {
+    size_t operator()(std::pair<T1, T2> const& p) const noexcept {
+        return phmap::HashState().combine(phmap::Hash<T1>()(p.first), p.second);
+    }
+};
+
+// define Hash for std::tuple
+// --------------------------
+template<class... T> 
+struct Hash<std::tuple<T...>> {
+    size_t operator()(std::tuple<T...> const& t) const noexcept {
+        return _hash_helper(t);
+    }
+
+private:
+    template<size_t I = 0, class ...P>
+        typename std::enable_if<I == sizeof...(P), size_t>::type
+        _hash_helper(const std::tuple<P...> &) const noexcept { return 0; }
+
+    template<size_t I = 0, class ...P>
+    typename std::enable_if<I < sizeof...(P), size_t>::type
+    _hash_helper(const std::tuple<P...> &t) const noexcept {
+        const auto &el = std::get<I>(t);
+        using el_type = typename std::remove_cv<typename std::remove_reference<decltype(el)>::type>::type;
+        return Combiner<size_t, sizeof(size_t)>()(
+            phmap::Hash<el_type>()(el),  _hash_helper<I + 1>(t));
+    }
+};
+
+
+#endif
+
 
 }  // namespace phmap
 
