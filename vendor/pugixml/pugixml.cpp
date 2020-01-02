@@ -6233,16 +6233,9 @@ namespace pugi
 
 	PUGI__FN xml_node xml_node::first_element_by_path(const char_t* path_, char_t delimiter) const
 	{
-		xml_node found = *this; // Current search context.
+		xml_node context = path_[0] == delimiter ? root() : *this;
 
-		if (!_root || !path_[0]) return found;
-
-		if (path_[0] == delimiter)
-		{
-			// Absolute path; e.g. '/foo/bar'
-			found = found.root();
-			++path_;
-		}
+		if (!context._root) return xml_node();
 
 		const char_t* path_segment = path_;
 
@@ -6252,19 +6245,19 @@ namespace pugi
 
 		while (*path_segment_end && *path_segment_end != delimiter) ++path_segment_end;
 
-		if (path_segment == path_segment_end) return found;
+		if (path_segment == path_segment_end) return context;
 
 		const char_t* next_segment = path_segment_end;
 
 		while (*next_segment == delimiter) ++next_segment;
 
 		if (*path_segment == '.' && path_segment + 1 == path_segment_end)
-			return found.first_element_by_path(next_segment, delimiter);
+			return context.first_element_by_path(next_segment, delimiter);
 		else if (*path_segment == '.' && *(path_segment+1) == '.' && path_segment + 2 == path_segment_end)
-			return found.parent().first_element_by_path(next_segment, delimiter);
+			return context.parent().first_element_by_path(next_segment, delimiter);
 		else
 		{
-			for (xml_node_struct* j = found._root->first_child; j; j = j->next_sibling)
+			for (xml_node_struct* j = context._root->first_child; j; j = j->next_sibling)
 			{
 				if (j->name && impl::strequalrange(j->name, path_segment, static_cast<size_t>(path_segment_end - path_segment)))
 				{
@@ -9756,7 +9749,7 @@ PUGI__NS_BEGIN
 			{
 				xpath_context c(*it, i, size);
 
-				if (expr->eval_number(c, stack) == i)
+				if (expr->eval_number(c, stack) == static_cast<double>(i))
 				{
 					*last++ = *it;
 
@@ -9780,11 +9773,11 @@ PUGI__NS_BEGIN
 
 			double er = expr->eval_number(c, stack);
 
-			if (er >= 1.0 && er <= size)
+			if (er >= 1.0 && er <= static_cast<double>(size))
 			{
 				size_t eri = static_cast<size_t>(er);
 
-				if (er == eri)
+				if (er == static_cast<double>(eri))
 				{
 					xpath_node r = last[eri - 1];
 
@@ -10742,7 +10735,7 @@ PUGI__NS_BEGIN
 				double first = round_nearest(_right->eval_number(c, stack));
 
 				if (is_nan(first)) return xpath_string(); // NaN
-				else if (first >= s_length + 1) return xpath_string();
+				else if (first >= static_cast<double>(s_length + 1)) return xpath_string();
 
 				size_t pos = first < 1 ? 1 : static_cast<size_t>(first);
 				assert(1 <= pos && pos <= s_length + 1);
@@ -10766,12 +10759,12 @@ PUGI__NS_BEGIN
 				double last = first + round_nearest(_right->_next->eval_number(c, stack));
 
 				if (is_nan(first) || is_nan(last)) return xpath_string();
-				else if (first >= s_length + 1) return xpath_string();
+				else if (first >= static_cast<double>(s_length + 1)) return xpath_string();
 				else if (first >= last) return xpath_string();
 				else if (last < 1) return xpath_string();
 
 				size_t pos = first < 1 ? 1 : static_cast<size_t>(first);
-				size_t end = last >= s_length + 1 ? s_length + 1 : static_cast<size_t>(last);
+				size_t end = last >= static_cast<double>(s_length + 1) ? s_length + 1 : static_cast<size_t>(last);
 
 				assert(1 <= pos && pos <= end && end <= s_length + 1);
 				const char_t* rbegin = s.c_str() + (pos - 1);

@@ -50,6 +50,11 @@
 #include <cstdint>
 #include "phmap_config.h"
 
+#ifdef _MSC_VER
+    #pragma warning(push)  
+    #pragma warning(disable : 4514) // unreferenced inline function has been removed
+#endif
+
 // -----------------------------------------------------------------------------
 // unaligned APIs
 // -----------------------------------------------------------------------------
@@ -279,7 +284,7 @@ PHMAP_BASE_INTERNAL_FORCEINLINE int CountLeadingZeros64(uint64_t n) {
     // MSVC does not have __buitin_clzll. Use _BitScanReverse64.
     unsigned long result = 0;  // NOLINT(runtime/int)
     if (_BitScanReverse64(&result, n)) {
-        return 63 - result;
+        return (int)(63 - result);
     }
     return 64;
 #elif defined(_MSC_VER)
@@ -322,7 +327,7 @@ PHMAP_BASE_INTERNAL_FORCEINLINE int CountLeadingZeros32(uint32_t n) {
 #if defined(_MSC_VER)
     unsigned long result = 0;  // NOLINT(runtime/int)
     if (_BitScanReverse(&result, n)) {
-        return 31 - result;
+        return (int)(31 - result);
     }
     return 32;
 #elif defined(__GNUC__)
@@ -359,7 +364,7 @@ PHMAP_BASE_INTERNAL_FORCEINLINE int CountTrailingZerosNonZero64(uint64_t n) {
 #if defined(_MSC_VER) && defined(_M_X64)
     unsigned long result = 0;  // NOLINT(runtime/int)
     _BitScanForward64(&result, n);
-    return result;
+    return (int)result;
 #elif defined(_MSC_VER)
     unsigned long result = 0;  // NOLINT(runtime/int)
     if (static_cast<uint32_t>(n) == 0) {
@@ -392,7 +397,7 @@ PHMAP_BASE_INTERNAL_FORCEINLINE int CountTrailingZerosNonZero32(uint32_t n) {
 #if defined(_MSC_VER)
     unsigned long result = 0;  // NOLINT(runtime/int)
     _BitScanForward(&result, n);
-    return result;
+    return (int)result;
 #elif defined(__GNUC__)
     static_assert(sizeof(int) == sizeof(n),
                   "__builtin_ctz does not take 32-bit arg");
@@ -650,5 +655,9 @@ inline void Store64(void *p, uint64_t v) {
 }  // namespace big_endian
 
 }  // namespace phmap
+
+#ifdef _MSC_VER
+     #pragma warning(pop)  
+#endif
 
 #endif // phmap_bits_h_guard_

@@ -28,14 +28,18 @@ namespace base_internal {
 
 BELA_FORCE_INLINE int CountLeadingZeros64Slow(uint64_t n) {
   int zeroes = 60;
-  if (n >> 32)
+  if (n >> 32) {
     zeroes -= 32, n >>= 32;
-  if (n >> 16)
+  }
+  if (n >> 16) {
     zeroes -= 16, n >>= 16;
-  if (n >> 8)
+  }
+  if (n >> 8) {
     zeroes -= 8, n >>= 8;
-  if (n >> 4)
+  }
+  if (n >> 4) {
     zeroes -= 4, n >>= 4;
+  }
   return "\4\3\2\2\1\1\1\1\0\0\0\0\0\0\0"[n] + zeroes;
 }
 
@@ -77,12 +81,15 @@ BELA_FORCE_INLINE int CountLeadingZeros64(uint64_t n) {
 
 BELA_FORCE_INLINE int CountLeadingZeros32Slow(uint64_t n) {
   int zeroes = 28;
-  if (n >> 16)
+  if (n >> 16) {
     zeroes -= 16, n >>= 16;
-  if (n >> 8)
+  }
+  if (n >> 8) {
     zeroes -= 8, n >>= 8;
-  if (n >> 4)
+  }
+  if (n >> 4) {
     zeroes -= 4, n >>= 4;
+  }
   return "\4\3\2\2\1\1\1\1\0\0\0\0\0\0\0"[n] + zeroes;
 }
 
@@ -114,18 +121,24 @@ BELA_FORCE_INLINE int CountLeadingZeros32(uint32_t n) {
 BELA_FORCE_INLINE int CountTrailingZerosNonZero64Slow(uint64_t n) {
   int c = 63;
   n &= ~n + 1;
-  if (n & 0x00000000FFFFFFFF)
+  if (n & 0x00000000FFFFFFFF) {
     c -= 32;
-  if (n & 0x0000FFFF0000FFFF)
+  }
+  if (n & 0x0000FFFF0000FFFF) {
     c -= 16;
-  if (n & 0x00FF00FF00FF00FF)
+  }
+  if (n & 0x00FF00FF00FF00FF) {
     c -= 8;
-  if (n & 0x0F0F0F0F0F0F0F0F)
+  }
+  if (n & 0x0F0F0F0F0F0F0F0F) {
     c -= 4;
-  if (n & 0x3333333333333333)
+  }
+  if (n & 0x3333333333333333) {
     c -= 2;
-  if (n & 0x5555555555555555)
+  }
+  if (n & 0x5555555555555555) {
     c -= 1;
+  }
   return c;
 }
 
@@ -154,16 +167,21 @@ BELA_FORCE_INLINE int CountTrailingZerosNonZero64(uint64_t n) {
 BELA_FORCE_INLINE int CountTrailingZerosNonZero32Slow(uint32_t n) {
   int c = 31;
   n &= ~n + 1;
-  if (n & 0x0000FFFF)
+  if (n & 0x0000FFFF) {
     c -= 16;
-  if (n & 0x00FF00FF)
+  }
+  if (n & 0x00FF00FF) {
     c -= 8;
-  if (n & 0x0F0F0F0F)
+  }
+  if (n & 0x0F0F0F0F) {
     c -= 4;
-  if (n & 0x33333333)
+  }
+  if (n & 0x33333333) {
     c -= 2;
-  if (n & 0x55555555)
+  }
+  if (n & 0x55555555) {
     c -= 1;
+  }
   return c;
 }
 

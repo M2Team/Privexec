@@ -34,6 +34,23 @@
 // limitations under the License.
 // ---------------------------------------------------------------------------
 
+#ifdef _MSC_VER
+    #pragma warning(push)  
+
+    #pragma warning(disable : 4127) // conditional expression is constant
+    #pragma warning(disable : 4324) // structure was padded due to alignment specifier
+    #pragma warning(disable : 4514) // unreferenced inline function has been removed
+    #pragma warning(disable : 4623) // default constructor was implicitly defined as deleted
+    #pragma warning(disable : 4625) // copy constructor was implicitly defined as deleted
+    #pragma warning(disable : 4626) // assignment operator was implicitly defined as deleted
+    #pragma warning(disable : 4710) // function not inlined
+    #pragma warning(disable : 4711) // selected for automatic inline expansion
+    #pragma warning(disable : 4820) // '6' bytes padding added after data member
+    #pragma warning(disable : 4868) // compiler may not enforce left-to-right evaluation order in braced initializer list
+    #pragma warning(disable : 5027) // move assignment operator was implicitly defined as deleted
+    #pragma warning(disable : 5045) // Compiler will insert Spectre mitigation for memory load if /Qspectre switch specified
+#endif
+
 #include <algorithm>
 #include <cmath>
 #include <cstring>
@@ -268,7 +285,7 @@ inline size_t H1(size_t hash, const ctrl_t* ) {
 #endif
 
 
-inline ctrl_t H2(size_t hash)          { return hash & 0x7F; }
+inline ctrl_t H2(size_t hash)          { return (ctrl_t)(hash & 0x7F); }
 
 inline bool IsEmpty(ctrl_t c)          { return c == kEmpty; }
 inline bool IsFull(ctrl_t c)           { return c >= 0; }
@@ -276,6 +293,11 @@ inline bool IsDeleted(ctrl_t c)        { return c == kDeleted; }
 inline bool IsEmptyOrDeleted(ctrl_t c) { return c < kSentinel; }
 
 #if PHMAP_HAVE_SSE2
+
+#ifdef _MSC_VER
+    #pragma warning(push)  
+    #pragma warning(disable : 4365) // conversion from 'int' to 'T', signed/unsigned mismatch
+#endif
 
 // --------------------------------------------------------------------------
 // https://github.com/abseil/abseil-cpp/issues/209
@@ -313,7 +335,7 @@ struct GroupSse2Impl
     // Returns a bitmask representing the positions of slots that match hash.
     // ----------------------------------------------------------------------
     BitMask<uint32_t, kWidth> Match(h2_t hash) const {
-        auto match = _mm_set1_epi8(hash);
+        auto match = _mm_set1_epi8((char)hash);
         return BitMask<uint32_t, kWidth>(
             _mm_movemask_epi8(_mm_cmpeq_epi8(match, ctrl)));
     }
@@ -362,6 +384,11 @@ struct GroupSse2Impl
 
     __m128i ctrl;
 };
+
+#ifdef _MSC_VER
+     #pragma warning(pop)  
+#endif
+
 #endif  // PHMAP_HAVE_SSE2
 
 // --------------------------------------------------------------------------
@@ -405,7 +432,7 @@ struct GroupPortableImpl
 
     uint32_t CountLeadingEmptyOrDeleted() const {
         constexpr uint64_t gaps = 0x00FEFEFEFEFEFEFEULL;
-        return (TrailingZeros(((~ctrl & (ctrl >> 7)) | gaps) + 1) + 7) >> 3;
+        return (uint32_t)((TrailingZeros(((~ctrl & (ctrl >> 7)) | gaps) + 1) + 7) >> 3);
     }
 
     void ConvertSpecialToEmptyAndFullToDeleted(ctrl_t* dst) const {
@@ -469,7 +496,7 @@ inline size_t CapacityToGrowth(size_t capacity)
 {
     assert(IsValidCapacity(capacity));
     // `capacity*7/8`
-    if (Group::kWidth == 8 && capacity == 7) {
+    PHMAP_IF_CONSTEXPR (Group::kWidth == 8 && capacity == 7) {
         // x-x/8 does not work when x==7.
         return 6;
     }
@@ -483,7 +510,7 @@ inline size_t CapacityToGrowth(size_t capacity)
 inline size_t GrowthToLowerboundCapacity(size_t growth) 
 {
     // `growth*8/7`
-    if (Group::kWidth == 8 && growth == 7) {
+    PHMAP_IF_CONSTEXPR (Group::kWidth == 8 && growth == 7) {
         // x+(x-1)/7 does not work when x==7.
         return 8;
     }
@@ -643,78 +670,6 @@ DecomposePairImpl(F&& f, std::pair<std::tuple<K>, V> p) {
 
 }  // namespace memory_internal
 
-// Helper functions for asan and msan.
-// ----------------------------------------------------------------------------
-inline void SanitizerPoisonMemoryRegion(const void* m, size_t s) {
-#ifdef ADDRESS_SANITIZER
-    ASAN_POISON_MEMORY_REGION(m, s);
-#endif
-#ifdef MEMORY_SANITIZER
-    __msan_poison(m, s);
-#endif
-    (void)m;
-    (void)s;
-}
-
-inline void SanitizerUnpoisonMemoryRegion(const void* m, size_t s) {
-#ifdef ADDRESS_SANITIZER
-    ASAN_UNPOISON_MEMORY_REGION(m, s);
-#endif
-#ifdef MEMORY_SANITIZER
-    __msan_unpoison(m, s);
-#endif
-    (void)m;
-    (void)s;
-}
-
-template <typename T>
-inline void SanitizerPoisonObject(const T* object) {
-    SanitizerPoisonMemoryRegion(object, sizeof(T));
-}
-
-template <typename T>
-inline void SanitizerUnpoisonObject(const T* object) {
-    SanitizerUnpoisonMemoryRegion(object, sizeof(T));
-}
-
-// ----------------------------------------------------------------------------
-// Allocates at least n bytes aligned to the specified alignment.
-// Alignment must be a power of 2. It must be positive.
-//
-// Note that many allocators don't honor alignment requirements above certain
-// threshold (usually either alignof(std::max_align_t) or alignof(void*)).
-// Allocate() doesn't apply alignment corrections. If the underlying allocator
-// returns insufficiently alignment pointer, that's what you are going to get.
-// ----------------------------------------------------------------------------
-template <size_t Alignment, class Alloc>
-void* Allocate(Alloc* alloc, size_t n) {
-  static_assert(Alignment > 0, "");
-  assert(n && "n must be positive");
-  struct alignas(Alignment) M {};
-  using A = typename phmap::allocator_traits<Alloc>::template rebind_alloc<M>;
-  using AT = typename phmap::allocator_traits<Alloc>::template rebind_traits<M>;
-  A mem_alloc(*alloc);
-  void* p = AT::allocate(mem_alloc, (n + sizeof(M) - 1) / sizeof(M));
-  assert(reinterpret_cast<uintptr_t>(p) % Alignment == 0 &&
-         "allocator does not respect alignment");
-  return p;
-}
-
-// ----------------------------------------------------------------------------
-// The pointer must have been previously obtained by calling
-// Allocate<Alignment>(alloc, n).
-// ----------------------------------------------------------------------------
-template <size_t Alignment, class Alloc>
-void Deallocate(Alloc* alloc, void* p, size_t n) {
-  static_assert(Alignment > 0, "");
-  assert(n && "n must be positive");
-  struct alignas(Alignment) M {};
-  using A = typename phmap::allocator_traits<Alloc>::template rebind_alloc<M>;
-  using AT = typename phmap::allocator_traits<Alloc>::template rebind_traits<M>;
-  A mem_alloc(*alloc);
-  AT::deallocate(mem_alloc, static_cast<M*>(p),
-                 (n + sizeof(M) - 1) / sizeof(M));
-}
 
 // ----------------------------------------------------------------------------
 //                     R A W _ H A S H _ S E T
@@ -1572,7 +1527,7 @@ public:
     //   s.count("abc");
     template <class K = key_type>
     size_t count(const key_arg<K>& key) const {
-        return find(key) == end() ? 0 : 1;
+        return find(key) == end() ? size_t(0) : size_t(1);
     }
 
     // Issues CPU prefetch instructions for the memory needed to find or insert
@@ -1606,11 +1561,11 @@ public:
         auto seq = probe(hash);
         while (true) {
             Group g{ctrl_ + seq.offset()};
-            for (int i : g.Match(H2(hash))) {
+            for (int i : g.Match((h2_t)H2(hash))) {
                 if (PHMAP_PREDICT_TRUE(PolicyTraits::apply(
                                           EqualElement<K>{key, eq_ref()},
-                                          PolicyTraits::element(slots_ + seq.offset(i)))))
-                    return iterator_at(seq.offset(i));
+                                          PolicyTraits::element(slots_ + seq.offset((size_t)i)))))
+                    return iterator_at(seq.offset((size_t)i));
             }
             if (PHMAP_PREDICT_TRUE(g.MatchEmpty())) 
                 return end();
@@ -1781,7 +1736,7 @@ private:
     void erase_meta_only(const_iterator it) {
         assert(IsFull(*it.inner_.ctrl_) && "erasing a dangling iterator");
         --size_;
-        const size_t index = it.inner_.ctrl_ - ctrl_;
+        const size_t index = (size_t)(it.inner_.ctrl_ - ctrl_);
         const size_t index_before = (index - Group::kWidth) & capacity_;
         const auto empty_after = Group(it.inner_.ctrl_).MatchEmpty();
         const auto empty_before = Group(ctrl_ + index_before).MatchEmpty();
@@ -1940,8 +1895,8 @@ private:
         auto seq = probe(hash);
         while (true) {
             Group g{ctrl_ + seq.offset()};
-            for (int i : g.Match(H2(hash))) {
-                if (PHMAP_PREDICT_TRUE(PolicyTraits::element(slots_ + seq.offset(i)) ==
+            for (int i : g.Match((h2_t)H2(hash))) {
+                if (PHMAP_PREDICT_TRUE(PolicyTraits::element(slots_ + seq.offset((size_t)i)) ==
                                       elem))
                     return true;
             }
@@ -1977,7 +1932,7 @@ private:
             Group g{ctrl_ + seq.offset()};
             auto mask = g.MatchEmptyOrDeleted();
             if (mask) {
-                return {seq.offset(mask.LowestBitSet()), seq.index()};
+                return {seq.offset((size_t)mask.LowestBitSet()), seq.index()};
             }
             assert(seq.index() < capacity_ && "full table!");
             seq.next();
@@ -2002,11 +1957,11 @@ protected:
         auto seq = probe(hash);
         while (true) {
             Group g{ctrl_ + seq.offset()};
-            for (int i : g.Match(H2(hash))) {
+            for (int i : g.Match((h2_t)H2(hash))) {
                 if (PHMAP_PREDICT_TRUE(PolicyTraits::apply(
                                           EqualElement<K>{key, eq_ref()},
-                                          PolicyTraits::element(slots_ + seq.offset(i)))))
-                    return {seq.offset(i), false};
+                                          PolicyTraits::element(slots_ + seq.offset((size_t)i)))))
+                    return {seq.offset((size_t)i), false};
             }
             if (PHMAP_PREDICT_TRUE(g.MatchEmpty())) break;
             seq.next();
@@ -3549,214 +3504,6 @@ DecomposeValue(F&& f, Arg&& arg) {
 }
 
 
-namespace memory_internal {
-
-// ----------------------------------------------------------------------------
-// If Pair is a standard-layout type, OffsetOf<Pair>::kFirst and
-// OffsetOf<Pair>::kSecond are equivalent to offsetof(Pair, first) and
-// offsetof(Pair, second) respectively. Otherwise they are -1.
-//
-// The purpose of OffsetOf is to avoid calling offsetof() on non-standard-layout
-// type, which is non-portable.
-// ----------------------------------------------------------------------------
-template <class Pair, class = std::true_type>
-struct OffsetOf {
-  static constexpr size_t kFirst = -1;
-  static constexpr size_t kSecond = -1;
-};
-
-template <class Pair>
-struct OffsetOf<Pair, typename std::is_standard_layout<Pair>::type> 
-{
-    static constexpr size_t kFirst = offsetof(Pair, first);
-    static constexpr size_t kSecond = offsetof(Pair, second);
-};
-
-// ----------------------------------------------------------------------------
-template <class K, class V>
-struct IsLayoutCompatible 
-{
-private:
-    struct Pair {
-        K first;
-        V second;
-    };
-
-    // Is P layout-compatible with Pair?
-    template <class P>
-    static constexpr bool LayoutCompatible() {
-        return std::is_standard_layout<P>() && sizeof(P) == sizeof(Pair) &&
-            alignof(P) == alignof(Pair) &&
-            memory_internal::OffsetOf<P>::kFirst ==
-            memory_internal::OffsetOf<Pair>::kFirst &&
-            memory_internal::OffsetOf<P>::kSecond ==
-            memory_internal::OffsetOf<Pair>::kSecond;
-    }
-
-public:
-    // Whether pair<const K, V> and pair<K, V> are layout-compatible. If they are,
-    // then it is safe to store them in a union and read from either.
-    static constexpr bool value = std::is_standard_layout<K>() &&
-        std::is_standard_layout<Pair>() &&
-        memory_internal::OffsetOf<Pair>::kFirst == 0 &&
-        LayoutCompatible<std::pair<K, V>>() &&
-        LayoutCompatible<std::pair<const K, V>>();
-};
-
-}  // namespace memory_internal
-
-// ----------------------------------------------------------------------------
-// The internal storage type for key-value containers like flat_hash_map.
-//
-// It is convenient for the value_type of a flat_hash_map<K, V> to be
-// pair<const K, V>; the "const K" prevents accidental modification of the key
-// when dealing with the reference returned from find() and similar methods.
-// However, this creates other problems; we want to be able to emplace(K, V)
-// efficiently with move operations, and similarly be able to move a
-// pair<K, V> in insert().
-//
-// The solution is this union, which aliases the const and non-const versions
-// of the pair. This also allows flat_hash_map<const K, V> to work, even though
-// that has the same efficiency issues with move in emplace() and insert() -
-// but people do it anyway.
-//
-// If kMutableKeys is false, only the value member can be accessed.
-//
-// If kMutableKeys is true, key can be accessed through all slots while value
-// and mutable_value must be accessed only via INITIALIZED slots. Slots are
-// created and destroyed via mutable_value so that the key can be moved later.
-//
-// Accessing one of the union fields while the other is active is safe as
-// long as they are layout-compatible, which is guaranteed by the definition of
-// kMutableKeys. For C++11, the relevant section of the standard is
-// https://timsong-cpp.github.io/cppwp/n3337/class.mem#19 (9.2.19)
-// ----------------------------------------------------------------------------
-template <class K, class V>
-union map_slot_type 
-{
-    map_slot_type() {}
-    ~map_slot_type() = delete;
-    using value_type = std::pair<const K, V>;
-    using mutable_value_type = std::pair<K, V>;
-
-    value_type value;
-    mutable_value_type mutable_value;
-    K key;
-};
-
-// ----------------------------------------------------------------------------
-// ----------------------------------------------------------------------------
-template <class K, class V>
-struct map_slot_policy 
-{
-    using slot_type = map_slot_type<K, V>;
-    using value_type = std::pair<const K, V>;
-    using mutable_value_type = std::pair<K, V>;
-
-private:
-    static void emplace(slot_type* slot) {
-        // The construction of union doesn't do anything at runtime but it allows us
-        // to access its members without violating aliasing rules.
-        new (slot) slot_type;
-    }
-    // If pair<const K, V> and pair<K, V> are layout-compatible, we can accept one
-    // or the other via slot_type. We are also free to access the key via
-    // slot_type::key in this case.
-    using kMutableKeys = memory_internal::IsLayoutCompatible<K, V>;
-
-public:
-    static value_type& element(slot_type* slot) { return slot->value; }
-    static const value_type& element(const slot_type* slot) {
-        return slot->value;
-    }
-
-    static const K& key(const slot_type* slot) {
-        return kMutableKeys::value ? slot->key : slot->value.first;
-    }
-
-    template <class Allocator, class... Args>
-    static void construct(Allocator* alloc, slot_type* slot, Args&&... args) {
-        emplace(slot);
-        if (kMutableKeys::value) {
-            phmap::allocator_traits<Allocator>::construct(*alloc, &slot->mutable_value,
-                                                         std::forward<Args>(args)...);
-        } else {
-            phmap::allocator_traits<Allocator>::construct(*alloc, &slot->value,
-                                                         std::forward<Args>(args)...);
-        }
-    }
-
-    // Construct this slot by moving from another slot.
-    template <class Allocator>
-    static void construct(Allocator* alloc, slot_type* slot, slot_type* other) {
-        emplace(slot);
-        if (kMutableKeys::value) {
-            phmap::allocator_traits<Allocator>::construct(
-                *alloc, &slot->mutable_value, std::move(other->mutable_value));
-        } else {
-            phmap::allocator_traits<Allocator>::construct(*alloc, &slot->value,
-                                                         std::move(other->value));
-        }
-    }
-
-    template <class Allocator>
-    static void destroy(Allocator* alloc, slot_type* slot) {
-        if (kMutableKeys::value) {
-            phmap::allocator_traits<Allocator>::destroy(*alloc, &slot->mutable_value);
-        } else {
-            phmap::allocator_traits<Allocator>::destroy(*alloc, &slot->value);
-        }
-    }
-
-    template <class Allocator>
-    static void transfer(Allocator* alloc, slot_type* new_slot,
-                         slot_type* old_slot) {
-        emplace(new_slot);
-        if (kMutableKeys::value) {
-            phmap::allocator_traits<Allocator>::construct(
-                *alloc, &new_slot->mutable_value, std::move(old_slot->mutable_value));
-        } else {
-            phmap::allocator_traits<Allocator>::construct(*alloc, &new_slot->value,
-                                                         std::move(old_slot->value));
-        }
-        destroy(alloc, old_slot);
-    }
-
-    template <class Allocator>
-    static void swap(Allocator* alloc, slot_type* a, slot_type* b) {
-        if (kMutableKeys::value) {
-            using std::swap;
-            swap(a->mutable_value, b->mutable_value);
-        } else {
-            value_type tmp = std::move(a->value);
-            phmap::allocator_traits<Allocator>::destroy(*alloc, &a->value);
-            phmap::allocator_traits<Allocator>::construct(*alloc, &a->value,
-                                                         std::move(b->value));
-            phmap::allocator_traits<Allocator>::destroy(*alloc, &b->value);
-            phmap::allocator_traits<Allocator>::construct(*alloc, &b->value,
-                                                         std::move(tmp));
-        }
-    }
-
-    template <class Allocator>
-    static void move(Allocator* alloc, slot_type* src, slot_type* dest) {
-        if (kMutableKeys::value) {
-            dest->mutable_value = std::move(src->mutable_value);
-        } else {
-            phmap::allocator_traits<Allocator>::destroy(*alloc, &dest->value);
-            phmap::allocator_traits<Allocator>::construct(*alloc, &dest->value,
-                                                          std::move(src->value));
-        }
-    }
-
-    template <class Allocator>
-    static void move(Allocator* alloc, slot_type* first, slot_type* last,
-                     slot_type* result) {
-        for (slot_type *src = first, *dest = result; src != last; ++src, ++dest)
-            move(alloc, src, dest);
-    }
-};
-
 // --------------------------------------------------------------------------
 // Policy: a policy defines how to perform different operations on
 // the slots of the hashtable (see hash_policy_traits.h for the full interface
@@ -4108,7 +3855,7 @@ struct HashtableDebugAccess<Set, phmap::void_t<typename Set::raw_hash_set>>
                 if (Traits::apply(
                         typename Set::template EqualElement<typename Set::key_type>{
                             key, set.eq_ref()},
-                        Traits::element(set.slots_ + seq.offset(i))))
+                        Traits::element(set.slots_ + seq.offset((size_t)i))))
                     return num_probes;
                 ++num_probes;
             }
@@ -4626,5 +4373,10 @@ public:
 };
 
 }  // namespace phmap
+
+#ifdef _MSC_VER
+     #pragma warning(pop)  
+#endif
+
 
 #endif // phmap_h_guard_

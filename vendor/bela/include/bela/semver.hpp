@@ -62,7 +62,7 @@ constexpr char char_to_lower(char c) noexcept {
 template <typename T>
 constexpr bool str_equals(std::basic_string_view<T> lhs, std::size_t pos,
                           std::basic_string_view<T> rhs) noexcept {
-  for (std::size_t i1 = pos, i2 = 0; i1 < lhs.length() && i2 < rhs.length();
+  for (std::size_t i1 = pos, i2 = 0; i1 < lhs.size() && i2 < rhs.size();
        ++i1, ++i2) {
     if (char_to_lower(static_cast<char>(lhs[i1])) !=
         char_to_lower(static_cast<char>(rhs[i2]))) {
@@ -79,8 +79,8 @@ template <typename T, typename I>
 constexpr bool read_uint(std::basic_string_view<T> str, std::size_t &i,
                          I &d) noexcept {
   if (std::uint32_t t = 0;
-      i < str.length() && is_digit(static_cast<char>(str[i]))) {
-    for (std::size_t p = i, s = 0; p < str.length() && s < 3; ++p, ++s) {
+      i < str.size() && is_digit(static_cast<char>(str[i]))) {
+    for (std::size_t p = i, s = 0; p < str.size() && s < 3; ++p, ++s) {
       auto c = static_cast<char>(str[p]);
       if (is_digit(c)) {
         t = t * 10 + char_to_digit(c);
@@ -101,7 +101,7 @@ constexpr bool read_uint(std::basic_string_view<T> str, std::size_t &i,
 template <typename T>
 constexpr bool read_dot(std::basic_string_view<T> str,
                         std::size_t &i) noexcept {
-  if (i < str.length() && str[i] == '.') {
+  if (i < str.size() && str[i] == '.') {
     ++i;
     return true;
   }
@@ -111,19 +111,22 @@ constexpr bool read_dot(std::basic_string_view<T> str,
 template <typename T>
 constexpr bool read_prerelease(std::basic_string_view<T> str, std::size_t &i,
                                prerelease &p) noexcept {
-  if (i >= str.length()) {
+  if (i >= str.size()) {
     p = prerelease::none;
     return false;
-  } else if (str_equals(str, i, Literal<T>::Alpha)) {
-    i += Literal<T>::Alpha.length();
+  }
+  if (str_equals(str, i, Literal<T>::Alpha)) {
+    i += Literal<T>::Alpha.size();
     p = prerelease::alpha;
     return true;
-  } else if (str_equals(str, i, Literal<T>::Beta)) {
-    i += Literal<T>::Beta.length();
+  }
+  if (str_equals(str, i, Literal<T>::Beta)) {
+    i += Literal<T>::Beta.size();
     p = prerelease::beta;
     return true;
-  } else if (str_equals(str, i, Literal<T>::RC)) {
-    i += Literal<T>::RC.length();
+  }
+  if (str_equals(str, i, Literal<T>::RC)) {
+    i += Literal<T>::RC.size();
     p = prerelease::rc;
     return true;
   }
@@ -215,26 +218,26 @@ struct alignas(1) version {
     }
     return str;
   }
+
   template <typename T>
   constexpr bool
   from_string_noexcept_t(std::basic_string_view<T> str) noexcept {
-    if (std::size_t i = 0;
-        detail::read_uint(str, i, major) && detail::read_dot(str, i) &&
+    std::size_t i = 0;
+    if (detail::read_uint(str, i, major) && detail::read_dot(str, i) &&
         detail::read_uint(str, i, minor) && detail::read_dot(str, i) &&
-        detail::read_uint(str, i, patch) && str.length() == i) {
+        detail::read_uint(str, i, patch) && str.size() == i) {
       prerelease_type = prerelease::none;
       prerelease_number = 0;
       return true;
-    } else if (detail::read_prerelease(str, i, prerelease_type) &&
-               str.length() == i) {
+    }
+    if (detail::read_prerelease(str, i, prerelease_type) && str.size() == i) {
       prerelease_number = 0;
       return true;
-    } else if (detail::read_dot(str, i) &&
-               detail::read_uint(str, i, prerelease_number) &&
-               str.length() == i) {
+    }
+    if (detail::read_dot(str, i) &&
+        detail::read_uint(str, i, prerelease_number) && str.size() == i) {
       return true;
     }
-
     *this = version{0, 0, 0};
     return false;
   }
@@ -242,7 +245,7 @@ struct alignas(1) version {
   constexpr bool from_string_noexcept(std::string_view str) noexcept {
     return from_string_noexcept_t(str);
   }
-  
+
   constexpr bool from_string_noexcept(std::wstring_view str) noexcept {
     return from_string_noexcept_t(str);
   }
