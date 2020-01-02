@@ -42,10 +42,10 @@
   L"href=\"https://github.com/M2Team/Privexec/issues\">Privexec Issues</a>"
 
 #define PRIVEXEC_COPYRIGHT                                                     \
-  L"Copyright \xA9 2019, Force Charlie. All Rights Reserved."
+  L"Copyright \xA9 2020, Force Charlie. All Rights Reserved."
 
 #define PRIVEXEC_APPVERSION                                                    \
-  L"Version: " PRIV_VERSION_FULL L"\nCopyright \xA9 2019, Force "              \
+  L"Version: " PRIV_VERSION_FULL L"\nCopyright \xA9 2020, Force "              \
   L"Charlie. All Rights Reserved."
 
 #endif
