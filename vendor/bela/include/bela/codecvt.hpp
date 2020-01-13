@@ -5,6 +5,24 @@
 #include <vector>
 #include "ucwidth.hpp"
 
+/*
+ * UTF-8 to UTF-16
+ * Table from https://woboq.com/blog/utf-8-processing-using-simd.html
+ *
+ * +-------------------------------------+-------------------+
+ * | UTF-8                               | UTF-16LE (HI LO)  |
+ * +-------------------------------------+-------------------+
+ * | 0aaaaaaa                            | 00000000 0aaaaaaa |
+ * +-------------------------------------+-------------------+
+ * | 110bbbbb 10aaaaaa                   | 00000bbb bbaaaaaa |
+ * +-------------------------------------+-------------------+
+ * | 1110cccc 10bbbbbb 10aaaaaa          | ccccbbbb bbaaaaaa |
+ * +-------------------------------------+-------------------+
+ * | 11110ddd 10ddcccc 10bbbbbb 10aaaaaa | 110110uu uuccccbb |
+ * + uuuu = ddddd - 1                    | 110111bb bbaaaaaa |
+ * +-------------------------------------+-------------------+
+ */
+
 namespace bela {
 size_t char32tochar16(char32_t rune, char16_t *dest, size_t dlen);
 size_t char32tochar8(char32_t rune, char *dest, size_t dlen);

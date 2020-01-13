@@ -9,13 +9,13 @@
 
 namespace wsudo {
 
-class EnvDerivative {
+class EnvDerivator {
 public:
   using conatiner_t = phmap::flat_hash_map<std::wstring, std::wstring>;
   using apply_t = std::function<void(std::wstring_view, std::wstring_view)>;
-  EnvDerivative() = default;
-  EnvDerivative(const EnvDerivative &) = delete;
-  EnvDerivative &operator=(const EnvDerivative &) = delete;
+  EnvDerivator() = default;
+  EnvDerivator(const EnvDerivator &) = delete;
+  EnvDerivator &operator=(const EnvDerivator &) = delete;
   bool Append(std::wstring_view s) {
     auto pos = s.find(L'=');
     if (pos == std::wstring_view::npos) {

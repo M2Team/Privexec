@@ -23,7 +23,7 @@ usage: wsudo-tie command args...
 
 namespace wsudo::tie {
 struct AppMode {
-  EnvDerivative envctx;
+  EnvDerivator envctx;
   std::vector<std::wstring_view> args;
   std::wstring_view cwd; // --cwd -c
   std::wstring_view pwd; // --pwd self cwd

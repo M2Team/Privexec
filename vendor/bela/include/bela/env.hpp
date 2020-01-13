@@ -34,12 +34,12 @@ std::wstring ExpandEnv(std::wstring_view sv);
 std::wstring PathUnExpand(std::wstring_view sv);
 
 namespace env {
-// Derivative Expand Env buitin. upper
-class Derivative {
+// Derivator Expand Env buitin. upper
+class Derivator {
 public:
-  Derivative() = default;
-  Derivative(const Derivative &) = delete;
-  Derivative &operator=(const Derivative &) = delete;
+  Derivator() = default;
+  Derivator(const Derivator &) = delete;
+  Derivator &operator=(const Derivator &) = delete;
   bool AddBashCompatible(int argc, wchar_t *const *argv);
   bool EraseEnv(std::wstring_view key);
   bool SetEnv(std::wstring_view key, std::wstring_view value,
@@ -56,11 +56,11 @@ private:
   bela::flat_hash_map<std::wstring, std::wstring> envblock;
 };
 
-class DerivativeMT {
+class DerivatorMT {
 public:
-  DerivativeMT() = default;
-  DerivativeMT(const DerivativeMT &) = delete;
-  DerivativeMT &operator=(const DerivativeMT &) = delete;
+  DerivatorMT() = default;
+  DerivatorMT(const DerivatorMT &) = delete;
+  DerivatorMT &operator=(const DerivatorMT &) = delete;
   bool AddBashCompatible(int argc, wchar_t *const *argv);
   bool EraseEnv(std::wstring_view key);
   bool SetEnv(std::wstring_view key, std::wstring_view value,

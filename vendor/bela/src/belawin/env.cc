@@ -145,7 +145,7 @@ bool os_expand_env(const std::wstring &key, std::wstring &value) {
   return true;
 }
 
-bool Derivative::AddBashCompatible(int argc, wchar_t *const *argv) {
+bool Derivator::AddBashCompatible(int argc, wchar_t *const *argv) {
   // $0~$N
   for (int i = 0; i < argc; i++) {
     envblock.emplace(bela::AlphaNum(i).Piece(), argv[i]);
@@ -161,11 +161,11 @@ bool Derivative::AddBashCompatible(int argc, wchar_t *const *argv) {
   return true;
 }
 
-bool Derivative::EraseEnv(std::wstring_view key) {
+bool Derivator::EraseEnv(std::wstring_view key) {
   return envblock.erase(key) != 0;
 }
 
-bool Derivative::SetEnv(std::wstring_view key, std::wstring_view value,
+bool Derivator::SetEnv(std::wstring_view key, std::wstring_view value,
                         bool force) {
   if (force) {
     // envblock[key] = value;
@@ -175,7 +175,7 @@ bool Derivative::SetEnv(std::wstring_view key, std::wstring_view value,
   return envblock.emplace(key, value).second;
 }
 
-bool Derivative::PutEnv(std::wstring_view nv, bool force) {
+bool Derivator::PutEnv(std::wstring_view nv, bool force) {
   auto pos = nv.find(L'=');
   if (pos == std::wstring_view::npos) {
     return SetEnv(nv, L"", force);
@@ -184,7 +184,7 @@ bool Derivative::PutEnv(std::wstring_view nv, bool force) {
 }
 
 [[nodiscard]] std::wstring_view
-Derivative::GetEnv(std::wstring_view key) const {
+Derivator::GetEnv(std::wstring_view key) const {
   auto it = envblock.find(key);
   if (it == envblock.end()) {
     return L"";
@@ -192,7 +192,7 @@ Derivative::GetEnv(std::wstring_view key) const {
   return it->second;
 }
 
-bool Derivative::AppendEnv(std::wstring_view key, std::wstring &s) const {
+bool Derivator::AppendEnv(std::wstring_view key, std::wstring &s) const {
   auto it = envblock.find(key);
   if (it == envblock.end()) {
     return false;
@@ -202,7 +202,7 @@ bool Derivative::AppendEnv(std::wstring_view key, std::wstring &s) const {
 }
 
 // Expand Env string to normal string only support  Unix style'${KEY}'
-bool Derivative::ExpandEnv(std::wstring_view raw, std::wstring &w,
+bool Derivator::ExpandEnv(std::wstring_view raw, std::wstring &w,
                            bool disableos) const {
   w.reserve(raw.size() * 2);
   size_t i = 0;
@@ -230,9 +230,9 @@ bool Derivative::ExpandEnv(std::wstring_view raw, std::wstring &w,
   return true;
 }
 
-// DerivativeMT support MultiThreading
+// DerivatorMT support MultiThreading
 
-bool DerivativeMT::AddBashCompatible(int argc, wchar_t *const *argv) {
+bool DerivatorMT::AddBashCompatible(int argc, wchar_t *const *argv) {
   for (int i = 0; i < argc; i++) {
     envblock.emplace(bela::AlphaNum(i).Piece(), argv[i]);
   }
@@ -247,11 +247,11 @@ bool DerivativeMT::AddBashCompatible(int argc, wchar_t *const *argv) {
   return true;
 }
 
-bool DerivativeMT::EraseEnv(std::wstring_view key) {
+bool DerivatorMT::EraseEnv(std::wstring_view key) {
   return envblock.erase(key) != 0; /// Internal is thread safe
 }
 
-bool DerivativeMT::SetEnv(std::wstring_view key, std::wstring_view value,
+bool DerivatorMT::SetEnv(std::wstring_view key, std::wstring_view value,
                           bool force) {
   if (force) {
     // envblock[key] = value;
@@ -261,7 +261,7 @@ bool DerivativeMT::SetEnv(std::wstring_view key, std::wstring_view value,
   return envblock.emplace(key, value).second;
 }
 
-bool DerivativeMT::PutEnv(std::wstring_view nv, bool force) {
+bool DerivatorMT::PutEnv(std::wstring_view nv, bool force) {
   auto pos = nv.find(L'=');
   if (pos == std::wstring_view::npos) {
     return SetEnv(nv, L"", force);
@@ -269,7 +269,7 @@ bool DerivativeMT::PutEnv(std::wstring_view nv, bool force) {
   return SetEnv(nv.substr(0, pos), nv.substr(pos + 1), force);
 }
 
-[[nodiscard]] std::wstring DerivativeMT::GetEnv(std::wstring_view key) {
+[[nodiscard]] std::wstring DerivatorMT::GetEnv(std::wstring_view key) {
   auto it = envblock.find(key);
   if (it == envblock.end()) {
     return L"";
@@ -277,7 +277,7 @@ bool DerivativeMT::PutEnv(std::wstring_view nv, bool force) {
   return it->second;
 }
 
-bool DerivativeMT::AppendEnv(std::wstring_view key, std::wstring &s) {
+bool DerivatorMT::AppendEnv(std::wstring_view key, std::wstring &s) {
   auto it = envblock.find(key);
   if (it == envblock.end()) {
     return false;
@@ -286,7 +286,7 @@ bool DerivativeMT::AppendEnv(std::wstring_view key, std::wstring &s) {
   return true;
 }
 
-bool DerivativeMT::ExpandEnv(std::wstring_view raw, std::wstring &w,
+bool DerivatorMT::ExpandEnv(std::wstring_view raw, std::wstring &w,
                              bool disableos) {
   w.reserve(raw.size() * 2);
   size_t i = 0;

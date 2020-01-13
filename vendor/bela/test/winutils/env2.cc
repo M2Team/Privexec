@@ -16,7 +16,7 @@ int wmain(int argc, wchar_t **argv) {
     auto k = bela::env::resovle_shell_name(s, off);
     bela::FPrintF(stderr, L"%s --> [%s] off: %d\n", s, k, off);
   }
-  bela::env::Derivative de;
+  bela::env::Derivator de;
   de.AddBashCompatible(argc, argv);
   de.PutEnv(L"JACK=ROSE");
 
