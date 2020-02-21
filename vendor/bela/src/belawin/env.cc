@@ -3,6 +3,7 @@
 #include <bela/base.hpp>
 #include <bela/env.hpp>
 #include <bela/strcat.hpp>
+#include <bela/finaly.hpp>
 
 namespace bela {
 namespace env_internal {
@@ -148,31 +149,29 @@ bool os_expand_env(const std::wstring &key, std::wstring &value) {
 bool Derivator::AddBashCompatible(int argc, wchar_t *const *argv) {
   // $0~$N
   for (int i = 0; i < argc; i++) {
-    envblock.emplace(bela::AlphaNum(i).Piece(), argv[i]);
+    envb.emplace(bela::AlphaNum(i).Piece(), argv[i]);
   }
-  envblock.emplace(
+  envb.emplace(
       L"$",
       bela::AlphaNum(GetCurrentProcessId()).Piece()); // current process PID
-  envblock.emplace(L"@", GetCommandLineW());          // $@ -->cmdline
+  envb.emplace(L"@", GetCommandLineW());              // $@ -->cmdline
   std::wstring userprofile;
   if (os_expand_env(L"USERPROFILE", userprofile)) {
-    envblock.emplace(L"HOME", userprofile);
+    envb.emplace(L"HOME", userprofile);
   }
   return true;
 }
 
-bool Derivator::EraseEnv(std::wstring_view key) {
-  return envblock.erase(key) != 0;
-}
+bool Derivator::EraseEnv(std::wstring_view key) { return envb.erase(key) != 0; }
 
 bool Derivator::SetEnv(std::wstring_view key, std::wstring_view value,
-                        bool force) {
+                       bool force) {
   if (force) {
-    // envblock[key] = value;
-    envblock.insert_or_assign(key, value);
+    // envb[key] = value;
+    envb.insert_or_assign(key, value);
     return true;
   }
-  return envblock.emplace(key, value).second;
+  return envb.emplace(key, value).second;
 }
 
 bool Derivator::PutEnv(std::wstring_view nv, bool force) {
@@ -183,18 +182,17 @@ bool Derivator::PutEnv(std::wstring_view nv, bool force) {
   return SetEnv(nv.substr(0, pos), nv.substr(pos + 1), force);
 }
 
-[[nodiscard]] std::wstring_view
-Derivator::GetEnv(std::wstring_view key) const {
-  auto it = envblock.find(key);
-  if (it == envblock.end()) {
+[[nodiscard]] std::wstring_view Derivator::GetEnv(std::wstring_view key) const {
+  auto it = envb.find(key);
+  if (it == envb.end()) {
     return L"";
   }
   return it->second;
 }
 
 bool Derivator::AppendEnv(std::wstring_view key, std::wstring &s) const {
-  auto it = envblock.find(key);
-  if (it == envblock.end()) {
+  auto it = envb.find(key);
+  if (it == envb.end()) {
     return false;
   }
   s.append(it->second);
@@ -203,7 +201,7 @@ bool Derivator::AppendEnv(std::wstring_view key, std::wstring &s) const {
 
 // Expand Env string to normal string only support  Unix style'${KEY}'
 bool Derivator::ExpandEnv(std::wstring_view raw, std::wstring &w,
-                           bool disableos) const {
+                          bool strict) const {
   w.reserve(raw.size() * 2);
   size_t i = 0;
   for (size_t j = 0; j < raw.size(); j++) {
@@ -217,7 +215,7 @@ bool Derivator::ExpandEnv(std::wstring_view raw, std::wstring &w,
         }
       } else {
         if (!AppendEnv(name, w)) {
-          if (!disableos) {
+          if (!strict) {
             os_expand_env(std::wstring(name), w);
           }
         }
@@ -230,35 +228,70 @@ bool Derivator::ExpandEnv(std::wstring_view raw, std::wstring &w,
   return true;
 }
 
+std::wstring Derivator::Encode() const {
+  LPWCH envs{nullptr};
+  auto deleter = bela::finally([&] {
+    if (envs) {
+      FreeEnvironmentStringsW(envs);
+      envs = nullptr;
+    }
+  });
+  envs = ::GetEnvironmentStringsW();
+  if (envs == nullptr) {
+    return L"";
+  }
+  std::wstring ne;
+  for (wchar_t const *lastch{envs}; *lastch != '\0'; ++lastch) {
+    const auto len = ::wcslen(lastch);
+    const std::wstring_view entry{lastch, len};
+    const auto pos = entry.find(L'=');
+    if (pos == std::wstring_view::npos) {
+      lastch += len;
+      continue;
+    }
+    auto key = entry.substr(0, pos);
+    if (auto it = envb.find(key); it == envb.end()) {
+      ne.append(lastch).push_back(L'\0');
+    }
+    lastch += len;
+  }
+  for (const auto &[name, value] : envb) {
+    ne.append(name).push_back(L'=');
+    ne.append(value).push_back(L'\0');
+  }
+  ne.push_back('\0');
+  return ne;
+}
+
 // DerivatorMT support MultiThreading
 
 bool DerivatorMT::AddBashCompatible(int argc, wchar_t *const *argv) {
   for (int i = 0; i < argc; i++) {
-    envblock.emplace(bela::AlphaNum(i).Piece(), argv[i]);
+    envb.emplace(bela::AlphaNum(i).Piece(), argv[i]);
   }
-  envblock.emplace(
+  envb.emplace(
       L"$",
       bela::AlphaNum(GetCurrentProcessId()).Piece()); // $$ --> current PID
-  envblock.emplace(L"@", GetCommandLineW());          // $@ -->cmdline
+  envb.emplace(L"@", GetCommandLineW());              // $@ -->cmdline
   std::wstring userprofile;
   if (os_expand_env(L"USERPROFILE", userprofile)) {
-    envblock.emplace(L"HOME", userprofile);
+    envb.emplace(L"HOME", userprofile);
   }
   return true;
 }
 
 bool DerivatorMT::EraseEnv(std::wstring_view key) {
-  return envblock.erase(key) != 0; /// Internal is thread safe
+  return envb.erase(key) != 0; /// Internal is thread safe
 }
 
 bool DerivatorMT::SetEnv(std::wstring_view key, std::wstring_view value,
-                          bool force) {
+                         bool force) {
   if (force) {
-    // envblock[key] = value;
-    envblock.insert_or_assign(key, value);
+    // envb[key] = value;
+    envb.insert_or_assign(key, value);
     return true;
   }
-  return envblock.emplace(key, value).second;
+  return envb.emplace(key, value).second;
 }
 
 bool DerivatorMT::PutEnv(std::wstring_view nv, bool force) {
@@ -270,16 +303,16 @@ bool DerivatorMT::PutEnv(std::wstring_view nv, bool force) {
 }
 
 [[nodiscard]] std::wstring DerivatorMT::GetEnv(std::wstring_view key) {
-  auto it = envblock.find(key);
-  if (it == envblock.end()) {
+  auto it = envb.find(key);
+  if (it == envb.end()) {
     return L"";
   }
   return it->second;
 }
 
 bool DerivatorMT::AppendEnv(std::wstring_view key, std::wstring &s) {
-  auto it = envblock.find(key);
-  if (it == envblock.end()) {
+  auto it = envb.find(key);
+  if (it == envb.end()) {
     return false;
   }
   s.append(it->second);
@@ -287,7 +320,7 @@ bool DerivatorMT::AppendEnv(std::wstring_view key, std::wstring &s) {
 }
 
 bool DerivatorMT::ExpandEnv(std::wstring_view raw, std::wstring &w,
-                             bool disableos) {
+                            bool strict) {
   w.reserve(raw.size() * 2);
   size_t i = 0;
   for (size_t j = 0; j < raw.size(); j++) {
@@ -301,7 +334,7 @@ bool DerivatorMT::ExpandEnv(std::wstring_view raw, std::wstring &w,
         }
       } else {
         if (!AppendEnv(name, w)) {
-          if (!disableos) {
+          if (!strict) {
             os_expand_env(std::wstring(name), w);
           }
         }
@@ -312,6 +345,41 @@ bool DerivatorMT::ExpandEnv(std::wstring_view raw, std::wstring &w,
   }
   w.append(raw.substr(i));
   return true;
+}
+
+std::wstring DerivatorMT::Encode() {
+  LPWCH envs{nullptr};
+  auto deleter = bela::finally([&] {
+    if (envs) {
+      FreeEnvironmentStringsW(envs);
+      envs = nullptr;
+    }
+  });
+  envs = ::GetEnvironmentStringsW();
+  if (envs == nullptr) {
+    return L"";
+  }
+  std::wstring ne;
+  for (wchar_t const *lastch{envs}; *lastch != '\0'; ++lastch) {
+    const auto len = ::wcslen(lastch);
+    const std::wstring_view entry{lastch, len};
+    const auto pos = entry.find(L'=');
+    if (pos == std::wstring_view::npos) {
+      lastch += len;
+      continue;
+    }
+    auto key = entry.substr(0, pos);
+    if (auto it = envb.find(key); it == envb.end()) {
+      ne.append(lastch).push_back(L'\0');
+    }
+    lastch += len;
+  }
+  for (const auto &[name, value] : envb) {
+    ne.append(name).push_back(L'=');
+    ne.append(value).push_back(L'\0');
+  }
+  ne.push_back('\0');
+  return ne;
 }
 
 } // namespace env

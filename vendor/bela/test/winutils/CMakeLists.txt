@@ -16,6 +16,10 @@ add_executable(env2
   env2.cc
 )
 
+add_executable(envps
+  envps.cc
+)
+
 
 target_link_libraries(which
   belawin
@@ -30,5 +34,9 @@ target_link_libraries(expandenv
 )
 
 target_link_libraries(env2
+  belawin
+)
+
+target_link_libraries(envps
   belawin
 )
