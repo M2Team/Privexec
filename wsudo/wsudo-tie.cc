@@ -31,7 +31,7 @@ struct AppMode {
   bool verbose{false};   // --verbose -V
   void Verbose(const wchar_t *fmt) const {
     if (verbose) {
-      bela::StdWrite(stderr, fmt);
+      bela::FileWrite(stderr, fmt);
     }
   }
   template <typename... Args>
@@ -40,7 +40,7 @@ struct AppMode {
       const bela::format_internal::FormatArg arg_array[] = {args...};
       auto str = bela::format_internal::StrFormatInternal(fmt, arg_array,
                                                           sizeof...(args));
-      bela::StdWrite(stderr, str);
+      bela::FileWrite(stderr, str);
     }
   }
 
