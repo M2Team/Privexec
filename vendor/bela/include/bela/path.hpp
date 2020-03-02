@@ -11,9 +11,11 @@ namespace bela {
 constexpr const wchar_t PathSeparator = L'\\';
 constexpr const wchar_t PathUnixSeparator = L'/';
 constexpr const size_t PathMax = 0x8000;
-inline bool IsPathSeparator(wchar_t c) {
+inline constexpr bool IsPathSeparator(wchar_t c) {
   return c == PathSeparator || c == PathUnixSeparator;
 }
+std::vector<std::wstring_view> SplitPath(std::wstring_view sv);
+void PathStripName(std::wstring &s);
 
 namespace path_internal {
 std::wstring PathCatPieces(bela::Span<std::wstring_view> pieces);
@@ -52,7 +54,6 @@ PathCat(const AlphaNum &a, const AlphaNum &b, const AlphaNum &c,
       {a.Piece(), b.Piece(), c.Piece(), d.Piece(), e.Piece(),
        static_cast<const AlphaNum &>(args).Piece()...});
 }
-std::vector<std::wstring_view> SplitPath(std::wstring_view sv);
 
 enum class FileAttribute : DWORD {
   None = 0, //
@@ -99,6 +100,9 @@ struct AppExecTarget {
   std::wstring target;
 };
 bool LookupAppExecLinkTarget(std::wstring_view src, AppExecTarget &ae);
+std::optional<std::wstring> Executable(bela::error_code &ec);
+std::optional<std::wstring> ExecutablePath(bela::error_code &ec);
+
 } // namespace bela
 
 #endif

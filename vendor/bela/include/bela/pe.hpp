@@ -6,8 +6,9 @@
 #include <string>
 #include <optional>
 #include "base.hpp"
+#include "endian.hpp"
 
-namespace bela {
+namespace bela::pe {
 enum class Machine : uint16_t {
   UNKNOWN = 0,
   TARGET_HOST = 0x0001, // Useful for indicating we want to interact with the
@@ -60,19 +61,23 @@ enum class Subsytem : uint16_t {
   XBOX_CODE_CATALOG = 17
 };
 
-struct PEVersionPair {
+struct VersionPair {
   uint16_t major{0};
   uint16_t minor{0};
-  std::wstring ToString() const { return bela::StringCat(major, L".", minor); }
+  template <typename T> void Update(T major_, T minor_) {
+    major = bela::swaple(major_);
+    minor = bela::swaple(minor_);
+  }
+  std::wstring Str() const { return bela::StringCat(major, L".", minor); }
 };
 
-struct PESimpleDetails {
+struct Attributes {
   std::wstring clrmsg;
   std::vector<std::wstring> depends; // depends dll
   std::vector<std::wstring> delays;  // delay load library
-  PEVersionPair osver;
-  PEVersionPair linkver;
-  PEVersionPair imagever;
+  VersionPair osver;
+  VersionPair linkver;
+  VersionPair imagever;
   Machine machine;
   Subsytem subsystem;
   uint16_t characteristics{0};
@@ -83,8 +88,30 @@ struct PESimpleDetails {
     return (characteristics & imagefiledll) != 0;
   }
 };
-std::optional<PESimpleDetails> PESimpleDetailsAze(std::wstring_view file,
-                                                      bela::error_code &ec);
-} // namespace bela
+std::optional<Attributes> Expose(std::wstring_view file, bela::error_code &ec);
+
+// https://docs.microsoft.com/en-us/windows/win32/api/winver/nf-winver-getfileversioninfoexw
+// https://docs.microsoft.com/zh-cn/windows/win32/api/winver/nf-winver-getfileversioninfosizeexw
+// https://docs.microsoft.com/zh-cn/windows/win32/api/winver/nf-winver-verqueryvaluew
+// version.lib
+struct VersionInfo {
+  std::wstring CompanyName;
+  std::wstring FileDescription;
+  std::wstring FileVersion;
+  std::wstring InternalName;
+  std::wstring LegalCopyright;
+  std::wstring OriginalFileName;
+  std::wstring ProductName;
+  std::wstring ProductVersion;
+  std::wstring Comments;
+  std::wstring LegalTrademarks;
+  std::wstring PrivateBuild;
+  std::wstring SpecialBuild;
+};
+
+std::optional<VersionInfo> ExposeVersion(std::wstring_view file,
+                                         bela::error_code &ec);
+
+} // namespace bela::pe
 
 #endif

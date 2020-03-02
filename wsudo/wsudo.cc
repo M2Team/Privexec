@@ -246,7 +246,7 @@ bool AppSubsystemIsConsole(std::wstring &cmd, bool aliasexpand,
       return false;
     }
     bela::error_code ec;
-    auto pe = bela::PESimpleDetailsAze(exe, ec);
+    auto pe = bela::pe::Expose(exe, ec);
     if (!pe) {
       am.Verbose(L"\x1b[01;33m* Not PE File '%s'\x1b[0m\n", exe);
       if (IsConsoleSuffix(exe)) {
@@ -256,7 +256,7 @@ bool AppSubsystemIsConsole(std::wstring &cmd, bool aliasexpand,
       return false;
     }
     am.Verbose(L"\x1b[01;33m* App real argv0 '%s'\x1b[0m\n", exe);
-    return pe->subsystem == bela::Subsytem::CUI;
+    return pe->subsystem == bela::pe::Subsytem::CUI;
   }
   int Argc;
   auto Argv = CommandLineToArgvW(cmd.data(), &Argc);
@@ -272,13 +272,13 @@ bool AppSubsystemIsConsole(std::wstring &cmd, bool aliasexpand,
   LocalFree(Argv);
   am.Verbose(L"\x1b[01;33m* App real path '%s'\x1b[0m\n", exe);
   bela::error_code ec;
-  auto pe = bela::PESimpleDetailsAze(exe, ec);
+  auto pe = bela::pe::Expose(exe, ec);
   if (!pe) {
     am.Verbose(L"\x1b[01;33m* Not PE File '%s'\x1b[0m\n", exe);
     return IsConsoleSuffix(exe);
   }
   am.Verbose(L"\x1b[01;33m* App real argv0 '%s'\x1b[0m\n", exe);
-  return pe->subsystem == bela::Subsytem::CUI;
+  return pe->subsystem == bela::pe::Subsytem::CUI;
 }
 
 } // namespace wsudo

@@ -1,5 +1,13 @@
 ##
 
+add_executable(exepath_test
+  exepath.cc
+)
+
+target_link_libraries(exepath_test
+  belawin
+)
+
 add_executable(pathcat_test
   pathcat.cc
 )

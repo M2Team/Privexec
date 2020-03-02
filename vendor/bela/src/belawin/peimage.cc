@@ -6,7 +6,7 @@
 #include <bela/mapview.hpp>
 #include <bela/codecvt.hpp>
 
-namespace bela {
+namespace bela::pe {
 // https://docs.microsoft.com/en-us/windows/desktop/Debug/pe-format
 // PE32+ executable (console) x86-64, for MS Windows
 // PE32 executable (DLL) (console) Intel 80386 Mono/.Net assembly, for MS
@@ -110,6 +110,10 @@ inline std::wstring DllName(MemView mv, LPVOID nh, ULONG nva) {
   return fromascii(name);
 }
 
+// https://docs.microsoft.com/zh-cn/previous-versions/ms809762(v=msdn.10)#pe-file-resources
+
+// TODO resolve PE file resources include 'VersionInfo'
+
 inline std::wstring ClrMessage(MemView mv, LPVOID nh, ULONG clrva) {
   auto va = BelaImageRvaToVa((PIMAGE_NT_HEADERS)nh, (LPVOID)mv.data(), clrva,
                              nullptr);
@@ -135,20 +139,20 @@ inline std::wstring ClrMessage(MemView mv, LPVOID nh, ULONG clrva) {
 }
 
 template <typename H = IMAGE_NT_HEADERS64>
-std::optional<PESimpleDetails>
-PESimpleDetailsInternal(bela::MemView mv, const H *nh, bela::error_code &ec) {
-  PESimpleDetails pm;
+std::optional<Attributes> ExposeInternal(bela::MemView mv, const H *nh,
+                                         bela::error_code &ec) {
+  Attributes pm;
   pm.machine = static_cast<Machine>(bela::swaple(nh->FileHeader.Machine));
   pm.characteristics = bela::swaple(nh->FileHeader.Characteristics);
   pm.dllcharacteristics = bela::swaple(nh->OptionalHeader.DllCharacteristics);
-  pm.osver = {bela::swaple(nh->OptionalHeader.MajorOperatingSystemVersion),
-              bela::swaple(nh->OptionalHeader.MinorOperatingSystemVersion)};
+  pm.osver.Update(nh->OptionalHeader.MajorOperatingSystemVersion,
+                  nh->OptionalHeader.MinorOperatingSystemVersion);
   pm.subsystem =
       static_cast<Subsytem>(bela::swaple(nh->OptionalHeader.Subsystem));
-  pm.linkver = {bela::swaple(nh->OptionalHeader.MajorLinkerVersion),
-                bela::swaple(nh->OptionalHeader.MinorLinkerVersion)};
-  pm.imagever = {bela::swaple(nh->OptionalHeader.MajorImageVersion),
-                 bela::swaple(nh->OptionalHeader.MinorImageVersion)};
+  pm.linkver.Update(nh->OptionalHeader.MajorLinkerVersion,
+                    nh->OptionalHeader.MinorLinkerVersion);
+  pm.imagever.Update(nh->OptionalHeader.MajorImageVersion,
+                     nh->OptionalHeader.MinorImageVersion);
   auto clre =
       &(nh->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_COMHEADER]);
   auto end = mv.data() + mv.size();
@@ -204,11 +208,10 @@ PESimpleDetailsInternal(bela::MemView mv, const H *nh, bela::error_code &ec) {
 
   // IMAGE_DIRECTORY_ENTRY_RESOURCE resolve copyright
 
-  return std::make_optional<PESimpleDetails>(std::move(pm));
+  return std::make_optional<Attributes>(std::move(pm));
 }
 
-std::optional<PESimpleDetails> PESimpleDetailsAze(std::wstring_view file,
-                                                  bela::error_code &ec) {
+std::optional<Attributes> Expose(std::wstring_view file, bela::error_code &ec) {
   constexpr size_t peminsize =
       sizeof(IMAGE_DOS_HEADER) + sizeof(IMAGE_NT_HEADERS32);
   bela::MapView mapview;
@@ -232,11 +235,11 @@ std::optional<PESimpleDetails> PESimpleDetailsAze(std::wstring_view file,
   }
   switch (bela::swaple(nh->OptionalHeader.Magic)) {
   case IMAGE_NT_OPTIONAL_HDR64_MAGIC:
-    return PESimpleDetailsInternal(
-        mv, reinterpret_cast<const IMAGE_NT_HEADERS64 *>(nh), ec);
+    return ExposeInternal(mv, reinterpret_cast<const IMAGE_NT_HEADERS64 *>(nh),
+                          ec);
   case IMAGE_NT_OPTIONAL_HDR32_MAGIC:
-    return PESimpleDetailsInternal(
-        mv, reinterpret_cast<const IMAGE_NT_HEADERS32 *>(nh), ec);
+    return ExposeInternal(mv, reinterpret_cast<const IMAGE_NT_HEADERS32 *>(nh),
+                          ec);
   case IMAGE_ROM_OPTIONAL_HDR_MAGIC: {
     // Not implemented
   } break;
@@ -246,4 +249,4 @@ std::optional<PESimpleDetails> PESimpleDetailsAze(std::wstring_view file,
   return std::nullopt;
 }
 
-} // namespace bela
+} // namespace bela::pe

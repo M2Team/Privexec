@@ -8,23 +8,10 @@
 #include <cstdint>
 #include <cstddef>
 #include <limits>
-#include <iosfwd>
 #include <optional>
 #include <string>
 #include <string_view>
-#include "strcat.hpp"
-#include "narrow/strcat.hpp"
-
-// Allow to disable exceptions.
-#if (defined(__cpp_exceptions) || defined(__EXCEPTIONS) ||                     \
-     defined(_CPPUNWIND)) &&                                                   \
-    !defined(SEMVER_NOEXCEPTION)
-#include <stdexcept>
-#define SEMVER_THROW(exception) throw exception
-#else
-#include <cstdlib>
-#define SEMVER_THROW(exception) std::abort()
-#endif
+#include <system_error>
 
 namespace bela::semver {
 enum struct prerelease : std::uint8_t {
@@ -33,108 +20,166 @@ enum struct prerelease : std::uint8_t {
   rc = 2,
   none = 3
 };
-namespace detail {
 
+// Max version string length = 3(<major>) + 1(.) + 3(<minor>) + 1(.) +
+// 3(<patch>) + 1(-) + 5(<prerelease>) + 1(.) + 3(<prereleaseversion>) = 21.
+[[maybe_unused]] inline constexpr std::size_t max_version_string_length = 21;
+
+namespace detail {
+// Literal
 template <typename T> class Literal;
 template <> class Literal<char> {
 public:
   static constexpr std::string_view Alpha{"-alpha"};
   static constexpr std::string_view Beta{"-beta"};
   static constexpr std::string_view RC{"-rc"};
+  static constexpr char Delimiter{'.'};
 };
 template <> class Literal<wchar_t> {
 public:
   static constexpr std::wstring_view Alpha{L"-alpha"};
   static constexpr std::wstring_view Beta{L"-beta"};
   static constexpr std::wstring_view RC{L"-rc"};
+  static constexpr wchar_t Delimiter{L'.'};
 };
 template <> class Literal<char16_t> {
 public:
   static constexpr std::u16string_view Alpha{u"-alpha"};
   static constexpr std::u16string_view Beta{u"-beta"};
   static constexpr std::u16string_view RC{u"-rc"};
+  static constexpr char16_t Delimiter{u'.'};
+};
+//
+template <typename CharT> struct from_chars_result {
+  const CharT *ptr;
+  std::errc ec;
+
+  [[nodiscard]] constexpr operator bool() const noexcept {
+    return ec == std::errc{};
+  }
+};
+template <typename CharT> struct to_chars_result {
+  CharT *ptr;
+  std::errc ec;
+
+  [[nodiscard]] constexpr operator bool() const noexcept {
+    return ec == std::errc{};
+  }
 };
 
-constexpr char char_to_lower(char c) noexcept {
-  return (c >= 'A' && c <= 'Z') ? c + ('a' - 'A') : c;
+// Min version string length = 1(<major>) + 1(.) + 1(<minor>) + 1(.) +
+// 1(<patch>) = 5.
+inline constexpr auto min_version_string_length = 5;
+
+template <typename CharT> constexpr CharT to_lower(CharT c) noexcept {
+  return (c >= 'A' && c <= 'Z') ? static_cast<CharT>(c + ('a' - 'A')) : c;
 }
 
-template <typename T>
-constexpr bool str_equals(std::basic_string_view<T> lhs, std::size_t pos,
-                          std::basic_string_view<T> rhs) noexcept {
-  for (std::size_t i1 = pos, i2 = 0; i1 < lhs.size() && i2 < rhs.size();
-       ++i1, ++i2) {
-    if (char_to_lower(static_cast<char>(lhs[i1])) !=
-        char_to_lower(static_cast<char>(rhs[i2]))) {
+template <typename CharT> constexpr bool is_digit(CharT c) noexcept {
+  return c >= '0' && c <= '9';
+}
+template <typename CharT> constexpr std::uint8_t to_digit(CharT c) noexcept {
+  return static_cast<std::uint8_t>(c - '0');
+}
+constexpr std::uint8_t length(std::uint8_t x) noexcept {
+  return x < 10 ? 1 : (x < 100 ? 2 : 3);
+}
+
+constexpr std::uint8_t length(prerelease t) noexcept {
+  if (t == prerelease::alpha) {
+    return 5;
+  }
+  if (t == prerelease::beta) {
+    return 4;
+  }
+  if (t == prerelease::rc) {
+    return 2;
+  }
+  return 0;
+}
+
+template <typename CharT>
+constexpr bool equals(const CharT *first, const CharT *last,
+                      std::basic_string_view<CharT> str) noexcept {
+  for (std::size_t i = 0; first != last && i < str.size(); ++i, ++first) {
+    if (to_lower(*first) != to_lower(str[i])) {
       return false;
     }
   }
   return true;
 }
 
-constexpr bool is_digit(char c) noexcept { return c >= '0' && c <= '9'; }
-constexpr std::uint8_t char_to_digit(char c) noexcept { return c - '0'; }
+template <typename CharT>
+constexpr CharT *to_chars(CharT *str, std::uint8_t x,
+                          bool dot = true) noexcept {
+  do {
+    *(--str) = static_cast<CharT>('0' + (x % 10));
+    x /= 10;
+  } while (x != 0);
 
-template <typename T, typename I>
-constexpr bool read_uint(std::basic_string_view<T> str, std::size_t &i,
-                         I &d) noexcept {
-  if (std::uint32_t t = 0;
-      i < str.size() && is_digit(static_cast<char>(str[i]))) {
-    for (std::size_t p = i, s = 0; p < str.size() && s < 3; ++p, ++s) {
-      auto c = static_cast<char>(str[p]);
-      if (is_digit(c)) {
-        t = t * 10 + char_to_digit(c);
-        ++i;
-      } else {
-        break;
-      }
-    }
-    if (t <= std::numeric_limits<I>::max()) {
-      d = static_cast<I>(t);
-      return true;
-    }
+  if (dot) {
+    *(--str) = '.';
   }
-
-  return false;
+  return str;
 }
 
-template <typename T>
-constexpr bool read_dot(std::basic_string_view<T> str,
-                        std::size_t &i) noexcept {
-  if (i < str.size() && str[i] == '.') {
-    ++i;
-    return true;
+template <typename CharT>
+constexpr CharT *to_chars(CharT *str, prerelease t) noexcept {
+  const auto p = t == prerelease::alpha
+                     ? Literal<CharT>::Alpha
+                     : t == prerelease::beta
+                           ? Literal<CharT>::Beta
+                           : t == prerelease::rc
+                                 ? Literal<CharT>::RC
+                                 : std::basic_string_view<CharT>{};
+  for (auto it = p.rbegin(); it != p.rend(); ++it) {
+    *(--str) = *it;
   }
-  return false;
+  return str;
 }
 
-template <typename T>
-constexpr bool read_prerelease(std::basic_string_view<T> str, std::size_t &i,
-                               prerelease &p) noexcept {
-  if (i >= str.size()) {
-    p = prerelease::none;
-    return false;
+template <typename CharT>
+constexpr const CharT *from_chars(const CharT *first, const CharT *last,
+                                  std::uint8_t &d) noexcept {
+  if (first != last && is_digit(*first)) {
+    std::int32_t t = 0;
+    for (; first != last && is_digit(*first); ++first) {
+      t = t * 10 + to_digit(*first);
+    }
+    if (t <= (std::numeric_limits<std::uint8_t>::max)()) {
+      d = static_cast<std::uint8_t>(t);
+      return first;
+    }
   }
-  if (str_equals(str, i, Literal<T>::Alpha)) {
-    i += Literal<T>::Alpha.size();
+  return nullptr;
+}
+
+template <typename CharT>
+constexpr const CharT *from_chars(const CharT *first, const CharT *last,
+                                  prerelease &p) noexcept {
+  if (equals(first, last, Literal<CharT>::Alpha)) {
     p = prerelease::alpha;
-    return true;
+    return first + Literal<CharT>::Alpha.size();
   }
-  if (str_equals(str, i, Literal<T>::Beta)) {
-    i += Literal<T>::Beta.size();
+  if (equals(first, last, Literal<CharT>::Beta)) {
     p = prerelease::beta;
-    return true;
+    return first + Literal<CharT>::Beta.size();
   }
-  if (str_equals(str, i, Literal<T>::RC)) {
-    i += Literal<T>::RC.size();
+  if (equals(first, last, Literal<CharT>::RC)) {
     p = prerelease::rc;
-    return true;
+    return first + Literal<CharT>::RC.size();
   }
-  return false;
+  return nullptr;
+}
+
+template <typename CharT>
+constexpr bool check_delimiter(const CharT *first, const CharT *last,
+                               CharT d) noexcept {
+  return first != last && first != nullptr && *first == d;
 }
 } // namespace detail
 
-struct alignas(1) version {
+struct version {
   std::uint8_t major = 0;
   std::uint8_t minor = 1;
   std::uint8_t patch = 0;
@@ -153,12 +198,12 @@ struct alignas(1) version {
 
   constexpr version(std::string_view str)
       : version(0, 0, 0, prerelease::none, 0) {
-    from_string(str);
+    from_string_noexcept(str);
   }
 
   constexpr version(std::wstring_view str)
       : version(0, 0, 0, prerelease::none, 0) {
-    from_string(str);
+    from_string_noexcept(str);
   }
 
   constexpr version() = default;
@@ -169,77 +214,81 @@ struct alignas(1) version {
   constexpr version &operator=(const version &) = default;
   constexpr version &operator=(version &&) = default;
 
-  std::wstring to_wstring() const {
-    auto str =
-        bela::StringCat(static_cast<int>(major), L".", static_cast<int>(minor),
-                        L".", static_cast<int>(patch));
-    switch (prerelease_type) {
-    case prerelease::alpha:
-      str.append(detail::Literal<wchar_t>::Alpha);
-      break;
-    case prerelease::beta:
-      str.append(detail::Literal<wchar_t>::Beta);
-      break;
-    case prerelease::rc:
-      str.append(detail::Literal<wchar_t>::RC);
-      break;
-    case prerelease::none:
-      return str;
-    default:
-      break;
+  template <typename CharT>
+  [[nodiscard]] constexpr detail::to_chars_result<CharT>
+  to_chars(CharT *first, CharT *last) const noexcept {
+    const auto length = chars_length();
+    if (first == nullptr || last == nullptr || (last - first) < length) {
+      return {last, std::errc::value_too_large};
     }
-    if (prerelease_number > 0) {
-      bela::StrAppend(&str, L".", static_cast<int>(prerelease_number));
+    auto next = first + length;
+    if (prerelease_type != prerelease::none) {
+      if (prerelease_number != 0) {
+        next = detail::to_chars(next, prerelease_number);
+      }
+      next = detail::to_chars(next, prerelease_type);
+    }
+    next = detail::to_chars(next, patch);
+    next = detail::to_chars(next, minor);
+    next = detail::to_chars(next, major, false);
+    return {first + length, std::errc{}};
+  }
+
+  [[nodiscard]] std::wstring to_wstring() const {
+    auto str = std::wstring(chars_length(), '\0');
+    if (!to_chars(str.data(), str.data() + str.length())) {
+      return L"";
     }
     return str;
   }
 
-  std::string to_string() const {
-    auto str = bela::narrow::StringCat(static_cast<int>(major), ".",
-                                       static_cast<int>(minor), ".",
-                                       static_cast<int>(patch));
-    switch (prerelease_type) {
-    case prerelease::alpha:
-      str.append(detail::Literal<char>::Alpha);
-      break;
-    case prerelease::beta:
-      str.append(detail::Literal<char>::Beta);
-      break;
-    case prerelease::rc:
-      str.append(detail::Literal<char>::RC);
-      break;
-    case prerelease::none:
-      return str;
-    default:
-      SEMVER_THROW(std::invalid_argument{"invalid version"});
-    }
-    if (prerelease_number > 0) {
-      bela::narrow::StrAppend(&str, ".", static_cast<int>(prerelease_number));
+      [[nodiscard]] std::string to_string() const {
+    auto str = std::string(chars_length(), '\0');
+    if (!to_chars(str.data(), str.data() + str.length())) {
+      return "";
     }
     return str;
+  }
+
+  template <typename CharT>
+  [[nodiscard]] constexpr detail::from_chars_result<CharT>
+  from_chars(const CharT *first, const CharT *last) noexcept {
+    if (first == nullptr || last == nullptr ||
+        (last - first) < detail::min_version_string_length) {
+      return {first, std::errc::invalid_argument};
+    }
+    auto next = first;
+    if (next = detail::from_chars(next, last, major);
+        detail::check_delimiter(next, last, static_cast<CharT>('.'))) {
+      if (next = detail::from_chars(++next, last, minor);
+          detail::check_delimiter(next, last, static_cast<CharT>('.'))) {
+        if (next = detail::from_chars(++next, last, patch); next == last) {
+          prerelease_type = prerelease::none;
+          prerelease_number = 0;
+          return {next, std::errc{}};
+        }
+        if (detail::check_delimiter(next, last, static_cast<CharT>('-'))) {
+          if (next = detail::from_chars(next, last, prerelease_type);
+              next == last) {
+            prerelease_number = 0;
+            return {next, std::errc{}};
+          }
+          if (detail::check_delimiter(next, last, static_cast<CharT>('.'))) {
+            if (next = detail::from_chars(++next, last, prerelease_number);
+                next == last) {
+              return {next, std::errc{}};
+            }
+          }
+        }
+      }
+    }
+    return {first, std::errc::invalid_argument};
   }
 
   template <typename T>
   constexpr bool
   from_string_noexcept_t(std::basic_string_view<T> str) noexcept {
-    std::size_t i = 0;
-    if (detail::read_uint(str, i, major) && detail::read_dot(str, i) &&
-        detail::read_uint(str, i, minor) && detail::read_dot(str, i) &&
-        detail::read_uint(str, i, patch) && str.size() == i) {
-      prerelease_type = prerelease::none;
-      prerelease_number = 0;
-      return true;
-    }
-    if (detail::read_prerelease(str, i, prerelease_type) && str.size() == i) {
-      prerelease_number = 0;
-      return true;
-    }
-    if (detail::read_dot(str, i) &&
-        detail::read_uint(str, i, prerelease_number) && str.size() == i) {
-      return true;
-    }
-    *this = version{0, 0, 0};
-    return false;
+    return from_chars(str.data(), str.data() + str.size());
   }
 
   constexpr bool from_string_noexcept(std::string_view str) noexcept {
@@ -250,19 +299,7 @@ struct alignas(1) version {
     return from_string_noexcept_t(str);
   }
 
-  constexpr void from_string(std::string_view str) {
-    if (!from_string_noexcept_t(str)) {
-      SEMVER_THROW(std::invalid_argument{"invalid version"});
-    }
-  }
-
-  constexpr void from_string(std::wstring_view str) {
-    if (!from_string_noexcept_t(str)) {
-      SEMVER_THROW(std::invalid_argument{"invalid version"});
-    }
-  }
-
-  constexpr int compare(const version &other) const noexcept {
+  [[nodiscard]] constexpr int compare(const version &other) const noexcept {
     if (major != other.major) {
       return major - other.major;
     }
@@ -280,6 +317,22 @@ struct alignas(1) version {
       return prerelease_number - other.prerelease_number;
     }
     return 0;
+  }
+
+private:
+  constexpr std::uint8_t chars_length() const noexcept {
+    // (<major>) + 1(.) + (<minor>) + 1(.) + (<patch>)
+    std::uint8_t length = detail::length(major) + detail::length(minor) +
+                          detail::length(patch) + 2;
+    if (prerelease_type != prerelease::none) {
+      // + 1(-) + (<prerelease>)
+      length += detail::length(prerelease_type) + 1;
+      if (prerelease_number != 0) {
+        // + 1(.) + (<prereleaseversion>)
+        length += detail::length(prerelease_number) + 1;
+      }
+    }
+    return length;
   }
 };
 
@@ -307,10 +360,6 @@ constexpr bool operator<=(const version &lhs, const version &rhs) noexcept {
   return lhs.compare(rhs) <= 0;
 }
 
-inline std::ostream &operator<<(std::ostream &os, const version &v) {
-  return os << v.to_string();
-}
-
 constexpr version operator""_version(const char *str, std::size_t size) {
   return version{std::string_view{str, size}};
 }
@@ -332,8 +381,6 @@ from_string_noexcept(std::wstring_view str) noexcept {
   }
   return std::nullopt;
 }
-constexpr version from_string(std::string_view str) { return version{str}; }
-constexpr version from_string(std::wstring_view str) { return version{str}; }
 
 } // namespace bela::semver
 

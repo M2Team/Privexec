@@ -12,5 +12,7 @@ int wmain() {
   bela::FPrintF(stderr, L"PathCat: %s\n", p3);
   auto p4 = bela::PathCat(L".", L"test/pathcat/./pathcat_test.exe");
   bela::FPrintF(stderr, L"PathCat: %s\n", p4);
+  auto p5 = bela::PathCat(L"C:\\Windows\\System32\\drivers\\..\\.\\IME");
+  bela::FPrintF(stderr, L"PathCat: %s\n", p5);
   return 0;
 }
