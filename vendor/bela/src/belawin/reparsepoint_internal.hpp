@@ -206,7 +206,7 @@
 #endif
 
 #ifndef IO_REPARSE_TAG_LX_BLK
-#define IO_REPARSE_TAG_LX_BLK (0x80000026L) // Linux subsytem block device
+#define IO_REPARSE_TAG_LX_BLK (0x80000026L) // Linux Subsystem block device
 #endif
 
 // https://docs.microsoft.com/en-us/windows-hardware/drivers/ddi/content/ntifs/ns-ntifs-_reparse_data_buffer

@@ -256,7 +256,7 @@ bool AppSubsystemIsConsole(std::wstring &cmd, bool aliasexpand,
       return false;
     }
     am.Verbose(L"\x1b[01;33m* App real argv0 '%s'\x1b[0m\n", exe);
-    return pe->subsystem == bela::pe::Subsytem::CUI;
+    return pe->subsystem == bela::pe::Subsystem::CUI;
   }
   int Argc;
   auto Argv = CommandLineToArgvW(cmd.data(), &Argc);
@@ -278,7 +278,7 @@ bool AppSubsystemIsConsole(std::wstring &cmd, bool aliasexpand,
     return IsConsoleSuffix(exe);
   }
   am.Verbose(L"\x1b[01;33m* App real argv0 '%s'\x1b[0m\n", exe);
-  return pe->subsystem == bela::pe::Subsytem::CUI;
+  return pe->subsystem == bela::pe::Subsystem::CUI;
 }
 
 } // namespace wsudo

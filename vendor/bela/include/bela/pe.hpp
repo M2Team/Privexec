@@ -43,7 +43,7 @@ enum class Machine : uint16_t {
   ARM64 = 0xAA64, // ARM64 Little-Endian
   CEE = 0xC0EE
 };
-enum class Subsytem : uint16_t {
+enum class Subsystem : uint16_t {
   UNKNOWN = 0,
   NATIVE = 1,
   GUI = 2,
@@ -79,10 +79,10 @@ struct Attributes {
   VersionPair linkver;
   VersionPair imagever;
   Machine machine;
-  Subsytem subsystem;
+  Subsystem subsystem;
   uint16_t characteristics{0};
   uint16_t dllcharacteristics{0};
-  bool IsConsole() const { return subsystem == Subsytem::CUI; }
+  bool IsConsole() const { return subsystem == Subsystem::CUI; }
   bool IsDLL() const {
     constexpr uint16_t imagefiledll = 0x2000;
     return (characteristics & imagefiledll) != 0;

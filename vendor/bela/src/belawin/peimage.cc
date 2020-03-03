@@ -148,7 +148,7 @@ std::optional<Attributes> ExposeInternal(bela::MemView mv, const H *nh,
   pm.osver.Update(nh->OptionalHeader.MajorOperatingSystemVersion,
                   nh->OptionalHeader.MinorOperatingSystemVersion);
   pm.subsystem =
-      static_cast<Subsytem>(bela::swaple(nh->OptionalHeader.Subsystem));
+      static_cast<Subsystem>(bela::swaple(nh->OptionalHeader.Subsystem));
   pm.linkver.Update(nh->OptionalHeader.MajorLinkerVersion,
                     nh->OptionalHeader.MinorLinkerVersion);
   pm.imagever.Update(nh->OptionalHeader.MajorImageVersion,
