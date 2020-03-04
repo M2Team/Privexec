@@ -15,6 +15,7 @@
 #include <string>
 #include <string_view>
 #include <vector>
+#include <system_error>
 #include "strcat.hpp"
 
 namespace bela {
@@ -95,6 +96,13 @@ inline error_code make_system_error_code() {
   error_code ec;
   ec.code = GetLastError();
   ec.message = system_error_dump(ec.code);
+  return ec;
+}
+
+inline error_code from_std_error_code(const std::error_code &e) {
+  error_code ec;
+  ec.code = e.value();
+  ec.message = bela::ToWide(e.message());
   return ec;
 }
 
