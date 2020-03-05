@@ -87,7 +87,7 @@ template <typename... T> std::wstring JoinEnv(const std::tuple<T...> &value) {
 }
 
 template <typename... Args>
-std::wstring AppendEnv(std::wstring_view key, Args... arg) {
+std::wstring InsertEnv(std::wstring_view key, Args... arg) {
   std::wstring_view svv[] = {arg...};
   auto prepend = bela::env::JoinEnv(svv);
   auto val = bela::GetEnv(key);
@@ -95,7 +95,7 @@ std::wstring AppendEnv(std::wstring_view key, Args... arg) {
 }
 
 template <typename... Args>
-std::wstring InsertEnv(std::wstring_view key, Args... arg) {
+std::wstring AppendEnv(std::wstring_view key, Args... arg) {
   std::wstring_view svv[] = {arg...};
   auto ended = bela::env::JoinEnv(svv);
   auto val = bela::GetEnv(key);
