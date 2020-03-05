@@ -17,6 +17,72 @@ size_t memsearch(const wchar_t *begin, const wchar_t *end, int ch) {
   return npos;
 }
 
+constexpr std::wstring_view env_wstrings[] = {
+    L"ALLUSERSPROFILE",
+    L"APPDATA",
+    L"CommonProgramFiles",
+    L"CommonProgramFiles(x86)",
+    L"CommonProgramW6432",
+    L"COMPUTERNAME",
+    L"ComSpec",
+    L"HOMEDRIVE",
+    L"HOMEPATH",
+    L"LOCALAPPDATA",
+    L"LOGONSERVER",
+    L"NUMBER_OF_PROCESSORS",
+    L"OS",
+    L"PATHEXT",
+    L"PROCESSOR_ARCHITECTURE",
+    L"PROCESSOR_ARCHITEW6432",
+    L"PROCESSOR_IDENTIFIER",
+    L"PROCESSOR_LEVEL",
+    L"PROCESSOR_REVISION",
+    L"ProgramData",
+    L"ProgramFiles",
+    L"ProgramFiles(x86)",
+    L"ProgramW6432",
+    L"PROMPT",
+    L"PSModulePath",
+    L"PUBLIC",
+    L"SystemDrive",
+    L"SystemRoot",
+    L"TEMP",
+    L"TMP",
+    L"USERDNSDOMAIN",
+    L"USERDOMAIN",
+    L"USERDOMAIN_ROAMINGPROFILE",
+    L"USERNAME",
+    L"USERPROFILE",
+    L"windir",
+    // Enables proxy information to be passed to Curl, the underlying download
+    // library in cmake.exe
+    L"http_proxy",
+    L"https_proxy",
+    // Enables find_package(CUDA) and enable_language(CUDA) in CMake
+    L"CUDA_PATH",
+    L"CUDA_PATH_V9_0",
+    L"CUDA_PATH_V9_1",
+    L"CUDA_PATH_V10_0",
+    L"CUDA_PATH_V10_1",
+    L"CUDA_TOOLKIT_ROOT_DIR",
+    // Environmental variable generated automatically by CUDA after installation
+    L"NVCUDASAMPLES_ROOT",
+    // Enables find_package(Vulkan) in CMake. Environmental variable generated
+    // by Vulkan SDK installer
+    L"VULKAN_SDK",
+    // Enable targeted Android NDK
+    L"ANDROID_NDK_HOME",
+};
+
+inline bool ExistsEnv(std::wstring_view k) {
+  for (const auto s : env_wstrings) {
+    if (bela::EqualsIgnoreCase(s, k)) {
+      return true;
+    }
+  }
+  return false;
+}
+
 } // namespace env_internal
 
 // https://docs.microsoft.com/en-us/windows/desktop/api/processenv/nf-processenv-expandenvironmentstringsw
@@ -263,6 +329,53 @@ std::wstring Derivator::Encode() const {
   return ne;
 }
 
+std::wstring Derivator::CleanupEnv(std::wstring_view prependpath) const {
+  LPWCH envs{nullptr};
+  auto deleter = bela::finally([&] {
+    if (envs) {
+      FreeEnvironmentStringsW(envs);
+      envs = nullptr;
+    }
+  });
+  envs = ::GetEnvironmentStringsW();
+  if (envs == nullptr) {
+    return L"";
+  }
+  auto systemroot = bela::GetEnv(L"SystemRoot");
+  auto newpath = bela::StringCat(
+      L"Path=", prependpath, L";", systemroot, L"\\System32;", systemroot, L";",
+      systemroot, L"\\Wbem;", systemroot, L"\\WindowsPowerShell\\v1.0\\");
+  std::wstring ne;
+  for (wchar_t const *lastch{envs}; *lastch != '\0'; ++lastch) {
+    const auto len = ::wcslen(lastch);
+    const std::wstring_view entry{lastch, len};
+    const auto pos = entry.find(L'=');
+    if (pos == std::wstring_view::npos) {
+      lastch += len;
+      continue;
+    }
+    auto key = entry.substr(0, pos);
+    if (!env_internal::ExistsEnv(key)) {
+      continue;
+    }
+    if (auto it = envb.find(key); it == envb.end()) {
+      ne.append(lastch).push_back(L'\0');
+    }
+    lastch += len;
+  }
+  for (const auto &[name, value] : envb) {
+    if (bela::EqualsIgnoreCase(name, L"Path")) {
+      bela::StrAppend(&newpath, L";", value);
+      continue;
+    }
+    ne.append(name).push_back(L'=');
+    ne.append(value).push_back(L'\0');
+  }
+  ne.append(newpath).push_back(L'\0');
+  ne.push_back('\0');
+  return ne;
+}
+
 // DerivatorMT support MultiThreading
 
 bool DerivatorMT::AddBashCompatible(int argc, wchar_t *const *argv) {
@@ -378,6 +491,53 @@ std::wstring DerivatorMT::Encode() {
     ne.append(name).push_back(L'=');
     ne.append(value).push_back(L'\0');
   }
+  ne.push_back('\0');
+  return ne;
+}
+
+std::wstring DerivatorMT::CleanupEnv(std::wstring_view prependpath) const {
+  LPWCH envs{nullptr};
+  auto deleter = bela::finally([&] {
+    if (envs) {
+      FreeEnvironmentStringsW(envs);
+      envs = nullptr;
+    }
+  });
+  envs = ::GetEnvironmentStringsW();
+  if (envs == nullptr) {
+    return L"";
+  }
+  auto systemroot = bela::GetEnv(L"SystemRoot");
+  auto newpath = bela::StringCat(
+      L"Path=", prependpath, L";", systemroot, L"\\System32;", systemroot, L";",
+      systemroot, L"\\Wbem;", systemroot, L"\\WindowsPowerShell\\v1.0\\");
+  std::wstring ne;
+  for (wchar_t const *lastch{envs}; *lastch != '\0'; ++lastch) {
+    const auto len = ::wcslen(lastch);
+    const std::wstring_view entry{lastch, len};
+    const auto pos = entry.find(L'=');
+    if (pos == std::wstring_view::npos) {
+      lastch += len;
+      continue;
+    }
+    auto key = entry.substr(0, pos);
+    if (!env_internal::ExistsEnv(key)) {
+      continue;
+    }
+    if (auto it = envb.find(key); it == envb.end()) {
+      ne.append(lastch).push_back(L'\0');
+    }
+    lastch += len;
+  }
+  for (const auto &[name, value] : envb) {
+    if (bela::EqualsIgnoreCase(name, L"Path")) {
+      bela::StrAppend(&newpath, L";", value);
+      continue;
+    }
+    ne.append(name).push_back(L'=');
+    ne.append(value).push_back(L'\0');
+  }
+  ne.append(newpath).push_back(L'\0');
   ne.push_back('\0');
   return ne;
 }

@@ -6,6 +6,7 @@
 #include <shared_mutex>
 #include "match.hpp"
 #include "str_split.hpp"
+#include "str_join.hpp"
 #include "span.hpp"
 #include "phmap.hpp"
 #include "base.hpp"
@@ -38,6 +39,7 @@ std::wstring PathUnExpand(std::wstring_view sv);
 
 namespace env {
 constexpr const wchar_t Separator = L';';
+constexpr const std::wstring_view Separators = L";";
 
 struct StringCaseInsensitiveHash {
   using is_transparent = void;
@@ -71,6 +73,35 @@ struct StringCaseInsensitiveEq {
   }
 };
 
+template <typename Range> std::wstring JoinEnv(const Range &range) {
+  return bela::strings_internal::JoinRange(range, Separators);
+}
+
+template <typename T> std::wstring JoinEnv(std::initializer_list<T> il) {
+  return bela::strings_internal::JoinRange(il, Separators);
+}
+
+template <typename... T> std::wstring JoinEnv(const std::tuple<T...> &value) {
+  return bela::strings_internal::JoinAlgorithm(value, Separators,
+                                               AlphaNumFormatter());
+}
+
+template <typename... Args>
+std::wstring AppendEnv(std::wstring_view key, Args... arg) {
+  std::wstring_view svv[] = {arg...};
+  auto prepend = bela::env::JoinEnv(svv);
+  auto val = bela::GetEnv(key);
+  return bela::StringCat(prepend, Separators, val);
+}
+
+template <typename... Args>
+std::wstring InsertEnv(std::wstring_view key, Args... arg) {
+  std::wstring_view svv[] = {arg...};
+  auto ended = bela::env::JoinEnv(svv);
+  auto val = bela::GetEnv(key);
+  return bela::StringCat(val, Separators, ended);
+}
+
 // Derivator Environment variable derivation container
 class Derivator {
 public:
@@ -91,6 +122,8 @@ public:
   bool ExpandEnv(std::wstring_view raw, std::wstring &w,
                  bool strict = false) const;
   std::wstring Encode() const;
+  // CleanupEnv create cleanup env. you can use bela::env::JoinEnv create it.
+  std::wstring CleanupEnv(std::wstring_view prependpath) const;
 
 private:
   bool AppendEnv(std::wstring_view key, std::wstring &s) const;
@@ -114,64 +147,13 @@ public:
   // ExpandEnv
   bool ExpandEnv(std::wstring_view raw, std::wstring &w, bool strict = false);
   std::wstring Encode();
+  // CleanupEnv create cleanup env. you can use bela::env::JoinEnv create it.
+  std::wstring CleanupEnv(std::wstring_view prependpath) const;
 
 private:
   bool AppendEnv(std::wstring_view key, std::wstring &s);
   value_type envb;
 };
-
-inline std::wstring JoinEnvInternal(std::wstring_view key, bool append,
-                                    const bela::Span<std::wstring_view> args) {
-  auto val = bela::GetEnv(key);
-  std::vector<std::wstring_view> pvv =
-      bela::StrSplit(val, bela::ByChar(Separator), bela::SkipEmpty());
-  std::wstring s;
-  size_t i = val.size();
-  for (auto a : args) {
-    i += a.size() + 1;
-  }
-  s.reserve(i);
-  if (append) {
-    for (auto v : pvv) {
-      if (!s.empty()) {
-        s.push_back(Separator);
-      }
-      s.append(v);
-    }
-    for (auto a : args) {
-      if (!s.empty()) {
-        s.push_back(Separator);
-      }
-      s.append(a);
-    }
-  } else {
-    for (auto a : args) {
-      if (!s.empty()) {
-        s.push_back(Separator);
-      }
-      s.append(a);
-    }
-    for (auto v : pvv) {
-      if (!s.empty()) {
-        s.push_back(Separator);
-      }
-      s.append(v);
-    }
-  }
-  return s;
-}
-
-template <typename... Args>
-std::wstring AppendEnv(std::wstring_view key, Args... arg) {
-  std::wstring_view svv[] = {arg...};
-  return JoinEnvInternal(key, true, svv);
-}
-
-template <typename... Args>
-std::wstring InsertEnv(std::wstring_view key, Args... arg) {
-  std::wstring_view svv[] = {arg...};
-  return JoinEnvInternal(key, false, svv);
-}
 
 } // namespace env
 

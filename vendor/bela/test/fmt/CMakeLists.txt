@@ -9,6 +9,14 @@ target_link_libraries(fmt_test
 )
 
 
+add_executable(strjoin_test
+  strjoin.cc
+)
+
+target_link_libraries(strjoin_test
+  bela
+)
+
 add_executable(unicode_test
   unicodetest.cc
   ../../src/bela/unicode.cc

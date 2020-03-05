@@ -6,7 +6,7 @@ int LinkToApp(wchar_t *env) {
   SecureZeroMemory(&si, sizeof(si));
   SecureZeroMemory(&pi, sizeof(pi));
   si.cb = sizeof(si);
-  wchar_t cmd[256]=L"pwsh";
+  wchar_t cmd[256] = L"pwsh";
   if (!CreateProcessW(nullptr, cmd, nullptr, nullptr, FALSE,
                       CREATE_UNICODE_ENVIRONMENT, env, nullptr, &si, &pi)) {
     return -1;
@@ -24,8 +24,7 @@ int LinkToApp(wchar_t *env) {
 int wmain() {
   bela::env::Derivator dev;
   dev.SetEnv(L"GOPROXY", L"https://goproxy.io/");
-  auto path = bela::env::AppendEnv(L"PATH", L"C:/Dev");
-  dev.SetEnv(L"PATH", path);
-  auto envs = dev.Encode();
+  dev.SetEnv(L"Path", L"C:/Dev");
+  auto envs = dev.CleanupEnv(L"C:/Go");
   return LinkToApp(envs.data());
 }

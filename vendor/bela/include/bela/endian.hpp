@@ -1,6 +1,6 @@
-// C++17 constexpr endian.hpp
-#ifndef QUARANTINE_ENDIAN_HPP
-#define QUARANTINE_ENDIAN_HPP
+// endian.hpp
+#ifndef BELA_ENDIAN_HPP
+#define BELA_ENDIAN_HPP
 #include <cstdint>
 #include <cstring>
 #include <type_traits>
