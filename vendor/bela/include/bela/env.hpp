@@ -121,6 +121,7 @@ public:
   // GetEnvironmentVariableW if key not exists envb
   bool ExpandEnv(std::wstring_view raw, std::wstring &w,
                  bool strict = false) const;
+  bool Empty() const { return envb.empty(); }
   std::wstring Encode() const;
   // CleanupEnv create cleanup env. you can use bela::env::JoinEnv create it.
   std::wstring CleanupEnv(std::wstring_view prependpath) const;
@@ -146,6 +147,7 @@ public:
   [[nodiscard]] std::wstring GetEnv(std::wstring_view key);
   // ExpandEnv
   bool ExpandEnv(std::wstring_view raw, std::wstring &w, bool strict = false);
+  bool Empty() { return envb.empty(); }
   std::wstring Encode();
   // CleanupEnv create cleanup env. you can use bela::env::JoinEnv create it.
   std::wstring CleanupEnv(std::wstring_view prependpath) const;
