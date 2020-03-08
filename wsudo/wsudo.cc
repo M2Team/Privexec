@@ -3,8 +3,8 @@
 #include <bela/match.hpp>
 #include <bela/path.hpp>
 #include <bela/pe.hpp>
+#include <bela/parseargv.hpp>
 #include <version.h>
-#include <parseargv.hpp>
 #include <Shellapi.h>
 #include <Shlobj.h>
 #include <apphelp.hpp>
@@ -88,27 +88,27 @@ bool IsAppLevel(std::wstring_view k, priv::ExecLevel &level) {
 
 // ParseArgv todo
 int AppMode::ParseArgv(int argc, wchar_t **argv) {
-  av::ParseArgv pa(argc, argv, true);
-  pa.Add(L"version", av::no_argument, L'v')
-      .Add(L"help", av::no_argument, L'h')
-      .Add(L"user", av::required_argument, L'u')
-      .Add(L"new-console", av::no_argument, L'n')
-      .Add(L"hide", av::no_argument, L'H')
-      .Add(L"wait", av::no_argument, L'w')
-      .Add(L"verbose", av::no_argument, L'V')
-      .Add(L"appx", av::required_argument, L'x')
-      .Add(L"cwd", av::required_argument, L'c')
-      .Add(L"env", av::required_argument, L'e')
-      .Add(L"lpac", av::no_argument, L'L')
-      .Add(L"", av::no_argument, L'a')
-      .Add(L"", av::no_argument, L'M')
-      .Add(L"", av::no_argument, L'U')
-      .Add(L"", av::no_argument, L'A')
-      .Add(L"", av::no_argument, L'S')
-      .Add(L"", av::no_argument, L'T')
-      .Add(L"appname", av::required_argument, 1001)
-      .Add(L"disable-alias", av::no_argument, 1002);
-  av::error_code ec;
+  bela::ParseArgv pa(argc, argv, true);
+  pa.Add(L"version", bela::no_argument, L'v')
+      .Add(L"help", bela::no_argument, L'h')
+      .Add(L"user", bela::required_argument, L'u')
+      .Add(L"new-console", bela::no_argument, L'n')
+      .Add(L"hide", bela::no_argument, L'H')
+      .Add(L"wait", bela::no_argument, L'w')
+      .Add(L"verbose", bela::no_argument, L'V')
+      .Add(L"appx", bela::required_argument, L'x')
+      .Add(L"cwd", bela::required_argument, L'c')
+      .Add(L"env", bela::required_argument, L'e')
+      .Add(L"lpac", bela::no_argument, L'L')
+      .Add(L"", bela::no_argument, L'a')
+      .Add(L"", bela::no_argument, L'M')
+      .Add(L"", bela::no_argument, L'U')
+      .Add(L"", bela::no_argument, L'A')
+      .Add(L"", bela::no_argument, L'S')
+      .Add(L"", bela::no_argument, L'T')
+      .Add(L"appname", bela::required_argument, 1001)
+      .Add(L"disable-alias", bela::no_argument, 1002);
+  bela::error_code ec;
   auto result = pa.Execute(
       [&](int val, const wchar_t *va, const wchar_t *) {
         switch (val) {

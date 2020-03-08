@@ -12,12 +12,12 @@ usage: wsudo-tie command args...
 
 */
 // other's command line
-#include <parseargv.hpp>
 #include <bela/stdwriter.hpp>
 #include <bela/escapeargv.hpp>
 #include <bela/picker.hpp>
 #include <bela/str_split.hpp>
 #include <bela/path.hpp>
+#include <bela/parseargv.hpp>
 #include <version.h>
 #include "env.hpp"
 
@@ -72,15 +72,15 @@ usage: wsudo-tie command args...
 }
 
 int AppMode::ParseArgv(int argc, wchar_t **argv) {
-  av::ParseArgv pa(argc, argv, true);
-  pa.Add(L"version", av::no_argument, L'v')
-      .Add(L"help", av::no_argument, L'h')
-      .Add(L"verbose", av::no_argument, L'V')
-      .Add(L"pwd", av::required_argument, L'd')
-      .Add(L"parent", av::required_argument, L'P')
-      .Add(L"cwd", av::required_argument, L'c')
-      .Add(L"env", av::required_argument, L'e');
-  av::error_code ec;
+  bela::ParseArgv pa(argc, argv, true);
+  pa.Add(L"version", bela::no_argument, L'v')
+      .Add(L"help", bela::no_argument, L'h')
+      .Add(L"verbose", bela::no_argument, L'V')
+      .Add(L"pwd", bela::required_argument, L'd')
+      .Add(L"parent", bela::required_argument, L'P')
+      .Add(L"cwd", bela::required_argument, L'c')
+      .Add(L"env", bela::required_argument, L'e');
+  bela::error_code ec;
   auto result = pa.Execute(
       [&](int val, const wchar_t *va, const wchar_t *) {
         switch (val) {

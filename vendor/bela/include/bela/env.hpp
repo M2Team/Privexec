@@ -111,6 +111,7 @@ public:
   Derivator() = default;
   Derivator(const Derivator &) = delete;
   Derivator &operator=(const Derivator &) = delete;
+  size_t Size() const { return envb.size(); }
   bool AddBashCompatible(int argc, wchar_t *const *argv);
   bool EraseEnv(std::wstring_view key);
   bool SetEnv(std::wstring_view key, std::wstring_view value,
@@ -121,8 +122,7 @@ public:
   // GetEnvironmentVariableW if key not exists envb
   bool ExpandEnv(std::wstring_view raw, std::wstring &w,
                  bool strict = false) const;
-  bool Empty() const { return envb.empty(); }
-  std::wstring Encode() const;
+  std::wstring MakeEnv() const;
   // CleanupEnv create cleanup env. you can use bela::env::JoinEnv create it.
   std::wstring CleanupEnv(std::wstring_view prependpath) const;
 
@@ -139,6 +139,7 @@ public:
   DerivatorMT() = default;
   DerivatorMT(const DerivatorMT &) = delete;
   DerivatorMT &operator=(const DerivatorMT &) = delete;
+  size_t Size() const { return envb.size(); }
   bool AddBashCompatible(int argc, wchar_t *const *argv);
   bool EraseEnv(std::wstring_view key);
   bool SetEnv(std::wstring_view key, std::wstring_view value,
@@ -147,8 +148,7 @@ public:
   [[nodiscard]] std::wstring GetEnv(std::wstring_view key);
   // ExpandEnv
   bool ExpandEnv(std::wstring_view raw, std::wstring &w, bool strict = false);
-  bool Empty() { return envb.empty(); }
-  std::wstring Encode();
+  std::wstring MakeEnv() const;
   // CleanupEnv create cleanup env. you can use bela::env::JoinEnv create it.
   std::wstring CleanupEnv(std::wstring_view prependpath) const;
 
