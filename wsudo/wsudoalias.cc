@@ -7,27 +7,6 @@
 #include <bela/stdwriter.hpp>
 #include <file.hpp>
 
-/// PathAppImageCombineExists
-bool wsudo::PathAppImageCombineExists(std::wstring &path, const wchar_t *file) {
-  if (PathFileExistsW(file)) {
-    path.assign(file);
-    return true;
-  }
-  path.resize(PATHCCH_MAX_CCH, L'\0');
-  auto N = GetModuleFileNameW(nullptr, &path[0], PATHCCH_MAX_CCH);
-  path.resize(N);
-  auto pos = path.find_last_of(L"\\/");
-  if (pos != std::wstring::npos) {
-    path.resize(pos);
-  }
-  path.append(L"\\").append(file);
-  if (PathFileExistsW(path.data())) {
-    return true;
-  }
-  path.clear();
-  return false;
-}
-
 wsudo::AliasEngine::~AliasEngine() {
   if (updated) {
     Apply();
@@ -35,10 +14,13 @@ wsudo::AliasEngine::~AliasEngine() {
 }
 
 bool wsudo::AliasEngine::Initialize(bool verbose) {
-  std::wstring file;
-  if (!PathAppImageCombineExists(file, L"Privexec.json")) {
+  bela::error_code ec;
+  auto p = bela::ExecutablePath(ec);
+  if (!p) {
+    bela::FPrintF(stderr, L"unable resolve exe parent: %s\n", ec.message);
     return false;
   }
+  auto file = bela::StringCat(*p, L"\\Privexec.json");
   try {
     priv::FD fd;
     if (_wfopen_s(&fd.fd, file.data(), L"rb") != 0) {
@@ -68,11 +50,13 @@ std::optional<std::wstring> wsudo::AliasEngine::Target(std::wstring_view al) {
 }
 
 bool wsudo::AliasEngine::Apply() {
-  std::wstring file;
-  if (!PathAppImageCombineExists(file, L"Privexec.json")) {
-    bela::FPrintF(stderr, L"\x1b[33mPrivexec.json not found\x1b[0m\n");
+  bela::error_code ec;
+  auto p = bela::ExecutablePath(ec);
+  if (!p) {
+    bela::FPrintF(stderr, L"unable resolve exe parent: %s\n", ec.message);
     return false;
   }
+  auto file = bela::StringCat(*p, L"\\Privexec.json");
   try {
     nlohmann::json root, av;
     for (const auto &i : alias) {

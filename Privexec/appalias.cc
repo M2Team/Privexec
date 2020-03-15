@@ -8,34 +8,15 @@
 #include <file.hpp>
 #include "app.hpp"
 
-/// PathAppImageCombineExists
-/// PathAppImageCombineExists
-bool PathAppImageCombineExists(std::wstring &path, const wchar_t *file) {
-  if (PathFileExistsW(file)) {
-    path.assign(file);
-    return true;
-  }
-  path.resize(PATHCCH_MAX_CCH, L'\0');
-  auto N = GetModuleFileNameW(nullptr, &path[0], PATHCCH_MAX_CCH);
-  path.resize(N);
-  auto pos = path.find_last_of(L"\\/");
-  if (pos != std::wstring::npos) {
-    path.resize(pos);
-  }
-  path.append(L"\\").append(file);
-  if (PathFileExistsW(path.data())) {
-    return true;
-  }
-  path.clear();
-  return false;
-}
-
 namespace priv {
 bool AppAliasInitialize(HWND hbox, priv::alias_t &alias) {
-  std::wstring file;
-  if (!PathAppImageCombineExists(file, L"Privexec.json")) {
+  bela::error_code ec;
+  auto p = bela::ExecutablePath(ec);
+  if (!p) {
+    OutputDebugStringW(ec.data());
     return false;
   }
+  auto file = bela::StringCat(*p, L"\\Privexec.json");
   try {
     priv::FD fd;
     if (_wfopen_s(&fd.fd, file.data(), L"rb") != 0) {

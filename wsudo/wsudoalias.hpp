@@ -10,7 +10,6 @@
 #include <bela/phmap.hpp>
 
 namespace wsudo {
-bool PathAppImageCombineExists(std::wstring &path, const wchar_t *file);
 struct AliasTarget {
   std::wstring target;
   std::wstring desc;

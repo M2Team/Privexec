@@ -1,8 +1,7 @@
 /////////////
 #include <json.hpp>
-#include <Shlwapi.h>
-#include <PathCch.h>
 #include <file.hpp>
+#include <bela/path.hpp>
 #include "app.hpp"
 
 [[nodiscard]] inline unsigned char
@@ -72,63 +71,24 @@ inline std::string EncodeColor(COLORREF cr) {
   return s;
 }
 
-bool PathAppImageCombine(std::wstring &path, const wchar_t *file) {
-  if (PathFileExistsW(file)) {
-    path.assign(file);
-    return true;
-  }
-  path.resize(PATHCCH_MAX_CCH, L'\0');
-  auto N = GetModuleFileNameW(nullptr, &path[0], PATHCCH_MAX_CCH);
-  path.resize(N);
-  auto pos = path.rfind(L'\\');
-  if (pos != std::wstring::npos) {
-    path.resize(pos);
-  }
-  path.append(L"\\").append(file);
-  return true;
-}
-
-/// PathAppImageCombineExists
-bool PathAppImageCombineExists(std::wstring &path, const wchar_t *file) {
-  if (!PathAppImageCombine(path, file)) {
-    return false;
-  }
-  if (PathFileExistsW(path.data())) {
-    return true;
-  }
-  path.clear();
-  return false;
-}
-
 namespace priv {
 
-bool AppJSON(nlohmann::json &j) {
-  std::wstring file;
-  if (!PathAppImageCombineExists(file, L"AppExec.json")) {
-    return false;
-  }
-  try {
-    FD fd;
-    if (_wfopen_s(&fd.fd, file.data(), L"rb") != 0) {
-      return false;
-    }
-
-    j = nlohmann::json::parse(fd.fd);
-  } catch (const std::exception &e) {
-    OutputDebugStringA(e.what());
-    return false;
-  }
-  return true;
-}
-
 bool AppInitializeSettings(AppSettings &as) {
+  bela::error_code ec;
+  auto p = bela::ExecutablePath(ec);
+  if (!p) {
+    OutputDebugStringW(ec.data());
+    return false;
+  }
+  auto file = bela::StringCat(*p, L"\\AppExec.json");
+  FD fd;
+  if (_wfopen_s(&fd.fd, file.data(), L"rb") != 0) {
+    return false;
+  }
   try {
-    nlohmann::json j;
-    if (!AppJSON(j)) {
-      return false;
-    }
+    auto j = nlohmann::json::parse(fd.fd);
     auto root = j["AppExec"];
-    auto scolor = root["Background"].get<std::string>();
+    auto scolor = root["Background"].get<std::string_view>();
     COLORREF cr;
     if (HexColorDecode(scolor, cr)) {
       as.bk = cr;
@@ -142,13 +102,24 @@ bool AppInitializeSettings(AppSettings &as) {
 }
 
 bool AppApplySettings(const AppSettings &as) {
-  std::wstring file;
-  if (!PathAppImageCombine(file, L"AppExec.json")) {
+  bela::error_code ec;
+  auto p = bela::ExecutablePath(ec);
+  if (!p) {
+    OutputDebugStringW(ec.data());
     return false;
   }
+  auto file = bela::StringCat(*p, L"\\AppExec.json");
+  nlohmann::json j;
   try {
-    nlohmann::json j;
-    AppJSON(j);
+    FD fd;
+    if (_wfopen_s(&fd.fd, file.data(), L"rb") == 0) {
+      j = nlohmann::json::parse(fd.fd);
+    }
+  } catch (const std::exception &e) {
+    OutputDebugStringA(e.what());
+  }
+  
+  try {
     auto it = j.find("AppExec");
     nlohmann::json a;
     if (it != j.end()) {

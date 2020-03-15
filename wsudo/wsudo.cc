@@ -444,8 +444,15 @@ inline std::wstring AppGetcwd() {
 
 std::optional<std::wstring> AppTieExecuteExists() {
   std::wstring wsudotie;
-  if (wsudo::PathAppImageCombineExists(wsudotie, L"wsudo-tie.exe")) {
-    return std::make_optional(std::move(wsudotie));
+  bela::error_code ec;
+  auto p = bela::ExecutablePath(ec);
+  if (!p) {
+    bela::FPrintF(stderr, L"unable resolve exe parent: %s\n", ec.message);
+    return std::nullopt;
+  }
+  auto file = bela::StringCat(*p, L"\\wsudo-tie.exe");
+  if (bela::PathExists(file)) {
+    return std::make_optional(std::move(file));
   }
   return std::nullopt;
 }
