@@ -10,6 +10,7 @@
 #include <bela/phmap.hpp>
 
 namespace wsudo {
+extern std::wstring ExecutableFinalPathParent;
 struct AliasTarget {
   std::wstring target;
   std::wstring desc;

@@ -6,7 +6,8 @@
 #include <bela/path.hpp>
 #include <bela/stdwriter.hpp>
 #include <file.hpp>
-#include <apputils.hpp>
+
+std::wstring wsudo::ExecutableFinalPathParent;
 
 wsudo::AliasEngine::~AliasEngine() {
   if (updated) {
@@ -15,13 +16,7 @@ wsudo::AliasEngine::~AliasEngine() {
 }
 
 bool wsudo::AliasEngine::Initialize(bool verbose) {
-  bela::error_code ec;
-  auto p = priv::ExecutablePath(ec);
-  if (!p) {
-    bela::FPrintF(stderr, L"unable resolve exe parent: %s\n", ec.message);
-    return false;
-  }
-  auto file = bela::StringCat(*p, L"\\Privexec.json");
+  auto file = bela::StringCat(ExecutableFinalPathParent, L"\\Privexec.json");
   try {
     priv::FD fd;
     if (_wfopen_s(&fd.fd, file.data(), L"rb") != 0) {
@@ -51,13 +46,7 @@ std::optional<std::wstring> wsudo::AliasEngine::Target(std::wstring_view al) {
 }
 
 bool wsudo::AliasEngine::Apply() {
-  bela::error_code ec;
-  auto p = priv::ExecutablePath(ec);
-  if (!p) {
-    bela::FPrintF(stderr, L"unable resolve exe parent: %s\n", ec.message);
-    return false;
-  }
-  auto file = bela::StringCat(*p, L"\\Privexec.json");
+  auto file = bela::StringCat(ExecutableFinalPathParent, L"\\Privexec.json");
   try {
     nlohmann::json root, av;
     for (const auto &i : alias) {

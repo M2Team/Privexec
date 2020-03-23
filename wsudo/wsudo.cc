@@ -8,7 +8,6 @@
 #include <Shellapi.h>
 #include <Shlobj.h>
 #include <apphelp.hpp>
-#include <apputils.hpp>
 //
 #include "wsudo.hpp"
 #include "wsudoalias.hpp"
@@ -444,14 +443,8 @@ inline std::wstring AppGetcwd() {
 }
 
 std::optional<std::wstring> AppTieExecuteExists() {
-  std::wstring wsudotie;
-  bela::error_code ec;
-  auto p = priv::ExecutablePath(ec);
-  if (!p) {
-    bela::FPrintF(stderr, L"unable resolve exe parent: %s\n", ec.message);
-    return std::nullopt;
-  }
-  auto file = bela::StringCat(*p, L"\\wsudo-tie.exe");
+  auto file =
+      bela::StringCat(wsudo::ExecutableFinalPathParent, L"\\wsudo-tie.exe");
   if (bela::PathExists(file)) {
     return std::make_optional(std::move(file));
   }
@@ -600,7 +593,23 @@ int AppExecute(wsudo::AppMode &am) {
   return 1;
 }
 
+bool InitializeExecutable() {
+  bela::error_code ec;
+  auto finalexeparent = bela::ExecutableParentFinalPath(ec);
+  if (!finalexeparent) {
+    bela::FPrintF(stderr,
+                  L"\x1b[31mwsudo unable resolve executable %s \x1b[0m\n",
+                  ec.message);
+    return false;
+  }
+  wsudo::ExecutableFinalPathParent.assign(std::move(*finalexeparent));
+  return true;
+}
+
 int wmain(int argc, wchar_t **argv) {
+  if (!InitializeExecutable()) {
+    return 1;
+  }
   wsudo::AppMode am;
   if (am.ParseArgv(argc, argv) != 0) {
     return 1;

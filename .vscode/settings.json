@@ -67,6 +67,10 @@
         "ratio": "cpp",
         "shared_mutex": "cpp",
         "thread": "cpp",
-        "filesystem": "cpp"
+        "filesystem": "cpp",
+        "atomic": "cpp",
+        "concepts": "cpp",
+        "set": "cpp",
+        "variant": "cpp"
     }
 }

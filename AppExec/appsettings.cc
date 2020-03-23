@@ -2,7 +2,6 @@
 #include <json.hpp>
 #include <file.hpp>
 #include <bela/path.hpp>
-#include <apputils.hpp>
 #include "app.hpp"
 
 [[nodiscard]] inline unsigned char
@@ -76,7 +75,7 @@ namespace priv {
 
 bool AppInitializeSettings(AppSettings &as) {
   bela::error_code ec;
-  auto p = priv::ExecutablePath(ec);
+  auto p = bela::ExecutableParentFinalPath(ec);
   if (!p) {
     OutputDebugStringW(ec.data());
     return false;
@@ -104,7 +103,7 @@ bool AppInitializeSettings(AppSettings &as) {
 
 bool AppApplySettings(const AppSettings &as) {
   bela::error_code ec;
-  auto p = priv::ExecutablePath(ec);
+  auto p = bela::ExecutableParentFinalPath(ec);
   if (!p) {
     OutputDebugStringW(ec.data());
     return false;
