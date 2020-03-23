@@ -1,6 +1,5 @@
 ////
 #include <bela/base.hpp> // Windows
-#include <bela/finaly.hpp>
 #include <shellapi.h>
 #include <Shlwapi.h>
 #include <PathCch.h>

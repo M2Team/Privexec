@@ -2,7 +2,7 @@
 #include "process_fwd.hpp"
 #include "elevator.hpp"
 #include <wtsapi32.h>
-#include <bela/finaly.hpp>
+#include <bela/base.hpp>
 
 namespace priv {
 // bela::EqualsIgnoreCase
