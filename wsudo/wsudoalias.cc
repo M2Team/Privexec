@@ -6,6 +6,7 @@
 #include <bela/path.hpp>
 #include <bela/stdwriter.hpp>
 #include <file.hpp>
+#include <apputils.hpp>
 
 wsudo::AliasEngine::~AliasEngine() {
   if (updated) {
@@ -15,7 +16,7 @@ wsudo::AliasEngine::~AliasEngine() {
 
 bool wsudo::AliasEngine::Initialize(bool verbose) {
   bela::error_code ec;
-  auto p = bela::ExecutablePath(ec);
+  auto p = priv::ExecutablePath(ec);
   if (!p) {
     bela::FPrintF(stderr, L"unable resolve exe parent: %s\n", ec.message);
     return false;

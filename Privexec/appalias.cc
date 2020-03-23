@@ -6,12 +6,13 @@
 #include <bela/codecvt.hpp>
 #include <bela/env.hpp>
 #include <file.hpp>
+#include <apputils.hpp>
 #include "app.hpp"
 
 namespace priv {
 bool AppAliasInitialize(HWND hbox, priv::alias_t &alias) {
   bela::error_code ec;
-  auto p = bela::ExecutablePath(ec);
+  auto p = priv::ExecutablePath(ec);
   if (!p) {
     OutputDebugStringW(ec.data());
     return false;

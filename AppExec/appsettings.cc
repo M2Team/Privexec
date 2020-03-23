@@ -2,6 +2,7 @@
 #include <json.hpp>
 #include <file.hpp>
 #include <bela/path.hpp>
+#include <apputils.hpp>
 #include "app.hpp"
 
 [[nodiscard]] inline unsigned char
@@ -75,7 +76,7 @@ namespace priv {
 
 bool AppInitializeSettings(AppSettings &as) {
   bela::error_code ec;
-  auto p = bela::ExecutablePath(ec);
+  auto p = priv::ExecutablePath(ec);
   if (!p) {
     OutputDebugStringW(ec.data());
     return false;
@@ -103,7 +104,7 @@ bool AppInitializeSettings(AppSettings &as) {
 
 bool AppApplySettings(const AppSettings &as) {
   bela::error_code ec;
-  auto p = bela::ExecutablePath(ec);
+  auto p = priv::ExecutablePath(ec);
   if (!p) {
     OutputDebugStringW(ec.data());
     return false;
@@ -118,7 +119,7 @@ bool AppApplySettings(const AppSettings &as) {
   } catch (const std::exception &e) {
     OutputDebugStringA(e.what());
   }
-  
+
   try {
     auto it = j.find("AppExec");
     nlohmann::json a;

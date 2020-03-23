@@ -8,6 +8,7 @@
 #include <Shellapi.h>
 #include <Shlobj.h>
 #include <apphelp.hpp>
+#include <apputils.hpp>
 //
 #include "wsudo.hpp"
 #include "wsudoalias.hpp"
@@ -445,7 +446,7 @@ inline std::wstring AppGetcwd() {
 std::optional<std::wstring> AppTieExecuteExists() {
   std::wstring wsudotie;
   bela::error_code ec;
-  auto p = bela::ExecutablePath(ec);
+  auto p = priv::ExecutablePath(ec);
   if (!p) {
     bela::FPrintF(stderr, L"unable resolve exe parent: %s\n", ec.message);
     return std::nullopt;
