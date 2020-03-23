@@ -11,7 +11,7 @@
 namespace priv {
 bool AppAliasInitialize(HWND hbox, priv::alias_t &alias) {
   bela::error_code ec;
-  auto p = bela::ExecutableParentFinalPath(ec);
+  auto p = bela::ExecutableFinalPathParent(ec);
   if (!p) {
     OutputDebugStringW(ec.data());
     return false;

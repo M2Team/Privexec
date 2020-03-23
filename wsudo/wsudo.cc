@@ -595,7 +595,7 @@ int AppExecute(wsudo::AppMode &am) {
 
 bool InitializeExecutable() {
   bela::error_code ec;
-  auto finalexeparent = bela::ExecutableParentFinalPath(ec);
+  auto finalexeparent = bela::ExecutableFinalPathParent(ec);
   if (!finalexeparent) {
     bela::FPrintF(stderr,
                   L"\x1b[31mwsudo unable resolve executable %s \x1b[0m\n",

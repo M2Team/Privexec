@@ -75,7 +75,7 @@ namespace priv {
 
 bool AppInitializeSettings(AppSettings &as) {
   bela::error_code ec;
-  auto p = bela::ExecutableParentFinalPath(ec);
+  auto p = bela::ExecutableFinalPathParent(ec);
   if (!p) {
     OutputDebugStringW(ec.data());
     return false;
@@ -103,7 +103,7 @@ bool AppInitializeSettings(AppSettings &as) {
 
 bool AppApplySettings(const AppSettings &as) {
   bela::error_code ec;
-  auto p = bela::ExecutableParentFinalPath(ec);
+  auto p = bela::ExecutableFinalPathParent(ec);
   if (!p) {
     OutputDebugStringW(ec.data());
     return false;
