@@ -52,7 +52,7 @@ std::optional<std::wstring> wsudo::AliasEngine::Target(std::wstring_view al) {
 
 bool wsudo::AliasEngine::Apply() {
   bela::error_code ec;
-  auto p = bela::ExecutablePath(ec);
+  auto p = priv::ExecutablePath(ec);
   if (!p) {
     bela::FPrintF(stderr, L"unable resolve exe parent: %s\n", ec.message);
     return false;
