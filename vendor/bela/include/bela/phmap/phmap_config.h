@@ -631,7 +631,11 @@
 // constexpr if
 // ----------------------------------------------------------------------
 #if __cplusplus >= 201703 || (defined(_MSVC_LANG) && _MSVC_LANG >= 201703)
+#ifdef _M_ARM64
+    #define PHMAP_IF_CONSTEXPR(expr) if ((expr))
+#else
     #define PHMAP_IF_CONSTEXPR(expr) if constexpr ((expr))
+#endif
 #else 
     #define PHMAP_IF_CONSTEXPR(expr) if ((expr))
 #endif
