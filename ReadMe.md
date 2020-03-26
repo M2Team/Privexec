@@ -2,7 +2,9 @@
 
 
 [![license badge](https://img.shields.io/github/license/M2Team/Privexec.svg)](LICENSE)
-[![Build status](https://ci.appveyor.com/api/projects/status/2cbd4pceqbldlixx/branch/master?svg=true)](https://ci.appveyor.com/project/fcharlie/privexec/branch/master)
+[![Build status](https://ci.appveyor.com/api/projects/status/github/M2Team/Privexec?branch=master&svg=true)](https://ci.appveyor.com/project/fcharlie/privexec/branch/master)
+[![Latest Release Downloads](https://img.shields.io/github/downloads/M2Team/Privexec/latest/total.svg)](https://github.com/M2Team/Privexec/releases/latest)
+[![Total Downloads](https://img.shields.io/github/downloads/M2Team/Privexec/total.svg)](https://github.com/M2Team/Privexec/releases)
 [![996.icu](https://img.shields.io/badge/link-996.icu-red.svg)](https://996.icu)
 
 
