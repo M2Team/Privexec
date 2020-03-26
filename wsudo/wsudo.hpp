@@ -13,7 +13,7 @@
 namespace wsudo {
 
 struct AppMode {
-  EnvDerivator envctx;
+  Derivator envctx;
   std::wstring message;
   std::vector<std::wstring_view> args;
   std::wstring_view cwd;     // --cwd -c

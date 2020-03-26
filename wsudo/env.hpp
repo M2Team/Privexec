@@ -8,15 +8,15 @@
 
 namespace wsudo {
 
-class EnvDerivator {
+class Derivator {
 public:
   using value_type = bela::flat_hash_map<std::wstring, std::wstring,
                                          bela::env::StringCaseInsensitiveHash,
                                          bela::env::StringCaseInsensitiveEq>;
   using apply_t = std::function<void(std::wstring_view, std::wstring_view)>;
-  EnvDerivator() = default;
-  EnvDerivator(const EnvDerivator &) = delete;
-  EnvDerivator &operator=(const EnvDerivator &) = delete;
+  Derivator() = default;
+  Derivator(const Derivator &) = delete;
+  Derivator &operator=(const Derivator &) = delete;
   bool Append(std::wstring_view s) {
     auto pos = s.find(L'=');
     if (pos == std::wstring_view::npos) {
@@ -32,7 +32,7 @@ public:
     return true;
   }
   // Normal
-  bool Appendable(std::wstring_view ws) {
+  bool IsAppend(std::wstring_view ws) {
     auto pos = ws.find(L'=');
     if (pos == std::wstring_view::npos || pos == 0) {
       return false;

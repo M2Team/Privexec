@@ -5,6 +5,7 @@
 #include <bela/base.hpp>
 #include <bela/match.hpp>
 #include <bela/strcat.hpp>
+#include <bela/str_join.hpp>
 
 namespace priv {
 struct PrivilegeView {
@@ -22,7 +23,6 @@ struct PrivilegeView {
     return s;
   }
 };
-
 
 bool GetCurrentSessionId(DWORD &dwSessionId);
 // System process elavator
