@@ -57,6 +57,15 @@ Builtin 'alias' command:
 
 namespace wsudo {
 
+std::optional<std::wstring> RealPathEx(std::wstring_view src,
+                                       bela::error_code &ec) {
+  bela::AppExecTarget at;
+  if (bela::LookupAppExecLinkTarget(src, at)) {
+    return std::make_optional(std::move(at.target));
+  }
+  return RealPath(src, ec);
+}
+
 //    -a          AppContainer
 //    -M          Mandatory Integrity Control
 //    -U          No Elevated(UAC)
@@ -246,9 +255,14 @@ bool AppSubsystemIsConsole(std::wstring &cmd, bool aliasexpand,
       return false;
     }
     bela::error_code ec;
-    auto pe = bela::pe::Expose(exe, ec);
+    auto realexe = RealPathEx(exe, ec);
+    if (!realexe) {
+      bela::FPrintF(stderr, L"realpath: %s error: %s\n", exe, ec.message);
+      return false;
+    }
+    auto pe = bela::pe::Expose(*realexe, ec);
     if (!pe) {
-      am.Verbose(L"\x1b[01;33m* Not PE File '%s'\x1b[0m\n", exe);
+      am.Verbose(L"\x1b[01;33m* Not PE File '%s'\x1b[0m\n", *realexe);
       if (IsConsoleSuffix(exe)) {
         cmd.assign(exe);
         return true;
