@@ -71,6 +71,7 @@
         "atomic": "cpp",
         "concepts": "cpp",
         "set": "cpp",
-        "variant": "cpp"
+        "variant": "cpp",
+        "sstream": "cpp"
     }
 }

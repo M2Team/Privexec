@@ -244,13 +244,14 @@ bool AppSubsystemIsConsole(std::wstring &cmd, bool aliasexpand,
       // NOT FOUND
       return false;
     }
+    am.Verbose(L"\x1b[01;33m* App full path '%s'\x1b[0m\n", exe);
     bela::error_code ec;
     auto realexe = bela::RealPathEx(exe, ec);
     if (!realexe) {
       bela::FPrintF(stderr, L"realpath: %s error: %s\n", exe, ec.message);
       return false;
     }
-    am.Verbose(L"\x1b[01;33m* App realpath '%s'\x1b[0m\n", *realexe);
+    am.Verbose(L"\x1b[01;33m* App real path '%s'\x1b[0m\n", *realexe);
     auto pe = bela::pe::Expose(*realexe, ec);
     if (!pe) {
       am.Verbose(L"\x1b[01;33m* Not PE File '%s'\x1b[0m\n", *realexe);
@@ -275,14 +276,20 @@ bool AppSubsystemIsConsole(std::wstring &cmd, bool aliasexpand,
     return false;
   }
   LocalFree(Argv);
-  am.Verbose(L"\x1b[01;33m* App real path '%s'\x1b[0m\n", exe);
+  am.Verbose(L"\x1b[01;33m* App full path '%s'\x1b[0m\n", exe);
   bela::error_code ec;
-  auto pe = bela::pe::Expose(exe, ec);
-  if (!pe) {
-    am.Verbose(L"\x1b[01;33m* Not PE File '%s'\x1b[0m\n", exe);
-    return IsConsoleSuffix(exe);
+  auto realexe = bela::RealPathEx(exe, ec);
+  if (!realexe) {
+    bela::FPrintF(stderr, L"realpath: %s error: %s\n", exe, ec.message);
+    return false;
   }
-  am.Verbose(L"\x1b[01;33m* App real argv0 '%s'\x1b[0m\n", exe);
+  am.Verbose(L"\x1b[01;33m* App real path '%s'\x1b[0m\n", *realexe);
+  auto pe = bela::pe::Expose(*realexe, ec);
+  if (!pe) {
+    am.Verbose(L"\x1b[01;33m* Not PE File '%s'\x1b[0m\n", *realexe);
+    return IsConsoleSuffix(*realexe);
+  }
+  am.Verbose(L"\x1b[01;33m* App real argv0 '%s'\x1b[0m\n", *realexe);
   return pe->subsystem == bela::pe::Subsystem::CUI;
 }
 
