@@ -262,7 +262,7 @@ std::optional<std::wstring> RealPathEx(std::wstring_view src,
   if (!reparser.FileDeviceLookup(src, ec)) {
     if (ec.code == ERROR_NOT_A_REPARSE_POINT) {
       ec.code = 0;
-      return std::make_optional<std::wstring>(src);
+      return std::make_optional(bela::PathAbsolute(src));
     }
     return std::nullopt;
   }
