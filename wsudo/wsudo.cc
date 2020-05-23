@@ -1,5 +1,5 @@
 ////
-#include <bela/stdwriter.hpp>
+#include <bela/terminal.hpp>
 #include <bela/match.hpp>
 #include <bela/path.hpp>
 #include <bela/pe.hpp>

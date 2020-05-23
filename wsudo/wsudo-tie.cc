@@ -12,7 +12,7 @@ usage: wsudo-tie command args...
 
 */
 // other's command line
-#include <bela/stdwriter.hpp>
+#include <bela/terminal.hpp>
 #include <bela/escapeargv.hpp>
 #include <bela/picker.hpp>
 #include <bela/str_split.hpp>
@@ -31,7 +31,7 @@ struct AppMode {
   bool verbose{false};   // --verbose -V
   void Verbose(const wchar_t *fmt) const {
     if (verbose) {
-      bela::FileWrite(stderr, fmt);
+      bela::terminal::WriteAuto(stderr, fmt);
     }
   }
   template <typename... Args>
@@ -40,7 +40,7 @@ struct AppMode {
       const bela::format_internal::FormatArg arg_array[] = {args...};
       auto str = bela::format_internal::StrFormatInternal(fmt, arg_array,
                                                           sizeof...(args));
-      bela::FileWrite(stderr, str);
+      bela::terminal::WriteAuto(stderr, str);
     }
   }
 

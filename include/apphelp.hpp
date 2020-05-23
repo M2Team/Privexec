@@ -3,7 +3,7 @@
 #define PRIV_APPHELP_HPP
 #include <objbase.h>
 #include <bela/base.hpp>
-#include <bela/stdwriter.hpp>
+#include <bela/terminal.hpp>
 
 namespace priv {
 class dotcom_global_initializer {

@@ -4,7 +4,7 @@
 #include <Shlwapi.h>
 #include <PathCch.h>
 #include <bela/path.hpp>
-#include <bela/stdwriter.hpp>
+#include <bela/terminal.hpp>
 #include <file.hpp>
 
 std::wstring wsudo::ExecutableFinalPathParent;

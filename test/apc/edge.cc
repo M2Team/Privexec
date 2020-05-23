@@ -1,6 +1,6 @@
 #include <bela/base.hpp>
 #include <bela/match.hpp>
-#include <bela/stdwriter.hpp>
+#include <bela/terminal.hpp>
 #include <windows.h>
 #include <tlhelp32.h>
 #include <string>
