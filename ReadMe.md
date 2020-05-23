@@ -2,7 +2,7 @@
 
 
 [![license badge](https://img.shields.io/github/license/M2Team/Privexec.svg)](LICENSE)
-[![Build status](https://ci.appveyor.com/api/projects/status/github/M2Team/Privexec?branch=master&svg=true)](https://ci.appveyor.com/project/fcharlie/privexec/branch/master)
+[![Master Branch Status](https://github.com/M2Team/Privexec/workflows/CI/badge.svg)](https://github.com/M2Team/Privexec/actions)
 [![Latest Release Downloads](https://img.shields.io/github/downloads/M2Team/Privexec/latest/total.svg)](https://github.com/M2Team/Privexec/releases/latest)
 [![Total Downloads](https://img.shields.io/github/downloads/M2Team/Privexec/total.svg)](https://github.com/M2Team/Privexec/releases)
 [![996.icu](https://img.shields.io/badge/link-996.icu-red.svg)](https://996.icu)
@@ -150,8 +150,8 @@ wsudo -e "PATH=%PATH%;%TEMP%" -n -U cmd
 
 ## Download
 
-Download CI Build:
-[https://ci.appveyor.com/project/fcharlie/privexec/branch/master/artifacts](https://ci.appveyor.com/project/fcharlie/privexec/branch/master/artifacts)
+Download:
+[https://github.com/M2Team/Privexec/releases/latest](https://github.com/M2Team/Privexec/releases/latest)
 
 
 ## Changelog

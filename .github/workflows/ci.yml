@@ -1,0 +1,73 @@
+name: CI
+on: 
+  push:
+    paths-ignore:
+      # https://help.github.com/en/actions/reference/workflow-syntax-for-github-actions
+      - "docs/**"
+      - '**.md'
+      - '**.txt'
+      - 'LICENSE'
+  pull_request:
+    paths-ignore:
+      - "docs/**"
+      - '**.md'
+      - '**.txt'
+      - 'LICENSE'
+jobs:
+  build:
+    name: Build
+    runs-on: windows-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        Privexec_target: [Privexec-win64, Privexec-win32, Privexec-arm64]
+        include:
+          - Privexec_target: Privexec-win64
+            msvc_arch: amd64
+            build_dir: build
+          - Privexec_target: Privexec-win32
+            msvc_arch: amd64_x86
+            build_dir: build.win32
+          - Privexec_target: Privexec-arm64
+            msvc_arch: amd64_arm64
+            build_dir: build.arm64
+    steps:
+      - uses: lukka/get-cmake@latest
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: 1
+      - name: compile-Privexec
+        shell: cmd
+        env:
+          vc_arch: ${{ matrix.msvc_arch }}
+          workdir: ${{ matrix.build_dir }}
+        run: |
+          call "C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\VC\Auxiliary\Build\vcvarsall.bat" %vc_arch%
+          mkdir %workdir%
+          cd %workdir%
+          set CC=cl
+          set CXX=cl
+          cmake -GNinja -DCMAKE_BUILD_TYPE=Release ..
+          ninja all
+
+      - name: Package release
+        if: startsWith(github.ref, 'refs/tags/')
+        shell: pwsh
+        # create package and show sha256 hash
+        run: |
+          Set-Location ${{ matrix.build_dir }}
+          # cleanup zip files
+          Remove-Item -Force *.zip
+          cpack -G ZIP
+          $obj=Get-FileHash -Algorithm SHA256 Privexec*.zip
+          Split-Path -Leaf $obj.Path
+          $obj.Algorithm +":"+$obj.Hash.ToLower()
+      - name: Upload release
+        uses: svenstaro/upload-release-action@v1-release
+        if: startsWith(github.ref, 'refs/tags/')
+        with:
+          file_glob: true
+          file: ${{ matrix.build_dir}}/Privexec-*.zip
+          tag: ${{ github.ref }}
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          overwrite: true
