@@ -147,20 +147,18 @@ struct Appx {
   }
 };
 
-struct AppTitle{
+struct AppTitle {
   std::wstring title;
-  void Initialize(HWND hWnd){
-    hWnd_=hWnd;
-    title=windowcontent(hWnd_);
+  void Initialize(HWND hWnd) {
+    hWnd_ = hWnd;
+    title = windowcontent(hWnd_);
   }
-  void Update(std::wstring_view suffix){
+  void Update(std::wstring_view suffix) {
     std::wstring s;
     s.assign(title).append(L" - ").append(suffix);
-    SetWindowText(hWnd_,s.c_str());
+    SetWindowText(hWnd_, s.c_str());
   }
-  void Reset(){
-    SetWindowText(hWnd_,title.c_str());
-  }
+  void Reset() { SetWindowText(hWnd_, title.c_str()); }
   HWND hWnd_{nullptr};
 };
 
@@ -174,8 +172,7 @@ public:
     return reinterpret_cast<App *>(GetWindowLongPtrW(window, GWLP_USERDATA));
   }
   int run(HINSTANCE hInstance);
-  static INT_PTR WINAPI WindowProc(HWND hWnd, UINT message, WPARAM wParam,
-                                   LPARAM lParam);
+  static INT_PTR WINAPI WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam);
   INT_PTR MessageHandler(UINT message, WPARAM wParam, LPARAM lParam);
   bool DropFiles(WPARAM wParam, LPARAM lParam);
 
@@ -184,13 +181,12 @@ private:
   bool AppUpdateWindow();
   bool Initialize(HWND window);
   bool InitializeCapabilities();
-    bool ParseAppx(std::wstring_view file);
+  bool ParseAppx(std::wstring_view file);
   std::wstring ResolveCMD();
   std::wstring ResolveCWD();
   bool AppLookupExecute();
   bool AppLookupCWD();
-  bool AppLookupAcl(std::vector<std::wstring> &fsdir,
-                    std::vector<std::wstring> &registries);
+  bool AppLookupAcl(std::vector<std::wstring> &fsdir, std::vector<std::wstring> &registries);
   bool AppExecute();
   HINSTANCE hInst{nullptr};
   HWND hWnd{nullptr};

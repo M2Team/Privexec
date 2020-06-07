@@ -11,8 +11,7 @@ public:
   dotcom_global_initializer() {
     auto hr = CoInitialize(NULL);
     if (FAILED(hr)) {
-      bela::FPrintF(stderr, L"\x1b[31minitialize dotcom error: 0x%08x\x1b[0m\n",
-                    hr);
+      bela::FPrintF(stderr, L"\x1b[31minitialize dotcom error: 0x%08x\x1b[0m\n", hr);
       exit(1);
     }
   }

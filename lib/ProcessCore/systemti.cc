@@ -47,8 +47,7 @@ bool TiElevator::Elevate() {
   if (hscm == nullptr) {
     return false;
   }
-  hsrv = OpenServiceW(hscm, L"TrustedInstaller",
-                      SERVICE_QUERY_STATUS | SERVICE_START);
+  hsrv = OpenServiceW(hscm, L"TrustedInstaller", SERVICE_QUERY_STATUS | SERVICE_START);
   if (hsrv == nullptr) {
     // unable start TrustedInstaller service
     return false;
@@ -60,9 +59,8 @@ bool TiElevator::Elevate() {
   bool sleeped = false;
   bool startcallonce = false;
   for (;;) {
-    if (!QueryServiceStatusEx(hsrv, SC_STATUS_PROCESS_INFO,
-                              reinterpret_cast<LPBYTE>(&ssp), sizeof(ssp),
-                              &dwNeed)) {
+    if (!QueryServiceStatusEx(hsrv, SC_STATUS_PROCESS_INFO, reinterpret_cast<LPBYTE>(&ssp),
+                              sizeof(ssp), &dwNeed)) {
       return false;
     }
     if (ssp.dwCurrentState == SERVICE_STOPPED) {
@@ -74,8 +72,7 @@ bool TiElevator::Elevate() {
       }
       continue;
     }
-    if (ssp.dwCurrentState != SERVICE_STOP_PENDING &&
-        ssp.dwCurrentState != SERVICE_START_PENDING) {
+    if (ssp.dwCurrentState != SERVICE_STOP_PENDING && ssp.dwCurrentState != SERVICE_START_PENDING) {
       return true;
     }
     tick = GetTickCount64();
@@ -108,8 +105,7 @@ bool TiElevator::Duplicate(PHANDLE phToken) {
   if (OpenProcessToken(hProcess, MAXIMUM_ALLOWED, &hToken) != TRUE) {
     return false;
   }
-  return DuplicateTokenEx(hToken, MAXIMUM_ALLOWED, nullptr,
-                          SecurityIdentification, TokenPrimary,
+  return DuplicateTokenEx(hToken, MAXIMUM_ALLOWED, nullptr, SecurityIdentification, TokenPrimary,
                           phToken) == TRUE;
 }
 
@@ -129,16 +125,14 @@ bool PrivilegesEnableAll(HANDLE hToken) {
     return false;
   }
   auto pfree = bela::finally([&] { HeapFree(GetProcessHeap(), 0, privs); });
-  if (GetTokenInformation(hToken, TokenPrivileges, privs, Length, &Length) !=
-      TRUE) {
+  if (GetTokenInformation(hToken, TokenPrivileges, privs, Length, &Length) != TRUE) {
     return false;
   }
   auto end = privs->Privileges + privs->PrivilegeCount;
   for (auto it = privs->Privileges; it != end; it++) {
     it->Attributes = SE_PRIVILEGE_ENABLED;
   }
-  return (AdjustTokenPrivileges(hToken, FALSE, privs, 0, nullptr, nullptr) ==
-          TRUE);
+  return (AdjustTokenPrivileges(hToken, FALSE, privs, 0, nullptr, nullptr) == TRUE);
 }
 
 bool PrivilegesEnableView(HANDLE hToken, const PrivilegeView *pv) {
@@ -158,8 +152,8 @@ bool PrivilegesEnableView(HANDLE hToken, const PrivilegeView *pv) {
     tp.Privileges[0].Attributes = SE_PRIVILEGE_ENABLED;
     // Enable the privilege or disable all privileges.
 
-    if (::AdjustTokenPrivileges(hToken, FALSE, &tp, sizeof(TOKEN_PRIVILEGES),
-                                nullptr, nullptr) != TRUE) {
+    if (::AdjustTokenPrivileges(hToken, FALSE, &tp, sizeof(TOKEN_PRIVILEGES), nullptr, nullptr) !=
+        TRUE) {
       continue;
     }
     if (::GetLastError() == ERROR_NOT_ALL_ASSIGNED) {
@@ -175,8 +169,7 @@ bool GetCurrentSessionId(DWORD &dwSessionId) {
     return false;
   }
   DWORD Length = 0;
-  if (GetTokenInformation(hToken, TokenSessionId, &dwSessionId, sizeof(DWORD),
-                          &Length) != TRUE) {
+  if (GetTokenInformation(hToken, TokenSessionId, &dwSessionId, sizeof(DWORD), &Length) != TRUE) {
     CloseHandle(hToken);
     return false;
   }
@@ -187,14 +180,12 @@ bool GetCurrentSessionId(DWORD &dwSessionId) {
 bool LookupSystemProcess(DWORD sid, DWORD &syspid) {
   PWTS_PROCESS_INFOW ppi;
   DWORD count;
-  if (::WTSEnumerateProcessesW(WTS_CURRENT_SERVER_HANDLE, 0, 1, &ppi, &count) !=
-      TRUE) {
+  if (::WTSEnumerateProcessesW(WTS_CURRENT_SERVER_HANDLE, 0, 1, &ppi, &count) != TRUE) {
     return false;
   }
   auto end = ppi + count;
   for (auto it = ppi; it != end; it++) {
-    if (it->SessionId == sid &&
-        bela::EqualsIgnoreCase(WinLogonName, it->pProcessName) &&
+    if (it->SessionId == sid && bela::EqualsIgnoreCase(WinLogonName, it->pProcessName) &&
         IsWellKnownSid(it->pUserSid, WinLocalSystemSid) == TRUE) {
       syspid = it->ProcessId;
       ::WTSFreeMemory(ppi);
@@ -219,8 +210,7 @@ bool PrepareElevate(DWORD &sid, std::wstring &klast) {
   }
   auto closer = bela::finally([&] { CloseHandle(hToken); });
   DWORD Length = 0;
-  if (GetTokenInformation(hToken, TokenSessionId, &sid, sizeof(DWORD),
-                          &Length) != TRUE) {
+  if (GetTokenInformation(hToken, TokenSessionId, &sid, sizeof(DWORD), &Length) != TRUE) {
     klast = L"unable resolve current process session id";
     return false;
   }
@@ -237,8 +227,8 @@ bool PrepareElevate(DWORD &sid, std::wstring &klast) {
   tp.Privileges[0].Attributes = SE_PRIVILEGE_ENABLED;
   // Enable the privilege or disable all privileges.
 
-  if (::AdjustTokenPrivileges(hToken, FALSE, &tp, sizeof(TOKEN_PRIVILEGES),
-                              nullptr, nullptr) != TRUE) {
+  if (::AdjustTokenPrivileges(hToken, FALSE, &tp, sizeof(TOKEN_PRIVILEGES), nullptr, nullptr) !=
+      TRUE) {
     klast = L"unable enable process SeDebugPrivilege";
     return false;
   }
@@ -261,9 +251,8 @@ bool Elevator::ElevateImitate(std::wstring &klast) {
     return false;
   }
   auto htdeleter = bela::finally([&] { CloseHandle(hExistingToken); });
-  if (DuplicateTokenEx(hExistingToken, MAXIMUM_ALLOWED, nullptr,
-                       SecurityImpersonation, TokenImpersonation,
-                       &hToken) != TRUE) {
+  if (DuplicateTokenEx(hExistingToken, MAXIMUM_ALLOWED, nullptr, SecurityImpersonation,
+                       TokenImpersonation, &hToken) != TRUE) {
     klast = L"unable duplicate winlogon.exe process token";
     return false;
   }
@@ -299,8 +288,7 @@ bool Elevator::Elevate(const PrivilegeView *pv, std::wstring &klast) {
 }
 
 bool Process::ExecSystem() {
-  PrivilegeView pv = {
-      {SE_TCB_NAME, SE_ASSIGNPRIMARYTOKEN_NAME, SE_INCREASE_QUOTA_NAME}};
+  PrivilegeView pv = {{SE_TCB_NAME, SE_ASSIGNPRIMARYTOKEN_NAME, SE_INCREASE_QUOTA_NAME}};
   Elevator eo;
   if (!eo.Elevate(&pv, kmessage)) {
     return false;
@@ -321,14 +309,13 @@ bool Process::ExecSystem() {
     kmessage = L"systemexec<OpenProcessToken>";
     return false;
   }
-  if (DuplicateTokenEx(hToken, TOKEN_ALL_ACCESS, nullptr, SecurityImpersonation,
-                       TokenPrimary, &hPrimary) != TRUE) {
+  if (DuplicateTokenEx(hToken, TOKEN_ALL_ACCESS, nullptr, SecurityImpersonation, TokenPrimary,
+                       &hPrimary) != TRUE) {
     kmessage = L"systemexec<DuplicateTokenEx>";
     return false;
   }
   auto session = eo.SID();
-  if (SetTokenInformation(hPrimary, TokenSessionId, &session,
-                          sizeof(session)) != TRUE) {
+  if (SetTokenInformation(hPrimary, TokenSessionId, &session, sizeof(session)) != TRUE) {
     return false;
   }
   return ExecWithToken(hPrimary, true);
@@ -352,8 +339,7 @@ bool Process::ExecTI() {
   if (!GetCurrentSessionId(dwSessionId)) {
     return false;
   }
-  if (SetTokenInformation(hToken, TokenSessionId, (PVOID)&dwSessionId,
-                          sizeof(DWORD)) != TRUE) {
+  if (SetTokenInformation(hToken, TokenSessionId, (PVOID)&dwSessionId, sizeof(DWORD)) != TRUE) {
     return false;
   }
   return ExecWithToken(hToken, true);

@@ -30,12 +30,10 @@ struct AppMode {
       bela::terminal::WriteAuto(stderr, fmt);
     }
   }
-  template <typename... Args>
-  void Verbose(const wchar_t *fmt, Args... args) const {
+  template <typename... Args> void Verbose(const wchar_t *fmt, Args... args) const {
     if (verbose) {
       const bela::format_internal::FormatArg arg_array[] = {args...};
-      auto str = bela::format_internal::StrFormatInternal(fmt, arg_array,
-                                                          sizeof...(args));
+      auto str = bela::format_internal::StrFormatInternal(fmt, arg_array, sizeof...(args));
       bela::terminal::WriteAuto(stderr, str);
     }
   }

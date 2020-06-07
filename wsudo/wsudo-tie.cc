@@ -34,12 +34,10 @@ struct AppMode {
       bela::terminal::WriteAuto(stderr, fmt);
     }
   }
-  template <typename... Args>
-  void Verbose(const wchar_t *fmt, Args... args) const {
+  template <typename... Args> void Verbose(const wchar_t *fmt, Args... args) const {
     if (verbose) {
       const bela::format_internal::FormatArg arg_array[] = {args...};
-      auto str = bela::format_internal::StrFormatInternal(fmt, arg_array,
-                                                          sizeof...(args));
+      auto str = bela::format_internal::StrFormatInternal(fmt, arg_array, sizeof...(args));
       bela::terminal::WriteAuto(stderr, str);
     }
   }
@@ -49,13 +47,10 @@ struct AppMode {
   void Verbose();
 };
 
-void Version() {
-  bela::FPrintF(stderr, L"\x1b[36mwsudo %s\x1b[0m\n", PRIVEXEC_BUILD_VERSION);
-}
+void Version() { bela::FPrintF(stderr, L"\x1b[36mwsudo %s\x1b[0m\n", PRIVEXEC_BUILD_VERSION); }
 
 void Usage(bool err = false) {
-  constexpr const wchar_t *kUsage =
-      LR"(wsudo-tie wsudo administrator level permission middleware.
+  constexpr const wchar_t *kUsage = LR"(wsudo-tie wsudo administrator level permission middleware.
 usage: wsudo-tie command args...
    -v|--version        print version and exit
    -h|--help           print help information and exit
@@ -67,8 +62,8 @@ usage: wsudo-tie command args...
 
 )";
   char32_t sh = 0x1F496; //  💖
-  bela::FPrintF(stderr, L"\x1b[%dmwsudo-tie %c %s %s\x1b[0m\n", err ? 31 : 36,
-                sh, PRIV_VERSION_MAIN, kUsage);
+  bela::FPrintF(stderr, L"\x1b[%dmwsudo-tie %c %s %s\x1b[0m\n", err ? 31 : 36, sh,
+                PRIV_VERSION_MAIN, kUsage);
 }
 
 int AppMode::ParseArgv(int argc, wchar_t **argv) {
@@ -92,9 +87,8 @@ int AppMode::ParseArgv(int argc, wchar_t **argv) {
           exit(0);
         case 'P': // parent
           if (!bela::SimpleAtoi(va, &parentid)) {
-            bela::BelaMessageBox(nullptr,
-                                 L"Parent process PID format is incorrect", va,
-                                 nullptr, bela::mbs_t::FATAL);
+            bela::BelaMessageBox(nullptr, L"Parent process PID format is incorrect", va, nullptr,
+                                 bela::mbs_t::FATAL);
           }
           break;
         case 'V':
@@ -116,8 +110,8 @@ int AppMode::ParseArgv(int argc, wchar_t **argv) {
       },
       ec);
   if (!result) {
-    bela::BelaMessageBox(nullptr, L"wsudo-tie ParseArgv:", ec.message.data(),
-                         nullptr, bela::mbs_t::FATAL);
+    bela::BelaMessageBox(nullptr, L"wsudo-tie ParseArgv:", ec.message.data(), nullptr,
+                         bela::mbs_t::FATAL);
     return 1;
   }
   /// Copy TO
@@ -127,22 +121,22 @@ int AppMode::ParseArgv(int argc, wchar_t **argv) {
 
 bool AppMode::InitializeApp() {
   if (parentid == 0) {
-    bela::BelaMessageBox(nullptr, L"wsudo-tie InitializeApp error:",
-                         L"missing process pid", nullptr, bela::mbs_t::FATAL);
+    bela::BelaMessageBox(nullptr, L"wsudo-tie InitializeApp error:", L"missing process pid",
+                         nullptr, bela::mbs_t::FATAL);
     return false;
   }
   FreeConsole();
   if (AttachConsole(parentid) != TRUE) {
     auto ec = bela::make_system_error_code();
     bela::StrAppend(&ec.message, L"parent process id: ", parentid);
-    bela::BelaMessageBox(nullptr, L"wsudo-tie AttachConsole error:",
-                         ec.message.data(), nullptr, bela::mbs_t::FATAL);
+    bela::BelaMessageBox(nullptr, L"wsudo-tie AttachConsole error:", ec.message.data(), nullptr,
+                         bela::mbs_t::FATAL);
     return false;
   }
   if (!pwd.empty() && SetCurrentDirectoryW(pwd.data()) != TRUE) {
     auto ec = bela::make_system_error_code();
-    bela::BelaMessageBox(nullptr, L"wsudo-tie SetCurrentDirectoryW error:",
-                         ec.message.data(), nullptr, bela::mbs_t::FATAL);
+    bela::BelaMessageBox(nullptr, L"wsudo-tie SetCurrentDirectoryW error:", ec.message.data(),
+                         nullptr, bela::mbs_t::FATAL);
     return false;
   }
   return true;
@@ -161,8 +155,7 @@ void AppMode::Verbose() {
 
 void dumpPathEnv() {
   auto path = bela::GetEnv(L"PATH");
-  std::vector<std::wstring_view> pv =
-      bela::StrSplit(path, bela::ByChar(L';'), bela::SkipEmpty());
+  std::vector<std::wstring_view> pv = bela::StrSplit(path, bela::ByChar(L';'), bela::SkipEmpty());
   for (auto p : pv) {
     bela::FPrintF(stderr, L"\x1b[01;33m%s\x1b[0m\n", p);
   }
@@ -205,9 +198,8 @@ int wmain(int argc, wchar_t **argv) {
   PROCESS_INFORMATION pi;
   ZeroMemory(&pi, sizeof(pi));
   DWORD createflags = CREATE_UNICODE_ENVIRONMENT;
-  if (CreateProcessW(exe.empty() ? nullptr : exe.data(), ea.data(), nullptr,
-                     nullptr, FALSE, createflags, nullptr,
-                     am.cwd.empty() ? nullptr : am.cwd.data(), &si,
+  if (CreateProcessW(exe.empty() ? nullptr : exe.data(), ea.data(), nullptr, nullptr, FALSE,
+                     createflags, nullptr, am.cwd.empty() ? nullptr : am.cwd.data(), &si,
                      &pi) != TRUE) {
     auto ec = bela::make_system_error_code();
     bela::FPrintF(stderr,
@@ -217,14 +209,12 @@ int wmain(int argc, wchar_t **argv) {
     dumpPathEnv();
     return 1;
   }
-  bela::FPrintF(stderr,
-                L"\x1b[01;32mnew administrator process is running: %d\x1b[0m\n",
+  bela::FPrintF(stderr, L"\x1b[01;32mnew administrator process is running: %d\x1b[0m\n",
                 pi.dwProcessId);
   SetConsoleCtrlHandler(nullptr, TRUE);
   if (WaitForSingleObject(pi.hProcess, INFINITE) == WAIT_FAILED) {
     auto ec = bela::make_system_error_code();
-    bela::FPrintF(stderr, L"\x1b[31munable wait process '%s'\x1b[0m\n",
-                  ec.message);
+    bela::FPrintF(stderr, L"\x1b[31munable wait process '%s'\x1b[0m\n", ec.message);
     SetConsoleCtrlHandler(nullptr, FALSE);
     CloseHandle(pi.hThread);
     CloseHandle(pi.hProcess);
@@ -234,8 +224,7 @@ int wmain(int argc, wchar_t **argv) {
   DWORD exitcode = 0;
   if (GetExitCodeProcess(pi.hProcess, &exitcode) != TRUE) {
     auto ec = bela::make_system_error_code();
-    bela::FPrintF(stderr, L"\x1b[31munable get process exit code '%s'\x1b[0m\n",
-                  ec.message);
+    bela::FPrintF(stderr, L"\x1b[31munable get process exit code '%s'\x1b[0m\n", ec.message);
   }
   CloseHandle(pi.hThread);
   CloseHandle(pi.hProcess);

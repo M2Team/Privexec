@@ -12,13 +12,10 @@
 #include "wsudo.hpp"
 #include "wsudoalias.hpp"
 
-void Version() {
-  bela::FPrintF(stderr, L"\x1b[36mwsudo %s\x1b[0m\n", PRIVEXEC_BUILD_VERSION);
-}
+void Version() { bela::FPrintF(stderr, L"\x1b[36mwsudo %s\x1b[0m\n", PRIVEXEC_BUILD_VERSION); }
 
 void Usage(bool err = false) {
-  constexpr const wchar_t *kUsage =
-      LR"(run the program with the specified permissions
+  constexpr const wchar_t *kUsage = LR"(run the program with the specified permissions
 usage: wsudo command args...
    -v|--version        print version and exit
    -h|--help           print help information and exit
@@ -51,8 +48,8 @@ Builtin 'alias' command:
    wsudo alias delete ehs
 )";
   char32_t sh = 0x1F496; //  💖
-  bela::FPrintF(stderr, L"\x1b[%dmwsudo %c %s %s\x1b[0m\n", err ? 31 : 36, sh,
-                PRIV_VERSION_MAIN, kUsage);
+  bela::FPrintF(stderr, L"\x1b[%dmwsudo %c %s %s\x1b[0m\n", err ? 31 : 36, sh, PRIV_VERSION_MAIN,
+                kUsage);
 }
 
 namespace wsudo {
@@ -216,11 +213,9 @@ void AppMode::Verbose() {
     bela::FPrintF(stderr, L"\x1b[01;33m* App cwd: %s\x1b[0m\n", cwd);
   }
   if (!appx.empty()) {
-    bela::FPrintF(stderr,
-                  L"\x1b[01;33m* App AppContainer Manifest: %s\x1b[0m\n", appx);
+    bela::FPrintF(stderr, L"\x1b[01;33m* App AppContainer Manifest: %s\x1b[0m\n", appx);
   }
-  bela::FPrintF(stderr, L"\x1b[01;33m* App Launcher level: %s\x1b[0m\n",
-                AppSLevel(level));
+  bela::FPrintF(stderr, L"\x1b[01;33m* App Launcher level: %s\x1b[0m\n", AppSLevel(level));
   if (disablealias) {
     bela::FPrintF(stderr, L"\x1b[01;33m* App Alias is disabled\x1b[0m\n");
   }
@@ -236,8 +231,7 @@ bool IsConsoleSuffix(std::wstring_view path) {
   return false;
 }
 
-bool AppSubsystemIsConsole(std::wstring &cmd, bool aliasexpand,
-                           const AppMode &am) {
+bool AppSubsystemIsConsole(std::wstring &cmd, bool aliasexpand, const AppMode &am) {
   if (!aliasexpand) {
     std::wstring exe;
     if (!bela::ExecutableExistsInPath(cmd, exe)) {
@@ -299,19 +293,16 @@ int AppWait(DWORD pid) {
   if (pid == 0) {
     return 0;
   }
-  auto hProcess =
-      OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION | SYNCHRONIZE, FALSE, pid);
+  auto hProcess = OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION | SYNCHRONIZE, FALSE, pid);
   if (hProcess == INVALID_HANDLE_VALUE) {
     auto ec = bela::make_system_error_code();
-    bela::FPrintF(stderr, L"\x1b[31munable open process '%s'\x1b[0m\n",
-                  ec.message);
+    bela::FPrintF(stderr, L"\x1b[31munable open process '%s'\x1b[0m\n", ec.message);
     return -1;
   }
   SetConsoleCtrlHandler(nullptr, TRUE);
   if (WaitForSingleObject(hProcess, INFINITE) == WAIT_FAILED) {
     auto ec = bela::make_system_error_code();
-    bela::FPrintF(stderr, L"\x1b[31munable wait process '%s'\x1b[0m\n",
-                  ec.message);
+    bela::FPrintF(stderr, L"\x1b[31munable wait process '%s'\x1b[0m\n", ec.message);
     SetConsoleCtrlHandler(nullptr, FALSE);
     CloseHandle(hProcess);
     return -1;
@@ -320,15 +311,14 @@ int AppWait(DWORD pid) {
   DWORD exitcode = 0;
   if (GetExitCodeProcess(hProcess, &exitcode) != TRUE) {
     auto ec = bela::make_system_error_code();
-    bela::FPrintF(stderr, L"\x1b[31munable get process exit code '%s'\x1b[0m\n",
-                  ec.message);
+    bela::FPrintF(stderr, L"\x1b[31munable get process exit code '%s'\x1b[0m\n", ec.message);
   }
   CloseHandle(hProcess);
   return static_cast<int>(exitcode);
 }
 
-std::wstring ExpandArgv0(std::wstring_view argv0, bool disablealias,
-                         const wsudo::AppMode &am, bool &aliasexpand) {
+std::wstring ExpandArgv0(std::wstring_view argv0, bool disablealias, const wsudo::AppMode &am,
+                         bool &aliasexpand) {
   aliasexpand = false;
   if (disablealias) {
     return bela::ExpandEnv(argv0);
@@ -364,8 +354,7 @@ int AppExecuteAppContainer(wsudo::AppMode &am) {
   }
 
   if (isconsole) {
-    am.Verbose(L"\x1b[01;33m* App subsystem is console, %s\x1b[0m\n",
-               am.Visible());
+    am.Verbose(L"\x1b[01;33m* App subsystem is console, %s\x1b[0m\n", am.Visible());
   }
   for (size_t i = 1; i < am.args.size(); i++) {
     ea.Append(am.args[i]);
@@ -413,10 +402,8 @@ int AppExecuteAppContainer(wsudo::AppMode &am) {
   if (!p.Exec()) {
     auto ec = bela::make_system_error_code();
     if (p.Message().empty()) {
-      bela::FPrintF(
-          stderr,
-          L"\x1b[31mcreate appconatiner process  last error %d : %s\x1b[0m\n",
-          ec.code, ec.message);
+      bela::FPrintF(stderr, L"\x1b[31mcreate appconatiner process  last error %d : %s\x1b[0m\n",
+                    ec.code, ec.message);
     } else {
       bela::FPrintF(stderr,
                     L"\x1b[31mcreate appconatiner process  last error %d  "
@@ -425,10 +412,8 @@ int AppExecuteAppContainer(wsudo::AppMode &am) {
     }
     return 1;
   }
-  bela::FPrintF(
-      stderr,
-      L"\x1b[01;32mnew appcontainer process is running: %d\nsid: %s\x1b[0m\n",
-      p.PID(), p.SSID());
+  bela::FPrintF(stderr, L"\x1b[01;32mnew appcontainer process is running: %d\nsid: %s\x1b[0m\n",
+                p.PID(), p.SSID());
   if (waitable) {
     return AppWait(p.PID());
   }
@@ -455,16 +440,14 @@ inline std::wstring AppGetcwd() {
 }
 
 std::optional<std::wstring> AppTieExecuteExists() {
-  auto file =
-      bela::StringCat(wsudo::ExecutableFinalPathParent, L"\\wsudo-tie.exe");
+  auto file = bela::StringCat(wsudo::ExecutableFinalPathParent, L"\\wsudo-tie.exe");
   if (bela::PathExists(file)) {
     return std::make_optional(std::move(file));
   }
   return std::nullopt;
 }
 
-int AppExecuteTie(std::wstring_view tie, std::wstring_view arg0,
-                  wsudo::AppMode &am) {
+int AppExecuteTie(std::wstring_view tie, std::wstring_view arg0, wsudo::AppMode &am) {
   bela::EscapeArgv ea;
 
   auto self = GetCurrentProcessId();
@@ -521,8 +504,7 @@ bool IsConhosted(wsudo::AppMode &am) {
   if (t == FILE_TYPE_PIPE) {
     constexpr unsigned int pipemaxlen = 512;
     WCHAR buffer[pipemaxlen] = {0};
-    if (GetFileInformationByHandleEx(h, FileNameInfo, buffer, pipemaxlen * 2) ==
-        TRUE) {
+    if (GetFileInformationByHandleEx(h, FileNameInfo, buffer, pipemaxlen * 2) == TRUE) {
       auto pb = reinterpret_cast<FILE_NAME_INFO *>(buffer);
       std::wstring_view pipename{pb->FileName, pb->FileNameLength / 2};
       auto pn = bela::StringCat(L"\\\\.\\pipe", pipename);
@@ -558,8 +540,7 @@ int AppExecute(wsudo::AppMode &am) {
     }
   }
   bool waitable = false;
-  if (!elevated && am.level == priv::ExecLevel::Elevated &&
-      am.visible == priv::VisibleMode::None) {
+  if (!elevated && am.level == priv::ExecLevel::Elevated && am.visible == priv::VisibleMode::None) {
     am.visible = priv::VisibleMode::NewConsole; /// change visible
   }
   if (am.visible == priv::VisibleMode::None && isconsole || am.wait) {
@@ -567,8 +548,7 @@ int AppExecute(wsudo::AppMode &am) {
   }
 
   if (isconsole) {
-    am.Verbose(L"\x1b[01;33m* App subsystem is console, %s\x1b[0m\n",
-               am.Visible());
+    am.Verbose(L"\x1b[01;33m* App subsystem is console, %s\x1b[0m\n", am.Visible());
   }
 
   for (size_t i = 1; i < am.args.size(); i++) {
@@ -585,8 +565,7 @@ int AppExecute(wsudo::AppMode &am) {
   }
   bela::FPrintF(stderr, L"\x1b[01;32mCommand: %s\x1b[0m\n", ea.sv());
   if (p.Exec(am.level)) {
-    bela::FPrintF(stderr, L"\x1b[01;32mnew process is running: %d\x1b[0m\n",
-                  p.PID());
+    bela::FPrintF(stderr, L"\x1b[01;32mnew process is running: %d\x1b[0m\n", p.PID());
     if (waitable) {
       return AppWait(p.PID());
     }
@@ -594,13 +573,11 @@ int AppExecute(wsudo::AppMode &am) {
   }
   auto ec = bela::make_system_error_code();
   if (p.Message().empty()) {
-    bela::FPrintF(stderr,
-                  L"\x1b[31mcreate process  last error %d : %s\x1b[0m\n",
-                  ec.code, ec.message);
+    bela::FPrintF(stderr, L"\x1b[31mcreate process  last error %d : %s\x1b[0m\n", ec.code,
+                  ec.message);
   } else {
-    bela::FPrintF(stderr,
-                  L"\x1b[31mcreate process  last error %d  (%s): %s\x1b[0m\n",
-                  ec.code, p.Message(), ec.message);
+    bela::FPrintF(stderr, L"\x1b[31mcreate process  last error %d  (%s): %s\x1b[0m\n", ec.code,
+                  p.Message(), ec.message);
   }
   return 1;
 }
@@ -609,9 +586,7 @@ bool InitializeExecutable() {
   bela::error_code ec;
   auto finalexeparent = bela::ExecutableFinalPathParent(ec);
   if (!finalexeparent) {
-    bela::FPrintF(stderr,
-                  L"\x1b[31mwsudo unable resolve executable %s \x1b[0m\n",
-                  ec.message);
+    bela::FPrintF(stderr, L"\x1b[31mwsudo unable resolve executable %s \x1b[0m\n", ec.message);
     return false;
   }
   wsudo::ExecutableFinalPathParent.assign(std::move(*finalexeparent));
@@ -627,9 +602,7 @@ int wmain(int argc, wchar_t **argv) {
     return 1;
   }
   if (am.args.empty()) {
-    bela::FPrintF(stderr,
-                  L"\x1b[31mwsudo missing command %s see usage:\x1b[0m\n",
-                  am.message);
+    bela::FPrintF(stderr, L"\x1b[31mwsudo missing command %s see usage:\x1b[0m\n", am.message);
     Usage(true);
     return 1;
   }

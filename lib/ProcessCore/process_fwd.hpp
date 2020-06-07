@@ -80,15 +80,13 @@ using wid_t = WELL_KNOWN_SID_TYPE;
 using widcontainer_t = std::vector<wid_t>;
 using alloweddir_t = std::vector<std::wstring>;
 using capabilities_t = std::vector<SID_AND_ATTRIBUTES>;
-bool MergeFromAppManifest(std::wstring_view file,
-                          std::vector<std::wstring> &caps);
+bool MergeFromAppManifest(std::wstring_view file, std::vector<std::wstring> &caps);
 
 class AppContainer {
 public:
   AppContainer() = default;
   AppContainer(std::wstring_view cmd_) : cmd(cmd_) {}
-  template <typename... Args>
-  AppContainer(std::wstring_view app, Args... args) {
+  template <typename... Args> AppContainer(std::wstring_view app, Args... args) {
     std::wstring_view svvv = {app, args...};
     bela::EscapeArgv ea;
     ea.AssignFull(svv);
@@ -147,8 +145,7 @@ inline bool IsUserAdministratorsGroup() {
   SID_IDENTIFIER_AUTHORITY NtAuthority = SECURITY_NT_AUTHORITY;
   PSID AdministratorsGroup;
   if (!AllocateAndInitializeSid(&NtAuthority, 2, SECURITY_BUILTIN_DOMAIN_RID,
-                                DOMAIN_ALIAS_RID_ADMINS, 0, 0, 0, 0, 0, 0,
-                                &AdministratorsGroup)) {
+                                DOMAIN_ALIAS_RID_ADMINS, 0, 0, 0, 0, 0, 0, &AdministratorsGroup)) {
     return false;
   }
   BOOL b = FALSE;

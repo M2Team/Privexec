@@ -25,13 +25,12 @@ bool wsudo::AliasEngine::Initialize(bool verbose) {
     auto json = nlohmann::json::parse(fd.fd);
     auto cmds = json["Alias"];
     for (auto &cmd : cmds) {
-      alias.emplace(bela::ToWide(cmd["Alias"].get<std::string_view>()),
-                    AliasTarget(cmd["Target"].get<std::string_view>(),
-                                cmd["Desc"].get<std::string_view>()));
+      alias.emplace(
+          bela::ToWide(cmd["Alias"].get<std::string_view>()),
+          AliasTarget(cmd["Target"].get<std::string_view>(), cmd["Desc"].get<std::string_view>()));
     }
   } catch (const std::exception &e) {
-    bela::FPrintF(stderr, L"\x1b[31mAliasEngine::Initialize: %s\x1b[0m\n",
-                  e.what());
+    bela::FPrintF(stderr, L"\x1b[31mAliasEngine::Initialize: %s\x1b[0m\n", e.what());
     return false;
   }
   return true;
@@ -71,13 +70,10 @@ bool wsudo::AliasEngine::Apply() {
   return true;
 }
 
-int wsudo::AliasSubcmd(const std::vector<std::wstring_view> &argv,
-                       bool verbose) {
+int wsudo::AliasSubcmd(const std::vector<std::wstring_view> &argv, bool verbose) {
   if (argv.size() < 2) {
-    bela::FPrintF(
-        stderr,
-        L"\x1b[31mwsudo alias missing argument, current have: %ld\x1b[0m\n",
-        argv.size());
+    bela::FPrintF(stderr, L"\x1b[31mwsudo alias missing argument, current have: %ld\x1b[0m\n",
+                  argv.size());
     return 1;
   }
   AliasEngine ae;
@@ -90,8 +86,7 @@ int wsudo::AliasSubcmd(const std::vector<std::wstring_view> &argv,
     for (size_t i = 2; i < argv.size(); i++) {
       ae.Delete(argv[i].data());
       if (verbose) {
-        bela::FPrintF(stderr, L"\x1b[31mwsudo alias delete: %s\x1b[0m\n",
-                      argv[i].data());
+        bela::FPrintF(stderr, L"\x1b[31mwsudo alias delete: %s\x1b[0m\n", argv[i].data());
       }
     }
     return 0;
@@ -104,13 +99,11 @@ int wsudo::AliasSubcmd(const std::vector<std::wstring_view> &argv,
     }
     ae.Set(argv[2], argv[3], argv[4]);
     if (verbose) {
-      bela::FPrintF(stderr, L"\x1b[33mwsudo alias set: %s to %s (%s)\x1b[0m\n",
-                    argv[2], argv[3], argv[4]);
+      bela::FPrintF(stderr, L"\x1b[33mwsudo alias set: %s to %s (%s)\x1b[0m\n", argv[2], argv[3],
+                    argv[4]);
     }
     return 0;
   }
-  bela::FPrintF(stderr,
-                L"\x1b[31mwsudo alias unsupported command '%s'\x1b[0m\n",
-                argv[1]);
+  bela::FPrintF(stderr, L"\x1b[31mwsudo alias unsupported command '%s'\x1b[0m\n", argv[1]);
   return 1;
 }

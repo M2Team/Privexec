@@ -25,8 +25,8 @@ bool Process::ExecNone() {
   } else if (visible == VisibleMode::Hide) {
     createflags |= CREATE_NO_WINDOW;
   }
-  if (CreateProcessW(nullptr, cmd.data(), nullptr, nullptr, FALSE, createflags,
-                     nullptr, EmptyNull(cwd), &si, &pi) != TRUE) {
+  if (CreateProcessW(nullptr, cmd.data(), nullptr, nullptr, FALSE, createflags, nullptr,
+                     EmptyNull(cwd), &si, &pi) != TRUE) {
     return false;
   }
   pid = pi.dwProcessId;
@@ -37,8 +37,7 @@ bool Process::ExecNone() {
 
 bool GetNoElevatedToken(PHANDLE hNewToken) {
   if (IsUserAdministratorsGroup()) {
-    PrivilegeView pv = {
-        {SE_TCB_NAME, SE_ASSIGNPRIMARYTOKEN_NAME, SE_INCREASE_QUOTA_NAME}};
+    PrivilegeView pv = {{SE_TCB_NAME, SE_ASSIGNPRIMARYTOKEN_NAME, SE_INCREASE_QUOTA_NAME}};
     Elevator eo;
     std::wstring msg;
     if (!eo.Elevate(&pv, msg)) {
@@ -50,8 +49,8 @@ bool GetNoElevatedToken(PHANDLE hNewToken) {
     if (WTSQueryUserToken(eo.SID(), &hToken) != TRUE) {
       return false;
     }
-    if (DuplicateTokenEx(hToken, MAXIMUM_ALLOWED, NULL, SecurityIdentification,
-                         TokenPrimary, hNewToken) != TRUE) {
+    if (DuplicateTokenEx(hToken, MAXIMUM_ALLOWED, NULL, SecurityIdentification, TokenPrimary,
+                         hNewToken) != TRUE) {
       return false;
     }
     return true;
@@ -61,8 +60,8 @@ bool GetNoElevatedToken(PHANDLE hNewToken) {
   if (!OpenProcessToken(GetCurrentProcess(), MAXIMUM_ALLOWED, &hCurrentToken)) {
     return false;
   }
-  if (!DuplicateTokenEx(hCurrentToken, MAXIMUM_ALLOWED, NULL,
-                        SecurityImpersonation, TokenPrimary, hNewToken)) {
+  if (!DuplicateTokenEx(hCurrentToken, MAXIMUM_ALLOWED, NULL, SecurityImpersonation, TokenPrimary,
+                        hNewToken)) {
     CloseHandle(hCurrentToken);
     return false;
   }
@@ -94,8 +93,7 @@ bool Process::ExecLow() {
   }
   // Set process integrity levels
   if (!SetTokenInformation(hNewToken, TokenIntegrityLevel, &TIL,
-                           sizeof(TOKEN_MANDATORY_LABEL) +
-                               GetLengthSid(pIntegritySid))) {
+                           sizeof(TOKEN_MANDATORY_LABEL) + GetLengthSid(pIntegritySid))) {
     kmessage = L"lowlevelexec<SetTokenInformation>";
     return false;
   }
@@ -126,8 +124,7 @@ bool Process::ExecNoElevated() {
   }
   // Set process integrity levels
   if (!SetTokenInformation(hNewToken, TokenIntegrityLevel, &TIL,
-                           sizeof(TOKEN_MANDATORY_LABEL) +
-                               GetLengthSid(pIntegritySid))) {
+                           sizeof(TOKEN_MANDATORY_LABEL) + GetLengthSid(pIntegritySid))) {
     kmessage = L"NoElevated <SetTokenInformation>";
     return false;
   }
@@ -204,9 +201,8 @@ bool Process::ExecWithToken(HANDLE hToken, bool desktop) {
   } else if (visible == VisibleMode::Hide) {
     createflags |= CREATE_NO_WINDOW;
   }
-  if (CreateProcessAsUserW(hToken, nullptr, cmd.data(), nullptr, nullptr, FALSE,
-                           createflags, lpEnvironment, EmptyNull(cwd), &si,
-                           &pi) != TRUE) {
+  if (CreateProcessAsUserW(hToken, nullptr, cmd.data(), nullptr, nullptr, FALSE, createflags,
+                           lpEnvironment, EmptyNull(cwd), &si, &pi) != TRUE) {
     return false;
   }
   pid = pi.dwProcessId;

@@ -17,8 +17,7 @@ template <typename T> struct Entry {
   inline bool operator==(const char *okey) const { return key == okey; }
 };
 
-bool MergeFromAppManifest(std::wstring_view file,
-                          std::vector<std::wstring> &caps) {
+bool MergeFromAppManifest(std::wstring_view file, std::vector<std::wstring> &caps) {
   pugi::xml_document doc;
   if (!doc.load_file(file.data())) {
     return false;
@@ -69,9 +68,10 @@ private:
   PSID *sids_;
 };
 
-typedef BOOL(WINAPI *DeriveCapabilitySidsFromNameImpl)(
-    LPCWSTR CapName, PSID **CapabilityGroupSids, DWORD *CapabilityGroupSidCount,
-    PSID **CapabilitySids, DWORD *CapabilitySidCount);
+typedef BOOL(WINAPI *DeriveCapabilitySidsFromNameImpl)(LPCWSTR CapName, PSID **CapabilityGroupSids,
+                                                       DWORD *CapabilityGroupSidCount,
+                                                       PSID **CapabilitySids,
+                                                       DWORD *CapabilitySidCount);
 
 bool AppContainer::InitializeFile(std::wstring_view file) {
   std::vector<std::wstring> caps;
@@ -84,9 +84,8 @@ bool AppContainer::InitializeFile(std::wstring_view file) {
 
 bool AppContainer::Initialize(const bela::Span<std::wstring> caps) {
   //
-  auto _DeriveCapabilitySidsFromName =
-      (DeriveCapabilitySidsFromNameImpl)GetProcAddress(
-          GetModuleHandle(L"KernelBase.dll"), "DeriveCapabilitySidsFromName");
+  auto _DeriveCapabilitySidsFromName = (DeriveCapabilitySidsFromNameImpl)GetProcAddress(
+      GetModuleHandle(L"KernelBase.dll"), "DeriveCapabilitySidsFromName");
   if (_DeriveCapabilitySidsFromName == nullptr) {
     kmessage = L"DeriveCapabilitySidsFromName Not Found in KernelBase.dll";
     return false;
@@ -95,10 +94,9 @@ bool AppContainer::Initialize(const bela::Span<std::wstring> caps) {
     DWORD dwn = 0, dwca = 0;
     SidArray capability_group_sids;
     SidArray capability_sids;
-    if (!_DeriveCapabilitySidsFromName(
-            n.c_str(), capability_group_sids.sids_ptr(),
-            capability_group_sids.count_ptr(), capability_sids.sids_ptr(),
-            capability_sids.count_ptr())) {
+    if (!_DeriveCapabilitySidsFromName(n.c_str(), capability_group_sids.sids_ptr(),
+                                       capability_group_sids.count_ptr(),
+                                       capability_sids.sids_ptr(), capability_sids.count_ptr())) {
       continue;
     }
     if (capability_sids.count() < 1) {
@@ -114,15 +112,14 @@ bool AppContainer::Initialize(const bela::Span<std::wstring> caps) {
     attr.Attributes = SE_GROUP_ENABLED;
     ca.push_back(attr);
   }
-  constexpr const wchar_t *appid =
-      L"Privexec.AppContainer.DeriveCapabilitySidsFromName";
+  constexpr const wchar_t *appid = L"Privexec.AppContainer.DeriveCapabilitySidsFromName";
   if (name.empty()) {
     name = appid;
   }
   DeleteAppContainerProfile(name.data()); // ignore error
   if (CreateAppContainerProfile(name.data(), name.data(), name.data(),
-                                (ca.empty() ? NULL : ca.data()),
-                                (DWORD)ca.size(), &appcontainersid) != S_OK) {
+                                (ca.empty() ? NULL : ca.data()), (DWORD)ca.size(),
+                                &appcontainersid) != S_OK) {
     kmessage = L"CreateAppContainerProfile error";
     return false;
   }
@@ -164,8 +161,8 @@ bool AppContainer::Initialize(const bela::Span<wid_t> wids) {
   }
   DeleteAppContainerProfile(name.data()); // ignore error
   if (CreateAppContainerProfile(name.data(), name.data(), name.data(),
-                                (ca.empty() ? NULL : ca.data()),
-                                (DWORD)ca.size(), &appcontainersid) != S_OK) {
+                                (ca.empty() ? NULL : ca.data()), (DWORD)ca.size(),
+                                &appcontainersid) != S_OK) {
     kmessage = L"CreateAppContainerProfile";
     return false;
   }

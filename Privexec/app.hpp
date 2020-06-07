@@ -149,8 +149,7 @@ public:
     return reinterpret_cast<App *>(GetWindowLongPtrW(window, GWLP_USERDATA));
   }
   int run(HINSTANCE hInstance);
-  static INT_PTR WINAPI WindowProc(HWND hWnd, UINT message, WPARAM wParam,
-                                   LPARAM lParam);
+  static INT_PTR WINAPI WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam);
   INT_PTR MessageHandler(UINT message, WPARAM wParam, LPARAM lParam);
   bool DropFiles(WPARAM wParam, LPARAM lParam);
 

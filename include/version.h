@@ -32,20 +32,19 @@
 #define PRIVEXEC_BUILD_VERSION PRIV_VERSION_FULL L"." PRIVSUBVER L" (dev)"
 #endif
 
-#define PRIVEXEC_APPLINK                                                       \
-  L"For more information about this tool. \nVisit: <a "                        \
-  L"href=\"https://github.com/M2Team/Privexec\">Privexec</a>\nVisit: <a "      \
+#define PRIVEXEC_APPLINK                                                                           \
+  L"For more information about this tool. \nVisit: <a "                                            \
+  L"href=\"https://github.com/M2Team/Privexec\">Privexec</a>\nVisit: <a "                          \
   L"href=\"https://forcemz.net/\">forcemz.net</a>"
 
-#define PRIVEXEC_APPLINKE                                                      \
-  L"Ask for help with this issue. \nVisit: <a "                                \
+#define PRIVEXEC_APPLINKE                                                                          \
+  L"Ask for help with this issue. \nVisit: <a "                                                    \
   L"href=\"https://github.com/M2Team/Privexec/issues\">Privexec Issues</a>"
 
-#define PRIVEXEC_COPYRIGHT                                                     \
-  L"Copyright \xA9 2020, Force Charlie. All Rights Reserved."
+#define PRIVEXEC_COPYRIGHT L"Copyright \xA9 2020, Force Charlie. All Rights Reserved."
 
-#define PRIVEXEC_APPVERSION                                                    \
-  L"Version: " PRIV_VERSION_FULL L"\nCopyright \xA9 2020, Force "              \
+#define PRIVEXEC_APPVERSION                                                                        \
+  L"Version: " PRIV_VERSION_FULL L"\nCopyright \xA9 2020, Force "                                  \
   L"Charlie. All Rights Reserved."
 
 #endif
