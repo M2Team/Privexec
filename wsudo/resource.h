@@ -3,7 +3,7 @@
 // Used by wsudo.rc
 
 //
-#include "..\include\version.h"
+#include "baseversion.h"
 
 #define IDI_APPICON 1001
 

@@ -4,7 +4,7 @@
 #include <bela/path.hpp>
 #include <bela/pe.hpp>
 #include <bela/parseargv.hpp>
-#include <version.h>
+#include <baseversion.h>
 #include <Shellapi.h>
 #include <Shlobj.h>
 #include <apphelp.hpp>
@@ -12,7 +12,10 @@
 #include "wsudo.hpp"
 #include "wsudoalias.hpp"
 
-void Version() { bela::FPrintF(stderr, L"\x1b[36mwsudo %s\x1b[0m\n", PRIVEXEC_BUILD_VERSION); }
+void Version() {
+  //
+  bela::FPrintF(stderr, L"\x1b[36mwsudo %s\x1b[0m\n", PRIVEXEC_VERSION);
+}
 
 void Usage(bool err = false) {
   constexpr const wchar_t *kUsage = LR"(run the program with the specified permissions
@@ -48,8 +51,8 @@ Builtin 'alias' command:
    wsudo alias delete ehs
 )";
   char32_t sh = 0x1F496; //  💖
-  bela::FPrintF(stderr, L"\x1b[%dmwsudo %c %s %s\x1b[0m\n", err ? 31 : 36, sh, PRIV_VERSION_MAIN,
-                kUsage);
+  bela::FPrintF(stderr, L"\x1b[%dmwsudo %c %d.%d %s\x1b[0m\n", err ? 31 : 36, sh,
+                PRIVEXEC_VERSION_MAJOR, PRIVEXEC_VERSION_MINOR, kUsage);
 }
 
 namespace wsudo {

@@ -42,7 +42,7 @@ public:
   Process &operator=(const Process &) = delete;
   Process(std::wstring_view cmd_) : cmd(cmd_) {}
   template <typename... Args> Process(std::wstring_view app, Args... args) {
-    std::wstring_view svvv = {app, args...};
+    std::wstring_view svv = {app, args...};
     bela::EscapeArgv ea;
     ea.AssignFull(svv);
     cmd = ea.sv();
@@ -87,7 +87,7 @@ public:
   AppContainer() = default;
   AppContainer(std::wstring_view cmd_) : cmd(cmd_) {}
   template <typename... Args> AppContainer(std::wstring_view app, Args... args) {
-    std::wstring_view svvv = {app, args...};
+    std::wstring_view svv = {app, args...};
     bela::EscapeArgv ea;
     ea.AssignFull(svv);
     cmd = ea.sv();

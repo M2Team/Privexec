@@ -1,7 +1,7 @@
 ///
 #ifndef RESOURCE_H
 #define RESOURCE_H
-#include "..\include\version.h"
+#include "baseversion.h"
 #define IDI_APPLICATION_ICON 101
 #define IDD_APPLICATION_DIALOG 102
 
@@ -29,16 +29,14 @@
 
 #define IDB_APPX_IMPORT 1021
 
-#define CS_LISTVIEW                                                            \
-  WS_BORDER | WS_VSCROLL | WS_TABSTOP | LVS_REPORT | LVS_NOCOLUMNHEADER
+#define CS_LISTVIEW WS_BORDER | WS_VSCROLL | WS_TABSTOP | LVS_REPORT | LVS_NOCOLUMNHEADER
 
-#define CS_BASE                                                                \
-  BS_PUSHBUTTON | BS_TEXT | BS_DEFPUSHBUTTON | BS_CHECKBOX | BS_AUTOCHECKBOX | \
-      WS_CHILD | WS_OVERLAPPED | WS_VISIBLE
+#define CS_BASE                                                                                    \
+  BS_PUSHBUTTON | BS_TEXT | BS_DEFPUSHBUTTON | BS_CHECKBOX | BS_AUTOCHECKBOX | WS_CHILD |          \
+      WS_OVERLAPPED | WS_VISIBLE
 
-#define CS_EDIT                                                                \
-  ES_MULTILINE | ES_AUTOVSCROLL | ES_AUTOHSCROLL | ES_WANTRETURN | ES_LEFT |   \
-      WS_VSCROLL
+#define CS_EDIT                                                                                    \
+  ES_MULTILINE | ES_AUTOVSCROLL | ES_AUTOHSCROLL | ES_WANTRETURN | ES_LEFT | WS_VSCROLL
 
 // Next default values for new objects
 //

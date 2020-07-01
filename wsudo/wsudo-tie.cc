@@ -18,7 +18,7 @@ usage: wsudo-tie command args...
 #include <bela/str_split.hpp>
 #include <bela/path.hpp>
 #include <bela/parseargv.hpp>
-#include <version.h>
+#include <baseversion.h>
 #include "env.hpp"
 
 namespace wsudo::tie {
@@ -47,7 +47,10 @@ struct AppMode {
   void Verbose();
 };
 
-void Version() { bela::FPrintF(stderr, L"\x1b[36mwsudo %s\x1b[0m\n", PRIVEXEC_BUILD_VERSION); }
+void Version() {
+  //
+  bela::FPrintF(stderr, L"\x1b[36mwsudo %s\x1b[0m\n", PRIVEXEC_VERSION);
+}
 
 void Usage(bool err = false) {
   constexpr const wchar_t *kUsage = LR"(wsudo-tie wsudo administrator level permission middleware.
@@ -62,8 +65,8 @@ usage: wsudo-tie command args...
 
 )";
   char32_t sh = 0x1F496; //  💖
-  bela::FPrintF(stderr, L"\x1b[%dmwsudo-tie %c %s %s\x1b[0m\n", err ? 31 : 36, sh,
-                PRIV_VERSION_MAIN, kUsage);
+  bela::FPrintF(stderr, L"\x1b[%dmwsudo-tie %c %d.%d %s\x1b[0m\n", err ? 31 : 36, sh,
+                PRIVEXEC_VERSION_MAJOR, PRIVEXEC_VERSION_MINOR, kUsage);
 }
 
 int AppMode::ParseArgv(int argc, wchar_t **argv) {
