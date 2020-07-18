@@ -8,6 +8,19 @@
 
 Run the program with the specified permission level
 
+## Install
+
+Install Privexec by [baulk](https://github.com/baulk/baulk)
+
+```powershell
+baulk install wsudo
+wsudo --version
+```
+
+Or you can download it directly, use Privexec after extracting the compressed package, and download: [https://github.com/M2Team/Privexec/releases/latest](https://github.com/M2Team/Privexec/releases/latest)
+
+
+
 ## Alias
 
 If you want add a alias to Privexec, Please modify Privexec.json on your Privexec.exe location.
@@ -144,13 +157,6 @@ Environment variables are deduced in cmd, so be careful to use quotes. In powers
 ::cmd
 wsudo -e "PATH=%PATH%;%TEMP%" -n -U cmd
 ```
-
-
-## Download
-
-Download:
-[https://github.com/M2Team/Privexec/releases/latest](https://github.com/M2Team/Privexec/releases/latest)
-
 
 ## Changelog
 
