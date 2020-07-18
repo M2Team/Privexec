@@ -17,7 +17,7 @@ baulk install wsudo
 wsudo --version
 ```
 
-Or you can download it directly, use Privexec after extracting the compressed package, and download: [https://github.com/M2Team/Privexec/releases/latest](https://github.com/M2Team/Privexec/releases/latest)
+Or you can download it directly, use Exeplorer or 7z and other tools to extract and then use Privexec, download link: [https://github.com/M2Team/Privexec/releases/latest](https://github.com/M2Team/Privexec/releases/latest)
 
 
 
