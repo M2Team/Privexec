@@ -77,6 +77,10 @@ wsudo Verbose Mode:
 
 ![wsudo](docs/images/wsudo3.png)
 
+wsudo exec administrator process under mintty (Turn on ConPty):
+
+![wsudo](docs/images/wsudo-tie-new-mintty.png)
+
 AppContainer Exec
 
 ![appexec](docs/images/appexec.png)
