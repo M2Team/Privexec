@@ -23,7 +23,7 @@ wsudo --version
 
 ## 别名
 
-Privexec 支持别名，在 Privexec 二进制目录下的 `Privexec.json`（或者 Baulk 虚拟环境中 `$BAULK_ROOT/bin/etc/privexec.json`）存储了 Privexec/wsudo 的别名信息。
+Privexec 和 wsudo 能够解析别名，另外 wsudo 添加或者删除别名，使用 vscode 编辑 `Privexec.json` 修改别名也是不错的选择，当 Privexec 通过 baulk 安装时，`Privexec.json` 的存储目录为 `$BAULK_ROOT/bin/etc`，如果 Privexec 直接下载解压，那么 `Privexec.json` 则在 `Privexec.exe` 相同的目录。 
 
 ```json
 {
@@ -56,8 +56,6 @@ AppContainer:
 
 ![appcoantiner](docs/images/appcontainer.png)
 
-**wsudo**:
-
 
 wsudo 帮助信息输出:
 
@@ -67,10 +65,6 @@ wsudo Verbose 模式:
 
 ![wsudo](docs/images/wsudo3.png)
 
-在开启了 ConPty 的 Mintty 中运行 wsudo 提升进程截图（借助 wsudo-tie 子进程继承了 wsudo 的控制台）:
-
-![wsudo](docs/images/wsudo-tie-new-mintty.png)
-
 AppExec AppContainer 启动器：
 
 ![appexec](docs/images/appexec.png)
@@ -79,11 +73,9 @@ AppExec AppContainer 启动器：
 
 Privexec 是一个 GUI 客户端, 当以标准用户运行时你可以启动管理员进程；当以管理员运行时则可以提权到 `System` 或者 `TrustedInstaller`，需要注意 `System` 或者 `TrustedInstaller` 拥有太多特权，容易破坏系统运行，使用的时候需要慎重。
 
-命令行和和启动目录支持通过 `ExpandEnvironmentString` 推导.
+AppExec 是一个启动 AppContainer 进程的程序，有一些开发者使用该程序去研究 Windows AppContainer 的运行细节，研究 AppContaner 的漏洞，UWP 应用便是运行在 AppContainer 容器中的。
 
-wsudo is a console command client
-
-**wsudo usage:**
+wsudo 是 Privexec/AppExec 的控制台版本，详细使用帮助如下：
 
 ```txt
 wsudo 😋 ♥ run the program with the specified permissions
@@ -120,6 +112,8 @@ Builtin 'alias' command:
 
 ```
 
+Privexec, AppExec, wsudo 启动命令时，命令行和和启动目录支持通过 `ExpandEnvironmentString` 推导.
+
 ## WSUDO 控制台行为细节
 
 wsudo 支持的参数 `--hide` `--wait` `--new-console` 行为细节如下:
@@ -130,6 +124,13 @@ wsudo 支持的参数 `--hide` `--wait` `--new-console` 行为细节如下:
 |Windows GUI|不等待退出/打开图形化窗口|不等待退出/打开图形化窗口|不等待退出/忽略|
 |Windows CUI `-wait`|等待退出/继承控制台|等待退出/打开新的控制台|等待退出/无控制台|
 |Windows GUI `-wait`|等待退出/打开图形化窗口|等待退出/打开图形化窗口|等待退出/忽略|
+
+wsudo 在以标准用户启动管理员进程时，如果当前运行在控制台时，支持继承控制台窗口，如果不是运行在控制台，则无能为力，较新的 Cygwin 目前已经支持在较新的 Windows 10 上以 ConPty 启动控制台，因此时可以继承控制台窗口的，也就是终端。 下图就是佐证。
+
+
+在开启了 ConPty 的 Mintty 中运行 wsudo 提升进程截图（借助 wsudo-tie 子进程继承了 wsudo 的控制台）:
+
+![wsudo](docs/images/wsudo-tie-new-mintty.png)
 
 ### WSUDO 环境变量
 
