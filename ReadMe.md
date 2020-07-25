@@ -6,6 +6,9 @@
 [![Total Downloads](https://img.shields.io/github/downloads/M2Team/Privexec/total.svg)](https://github.com/M2Team/Privexec/releases)
 [![996.icu](https://img.shields.io/badge/link-996.icu-red.svg)](https://996.icu)
 
+
+[简体中文](./ReadMe.zh-CN.md)
+
 Run the program with the specified permission level
 
 ## Install
@@ -22,8 +25,7 @@ Or you can download it directly, use Exeplorer or 7z and other tools to extract 
 
 
 ## Alias
-
-If you want add a alias to Privexec, Please modify `Privexec.json` on your Privexec.exe location. (Or baulk virtual env `$BAULK_ROOT/bin/etc/privexec.json`)
+Privexec and wsudo can resolve aliases. In addition, wsudo adds or deletes aliases. It is also a good choice to use vscode to edit `Privexec.json` to modify aliases. When Privexec is installed via baulk, the storage directory of `Privexec.json` is `$BAULK_ROOT/bin/etc`. If Privexec Download and unzip directly, then `Privexec.json` will be in the same directory as `Privexec.exe`.
 
 
 ```json
@@ -57,8 +59,6 @@ AppContainer:
 
 ![appcoantiner](docs/images/appcontainer.png)
 
-**wsudo**:
-
 
 wsudo usage:
 
@@ -68,21 +68,17 @@ wsudo Verbose Mode:
 
 ![wsudo](docs/images/wsudo3.png)
 
-wsudo exec administrator process under mintty (Turn on ConPty):
-
-![wsudo](docs/images/wsudo-tie-new-mintty.png)
-
 AppContainer Exec
 
 ![appexec](docs/images/appexec.png)
 
 ## Usage
 
-Privexec is a GUI client, Your can run as administrator (no administrator), System and TrustedInstaller require administrator!!!
+Privexec is a GUI client. When running as a standard user, you can start the administrator process; when running as an administrator, you can elevate the privileges to `System` or `TrustedInstaller`. It should be noted that `System` or `TrustedInstaller` has too many privileges, which can easily damage the system operation. Be careful when using it.
 
-Command and Process startup directory support `ExpandEnvironmentString`.
+AppExec is a program that starts the AppContainer process. Some developers use this program to study the running details of Windows AppContainer and the vulnerabilities of AppContaner. UWP applications run in the AppContainer container.
 
-wsudo is a console command client
+wsudo is the console version of Privexec/AppExec. The detailed help is as follows:
 
 **wsudo usage:**
 
@@ -121,6 +117,9 @@ Builtin 'alias' command:
 
 ```
 
+When Privexec, AppExec, wsudo launch commands, the command line and launch directory support deduction via `ExpandEnvironmentString`.
+
+
 ## WSUDO Details
 
 The wsudo visible and wait related parameters are `--hide` `--wait` `--new-console`. The corresponding situation is as follows:
@@ -132,6 +131,12 @@ The wsudo visible and wait related parameters are `--hide` `--wait` `--new-conso
 |Windows CUI `-wait`|wait/Inheritance console|wait/New console|wait/No console|
 |Windows GUI `-wait`|wait/New UI|wait/New UI|wait/No ignore|
 
+When wsudo starts the administrator process as a standard user, if it is currently running in the console, it supports inheriting the console window. If it is not running in the console, it can do nothing. The newer Cygwin currently supports the newer Windows 10 `ConPty` starts the console, so it can inherit the console window, which is the terminal. The picture below is the proof.
+
+wsudo exec administrator process under mintty (Turn on ConPty):
+
+![wsudo](docs/images/wsudo-tie-new-mintty.png)
+
 ### WSUDO Environment
 
 wsudo support `-e/--env` to set environment. such as:
@@ -140,8 +145,7 @@ wsudo support `-e/--env` to set environment. such as:
 ::curl must enabled multiple SSL backends.
 wsudo  -U -V --env CURL_SSL_BACKEND=schannel curl --verbose  -I https://nghttp2.org
 ```
-
-Environment variables are deduced in cmd, so be careful to use quotes. In powershell, the environment variable format is different, and wsudo will eventually process the environment variable.
+The environment variables will be deduced according to the Batch mechanism, that is, the environment variables are marked with matching `%`.
 
 ```powershell
 # powershell
