@@ -24,10 +24,10 @@ enum class VisibleMode : int {
   Hide
 };
 
-constexpr inline const wchar_t *EmptyNull(std::wstring_view s) {
-  return s.empty() ? nullptr : s.data();
+constexpr const wchar_t *string_nullable(std::wstring_view str) {
+  return str.empty() ? nullptr : str.data();
 }
-
+constexpr wchar_t *string_nullable(std::wstring &str) { return str.empty() ? nullptr : str.data(); }
 inline void CloseHandleEx(HANDLE &h) {
   if (h != INVALID_HANDLE_VALUE) {
     ::CloseHandle(h);

@@ -28,8 +28,7 @@ public:
   ~AliasEngine();
   bool Initialize(bool verbose = false);
   std::optional<std::wstring> Target(std::wstring_view al);
-  bool Set(std::wstring_view key, std::wstring_view target,
-           std::wstring_view desc) {
+  bool Set(std::wstring_view key, std::wstring_view target, std::wstring_view desc) {
     alias.insert_or_assign(key, AliasTarget(target, desc));
     updated = true;
     return true;

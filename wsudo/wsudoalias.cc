@@ -106,8 +106,8 @@ int wsudo::AliasSubcmd(const std::vector<std::wstring_view> &argv) {
   }
   if (argv[1] == L"add") {
     if (argv.size() < 5) {
-      bela::FPrintF(stderr, L"\x1b[31mwsudo alias add command style is:  Alias "
-                            L"Target Des\x1b[0m\n");
+      bela::FPrintF(
+          stderr, L"\x1b[31mwsudo alias add command style is:  alias target description\x1b[0m\n");
       return 1;
     }
     ae.Set(argv[2], argv[3], argv[4]);

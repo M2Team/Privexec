@@ -8,8 +8,8 @@
 
 namespace priv {
 //
-bool AllowNameObjectAccess(PSID appContainerSid, LPWSTR name,
-                           SE_OBJECT_TYPE type, ACCESS_MASK accessMask) {
+bool AllowNameObjectAccess(PSID appContainerSid, LPWSTR name, SE_OBJECT_TYPE type,
+                           ACCESS_MASK accessMask) {
   PACL oldAcl, newAcl = nullptr;
   DWORD status;
   EXPLICIT_ACCESSW ea;
@@ -22,16 +22,16 @@ bool AllowNameObjectAccess(PSID appContainerSid, LPWSTR name,
     ea.Trustee.ptstrName = (PWSTR)appContainerSid;
     ea.Trustee.TrusteeForm = TRUSTEE_IS_SID;
     ea.Trustee.TrusteeType = TRUSTEE_IS_GROUP;
-    status = GetNamedSecurityInfoW(name, type, DACL_SECURITY_INFORMATION,
-                                   nullptr, nullptr, &oldAcl, nullptr, nullptr);
+    status = GetNamedSecurityInfoW(name, type, DACL_SECURITY_INFORMATION, nullptr, nullptr, &oldAcl,
+                                   nullptr, nullptr);
     if (status != ERROR_SUCCESS) {
       return false;
     }
     if (SetEntriesInAclW(1, &ea, oldAcl, &newAcl) != ERROR_SUCCESS) {
       return false;
     }
-    status = SetNamedSecurityInfoW(name, type, DACL_SECURITY_INFORMATION,
-                                   nullptr, nullptr, newAcl, nullptr);
+    status = SetNamedSecurityInfoW(name, type, DACL_SECURITY_INFORMATION, nullptr, nullptr, newAcl,
+                                   nullptr);
     if (status != ERROR_SUCCESS) {
       break;
     }
@@ -43,9 +43,8 @@ bool AllowNameObjectAccess(PSID appContainerSid, LPWSTR name,
 }
 
 using PAttribute = LPPROC_THREAD_ATTRIBUTE_LIST;
-#define PROC_THREAD_ATTRIBUTE_ALL_APPLICATION_PACKAGES_POLICY_EX               \
-  ProcThreadAttributeValue(ProcThreadAttributeAllApplicationPackagesPolicy,    \
-                           FALSE, TRUE, FALSE)
+#define PROC_THREAD_ATTRIBUTE_ALL_APPLICATION_PACKAGES_POLICY_EX                                   \
+  ProcThreadAttributeValue(ProcThreadAttributeAllApplicationPackagesPolicy, FALSE, TRUE, FALSE)
 
 bool AppContainer::Exec() {
   PWSTR pszstr;
@@ -67,14 +66,13 @@ bool AppContainer::Exec() {
   siex.StartupInfo.cb = sizeof(siex);
   SIZE_T cbAttributeListSize = 0;
   InitializeProcThreadAttributeList(NULL, 3, 0, &cbAttributeListSize);
-  siex.lpAttributeList = reinterpret_cast<PAttribute>(
-      HeapAlloc(GetProcessHeap(), 0, cbAttributeListSize));
+  siex.lpAttributeList =
+      reinterpret_cast<PAttribute>(HeapAlloc(GetProcessHeap(), 0, cbAttributeListSize));
   auto act = bela::finally([&] {
     // delete when func exit.
     DeleteProcThreadAttributeList(siex.lpAttributeList);
   });
-  if (InitializeProcThreadAttributeList(siex.lpAttributeList, 3, 0,
-                                        &cbAttributeListSize) != TRUE) {
+  if (InitializeProcThreadAttributeList(siex.lpAttributeList, 3, 0, &cbAttributeListSize) != TRUE) {
     kmessage = L"InitializeProcThreadAttributeList";
     return false;
   }
@@ -84,8 +82,8 @@ bool AppContainer::Exec() {
   sc.CapabilityCount = static_cast<DWORD>(ca.size());
   sc.Reserved = 0;
   if (UpdateProcThreadAttribute(siex.lpAttributeList, 0,
-                                PROC_THREAD_ATTRIBUTE_SECURITY_CAPABILITIES,
-                                &sc, sizeof(sc), nullptr, nullptr) != TRUE) {
+                                PROC_THREAD_ATTRIBUTE_SECURITY_CAPABILITIES, &sc, sizeof(sc),
+                                nullptr, nullptr) != TRUE) {
     kmessage = L"UpdateProcThreadAttribute";
     return false;
   }
@@ -93,22 +91,19 @@ bool AppContainer::Exec() {
   if (lpac) {
     // ProcThreadAttributeAllApplicationPackagesPolicy
     // UpdateProcThreadAttribute(siex.lpAttributeList,0,)
-    if (UpdateProcThreadAttribute(
-            siex.lpAttributeList, 0,
-            PROC_THREAD_ATTRIBUTE_ALL_APPLICATION_PACKAGES_POLICY_EX, &dwvalue,
-            sizeof(dwvalue), nullptr, nullptr) != TRUE) {
+    if (UpdateProcThreadAttribute(siex.lpAttributeList, 0,
+                                  PROC_THREAD_ATTRIBUTE_ALL_APPLICATION_PACKAGES_POLICY_EX,
+                                  &dwvalue, sizeof(dwvalue), nullptr, nullptr) != TRUE) {
       kmessage = L"call UpdateProcThreadAttribute(LPAC) failed";
       return false;
     }
   }
   for (auto &f : alloweddirs) {
-    AllowNameObjectAccess(appcontainersid, f.data(), SE_FILE_OBJECT,
-                          FILE_ALL_ACCESS);
+    AllowNameObjectAccess(appcontainersid, f.data(), SE_FILE_OBJECT, FILE_ALL_ACCESS);
   }
 
   for (auto &r : registries) {
-    AllowNameObjectAccess(appcontainersid, r.data(), SE_REGISTRY_KEY,
-                          KEY_ALL_ACCESS);
+    AllowNameObjectAccess(appcontainersid, r.data(), SE_REGISTRY_KEY, KEY_ALL_ACCESS);
   }
 
   DWORD createflags = EXTENDED_STARTUPINFO_PRESENT | CREATE_UNICODE_ENVIRONMENT;
@@ -118,9 +113,8 @@ bool AppContainer::Exec() {
     createflags |= CREATE_NO_WINDOW;
   }
 
-  if (CreateProcessW(nullptr, cmd.data(), nullptr, nullptr, FALSE, createflags,
-                     nullptr, EmptyNull(cwd),
-                     reinterpret_cast<STARTUPINFOW *>(&siex), &pi) != TRUE) {
+  if (CreateProcessW(nullptr, cmd.data(), nullptr, nullptr, FALSE, createflags, nullptr,
+                     string_nullable(cwd), reinterpret_cast<STARTUPINFOW *>(&siex), &pi) != TRUE) {
     kmessage = L"call CreateProcessW (appcontainer) failed";
     return false;
   }

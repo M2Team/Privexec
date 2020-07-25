@@ -26,7 +26,7 @@ bool Process::ExecNone() {
     createflags |= CREATE_NO_WINDOW;
   }
   if (CreateProcessW(nullptr, cmd.data(), nullptr, nullptr, FALSE, createflags, nullptr,
-                     EmptyNull(cwd), &si, &pi) != TRUE) {
+                     string_nullable(cwd), &si, &pi) != TRUE) {
     return false;
   }
   pid = pi.dwProcessId;
@@ -162,7 +162,7 @@ bool Process::ExecElevated() {
     info.nShow = SW_SHOWNORMAL;
   }
   info.fMask = SEE_MASK_DEFAULT | SEE_MASK_NOCLOSEPROCESS;
-  info.lpDirectory = EmptyNull(cwd);
+  info.lpDirectory = string_nullable(cwd);
   if (ShellExecuteExW(&info) != TRUE) {
     return false;
   }
@@ -202,7 +202,7 @@ bool Process::ExecWithToken(HANDLE hToken, bool desktop) {
     createflags |= CREATE_NO_WINDOW;
   }
   if (CreateProcessAsUserW(hToken, nullptr, cmd.data(), nullptr, nullptr, FALSE, createflags,
-                           lpEnvironment, EmptyNull(cwd), &si, &pi) != TRUE) {
+                           lpEnvironment, string_nullable(cwd), &si, &pi) != TRUE) {
     return false;
   }
   pid = pi.dwProcessId;
