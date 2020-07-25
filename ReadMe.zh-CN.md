@@ -6,25 +6,24 @@
 [![Total Downloads](https://img.shields.io/github/downloads/M2Team/Privexec/total.svg)](https://github.com/M2Team/Privexec/releases)
 [![996.icu](https://img.shields.io/badge/link-996.icu-red.svg)](https://996.icu)
 
-Run the program with the specified permission level
+使用特定的用户权限运行程序
 
-## Install
+## 安装
 
-Install Privexec by [baulk](https://github.com/baulk/baulk)
+使用 [baulk](https://github.com/baulk/baulk) 安装 Privexec
 
 ```powershell
 baulk install wsudo
 wsudo --version
 ```
 
-Or you can download it directly, use Exeplorer or 7z and other tools to extract and then use Privexec, download link: [https://github.com/M2Team/Privexec/releases/latest](https://github.com/M2Team/Privexec/releases/latest)
+当然你可以直接下载压缩包，然后使用 7z/WinRar/资源管理器等提取到任意目录运行 Privexec/AppExec/wsudo，下载链接: [https://github.com/M2Team/Privexec/releases/latest](https://github.com/M2Team/Privexec/releases/latest)
 
 
 
-## Alias
+## 别名
 
-If you want add a alias to Privexec, Please modify `Privexec.json` on your Privexec.exe location. (Or baulk virtual env `$BAULK_ROOT/bin/etc/privexec.json`)
-
+Privexec 支持别名，在 Privexec 二进制目录下的 `Privexec.json`（或者 Baulk 虚拟环境中 `$BAULK_ROOT/bin/etc/privexec.json`）存储了 Privexec/wsudo 的别名信息。
 
 ```json
 {

@@ -72,6 +72,9 @@
         "concepts": "cpp",
         "set": "cpp",
         "variant": "cpp",
-        "sstream": "cpp"
+        "sstream": "cpp",
+        "locale": "cpp",
+        "xlocbuf": "cpp",
+        "xlocmes": "cpp"
     }
 }

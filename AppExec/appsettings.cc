@@ -2,6 +2,8 @@
 #include <json.hpp>
 #include <file.hpp>
 #include <bela/path.hpp>
+#include <vfsenv.hpp>
+#include <filesystem>
 #include "app.hpp"
 
 [[nodiscard]] inline unsigned char _Digit_from_char(const unsigned char _Ch) noexcept {
@@ -69,13 +71,7 @@ inline std::string EncodeColor(COLORREF cr) {
 namespace priv {
 
 bool AppInitializeSettings(AppSettings &as) {
-  bela::error_code ec;
-  auto p = bela::ExecutableFinalPathParent(ec);
-  if (!p) {
-    OutputDebugStringW(ec.data());
-    return false;
-  }
-  auto file = bela::StringCat(*p, L"\\AppExec.json");
+  auto file = PathSearcher::Instance().JoinEtc(L"AppExec.json");
   FD fd;
   if (_wfopen_s(&fd.fd, file.data(), L"rb") != 0) {
     return false;
@@ -97,13 +93,16 @@ bool AppInitializeSettings(AppSettings &as) {
 }
 
 bool AppApplySettings(const AppSettings &as) {
-  bela::error_code ec;
-  auto p = bela::ExecutableFinalPathParent(ec);
-  if (!p) {
-    OutputDebugStringW(ec.data());
-    return false;
+  auto file = PathSearcher::Instance().JoinEtc(L"AppExec.json");
+  std::filesystem::path p(file);
+  auto parent = p.parent_path();
+  std::error_code e;
+  if (!std::filesystem::exists(parent, e)) {
+    if (!std::filesystem::create_directories(parent, e)) {
+      auto ec = bela::from_std_error_code(e);
+      return false;
+    }
   }
-  auto file = bela::StringCat(*p, L"\\AppExec.json");
   nlohmann::json j;
   try {
     FD fd;

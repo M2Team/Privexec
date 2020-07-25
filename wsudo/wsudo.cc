@@ -56,6 +56,7 @@ Builtin 'alias' command:
 }
 
 namespace wsudo {
+bool IsDebugMode = false;
 //    -a          AppContainer
 //    -M          Mandatory Integrity Control
 //    -U          No Elevated(UAC)
@@ -133,7 +134,7 @@ int AppMode::ParseArgv(int argc, wchar_t **argv) {
           wait = true;
           break;
         case 'V':
-          verbose = true;
+          wsudo::IsDebugMode = true;
           break;
         case 'x':
           appx = va;
@@ -209,18 +210,18 @@ const std::wstring_view AppSLevel(priv::ExecLevel l) {
 }
 
 void AppMode::Verbose() {
-  if (!verbose) {
+  if (!IsDebugMode) {
     return;
   }
   if (!cwd.empty()) {
-    bela::FPrintF(stderr, L"\x1b[01;33m* App cwd: %s\x1b[0m\n", cwd);
+    DbgPrint(L"App cwd: %s", cwd);
   }
   if (!appx.empty()) {
-    bela::FPrintF(stderr, L"\x1b[01;33m* App AppContainer Manifest: %s\x1b[0m\n", appx);
+    DbgPrint(L"App AppContainer Manifest: %s", appx);
   }
-  bela::FPrintF(stderr, L"\x1b[01;33m* App Launcher level: %s\x1b[0m\n", AppSLevel(level));
+  DbgPrint(L"App Launcher level: %s", AppSLevel(level));
   if (disablealias) {
-    bela::FPrintF(stderr, L"\x1b[01;33m* App Alias is disabled\x1b[0m\n");
+    DbgPrint(L"App Alias is disabled");
   }
 }
 
@@ -241,24 +242,24 @@ bool AppSubsystemIsConsole(std::wstring &cmd, bool aliasexpand, const AppMode &a
       // NOT FOUND
       return false;
     }
-    am.Verbose(L"\x1b[01;33m* App full path '%s'\x1b[0m\n", exe);
+    DbgPrint(L"App full path '%s'", exe);
     bela::error_code ec;
     auto realexe = bela::RealPathEx(exe, ec);
     if (!realexe) {
       bela::FPrintF(stderr, L"realpath: %s error: %s\n", exe, ec.message);
       return false;
     }
-    am.Verbose(L"\x1b[01;33m* App real path '%s'\x1b[0m\n", *realexe);
+    DbgPrint(L"App real path '%s'", *realexe);
     auto pe = bela::pe::Expose(*realexe, ec);
     if (!pe) {
-      am.Verbose(L"\x1b[01;33m* Not PE File '%s'\x1b[0m\n", *realexe);
+      DbgPrint(L"Not PE File '%s'", *realexe);
       if (IsConsoleSuffix(exe)) {
         cmd.assign(exe);
         return true;
       }
       return false;
     }
-    am.Verbose(L"\x1b[01;33m* App real argv0 '%s'\x1b[0m\n", exe);
+    DbgPrint(L"App real argv0 '%s'", exe);
     return pe->subsystem == bela::pe::Subsystem::CUI;
   }
   int Argc;
@@ -266,31 +267,29 @@ bool AppSubsystemIsConsole(std::wstring &cmd, bool aliasexpand, const AppMode &a
   if (Argc == 0) {
     return false;
   }
-  am.Verbose(L"\x1b[01;33m* App real argv0 '%s'\x1b[0m\n", Argv[0]);
+  DbgPrint(L"App real argv0 '%s'", Argv[0]);
   std::wstring exe;
   if (!bela::ExecutableExistsInPath(Argv[0], exe)) {
     LocalFree(Argv);
     return false;
   }
   LocalFree(Argv);
-  am.Verbose(L"\x1b[01;33m* App full path '%s'\x1b[0m\n", exe);
+  DbgPrint(L"App full path '%s'", exe);
   bela::error_code ec;
   auto realexe = bela::RealPathEx(exe, ec);
   if (!realexe) {
     bela::FPrintF(stderr, L"realpath: %s error: %s\n", exe, ec.message);
     return false;
   }
-  am.Verbose(L"\x1b[01;33m* App real path '%s'\x1b[0m\n", *realexe);
+  DbgPrint(L"App real path '%s'", *realexe);
   auto pe = bela::pe::Expose(*realexe, ec);
   if (!pe) {
-    am.Verbose(L"\x1b[01;33m* Not PE File '%s'\x1b[0m\n", *realexe);
+    DbgPrint(L"Not PE File '%s'", *realexe);
     return IsConsoleSuffix(*realexe);
   }
-  am.Verbose(L"\x1b[01;33m* App real argv0 '%s'\x1b[0m\n", *realexe);
+  DbgPrint(L"App real argv0 '%s'", *realexe);
   return pe->subsystem == bela::pe::Subsystem::CUI;
 }
-
-} // namespace wsudo
 
 int AppWait(DWORD pid) {
   if (pid == 0) {
@@ -336,7 +335,7 @@ std::wstring ExpandArgv0(std::wstring_view argv0, bool disablealias, const wsudo
     return bela::ExpandEnv(argv0);
   }
   aliasexpand = true;
-  am.Verbose(L"\x1b[01;33m* App alias '%s' expand to '%s'\x1b[0m\n", cmd, *al);
+  DbgPrint(L"App alias '%s' expand to '%s'", cmd, *al);
   return bela::ExpandEnv(*al);
 }
 
@@ -351,20 +350,20 @@ int AppExecuteAppContainer(wsudo::AppMode &am) {
   } else {
     ea.Assign(argv0);
   }
-  am.Verbose(L"\x1b[01;33m* App real arg0 '%s'\x1b[0m\n", argv0);
+  DbgPrint(L"App real arg0 '%s'", argv0);
   if (am.visible == priv::VisibleMode::None && isconsole || am.wait) {
     waitable = true;
   }
 
   if (isconsole) {
-    am.Verbose(L"\x1b[01;33m* App subsystem is console, %s\x1b[0m\n", am.Visible());
+    DbgPrint(L"App subsystem is console, %s", am.Visible());
   }
   for (size_t i = 1; i < am.args.size(); i++) {
     ea.Append(am.args[i]);
   }
-  am.Verbose(L"\x1b[01;33m* App real command '%s'\x1b[0m\n", argv0);
+  DbgPrint(L"App real command '%s'", argv0);
   am.envctx.Apply([&](std::wstring_view k, std::wstring_view v) {
-    am.Verbose(L"\x1b[01;33m* App apply env '%s' = '%s'\x1b[0m\n", k, v);
+    DbgPrint(L"App apply env '%s' = '%s'", k, v);
   });
   priv::AppContainer p(ea.sv());
   if (!am.cwd.empty()) {
@@ -377,13 +376,13 @@ int AppExecuteAppContainer(wsudo::AppMode &am) {
   p.ChangeVisibleMode(am.visible);
   p.EnableLPAC(am.lpac);
   if (am.lpac) {
-    am.Verbose(L"\x1b[01;33m* AppContainer: Less Privileged AppContainer Is "
-               L"Enabled.\x1b[0m\n");
+    DbgPrint(L"AppContainer: Less Privileged AppContainer Is "
+             L"Enabled.");
   }
   if (!am.appname.empty()) {
     p.Name(am.appname);
   }
-  bela::FPrintF(stderr, L"\x1b[01;32mCommand: %s\x1b[0m\n", ea.sv());
+  bela::FPrintF(stderr, L"\x1b[01;32mCommand: %s", ea.sv());
   bool ok = false;
   if (am.appx.empty()) {
     if (am.lpac) {
@@ -443,7 +442,13 @@ inline std::wstring AppGetcwd() {
 }
 
 std::optional<std::wstring> AppTieExecuteExists() {
-  auto file = bela::StringCat(wsudo::ExecutableFinalPathParent, L"\\wsudo-tie.exe");
+  bela::error_code ec;
+  auto finalexeparent = bela::ExecutableFinalPathParent(ec);
+  if (!finalexeparent) {
+    bela::FPrintF(stderr, L"\x1b[31mwsudo unable resolve executable %s \x1b[0m\n", ec.message);
+    return std::nullopt;
+  }
+  auto file = bela::StringCat(*finalexeparent, L"\\wsudo-tie.exe");
   if (bela::PathExists(file)) {
     return std::make_optional(std::move(file));
   }
@@ -462,7 +467,7 @@ int AppExecuteTie(std::wstring_view tie, std::wstring_view arg0, wsudo::AppMode 
   }
   // parent work dir (wsudo-tie will chdir to)
   // env values...
-  if (am.verbose) {
+  if (wsudo::IsDebugMode) {
     ea.Append(L"--verbose");
   }
   // spec cwd
@@ -497,7 +502,7 @@ int AppExecuteTie(std::wstring_view tie, std::wstring_view arg0, wsudo::AppMode 
 bool IsConhosted(wsudo::AppMode &am) {
   auto h = GetStdHandle(STD_OUTPUT_HANDLE);
   if (h == nullptr || h == INVALID_HANDLE_VALUE) {
-    am.Verbose(L"unable get std handle\n");
+    DbgPrint(L"unable get std handle");
     return false;
   }
   auto t = GetFileType(h);
@@ -511,7 +516,7 @@ bool IsConhosted(wsudo::AppMode &am) {
       auto pb = reinterpret_cast<FILE_NAME_INFO *>(buffer);
       std::wstring_view pipename{pb->FileName, pb->FileNameLength / 2};
       auto pn = bela::StringCat(L"\\\\.\\pipe", pipename);
-      am.Verbose(L"\x1b[1;33m* App stdout: '%s'\x1b[0m\n", pn);
+      DbgPrint(L"App stdout: '%s'", pn);
     }
     return false;
   }
@@ -523,22 +528,20 @@ int AppExecute(wsudo::AppMode &am) {
   bela::EscapeArgv ea;
   bool aliasexpand = false;
   auto argv0 = ExpandArgv0(am.args[0], am.disablealias, am, aliasexpand);
-  auto isconsole = wsudo::AppSubsystemIsConsole(argv0, aliasexpand, am);
+  auto isconsole = AppSubsystemIsConsole(argv0, aliasexpand, am);
   if (aliasexpand) {
     ea.AssignNoEscape(argv0);
   } else {
     ea.Assign(argv0);
   }
-  am.Verbose(L"\x1b[01;33m* App real arg0 '%s'\x1b[0m\n", argv0);
+  DbgPrint(L"App real arg0 '%s'", argv0);
   auto elevated = priv::IsUserAdministratorsGroup();
   // If wsudo-tie exists. we will use wsudo-tie as administrator proxy
   if (!elevated && am.level == priv::ExecLevel::Elevated && isconsole &&
       am.visible == priv::VisibleMode::None && IsConhosted(am)) {
     auto tie = AppTieExecuteExists();
     if (tie) {
-      am.Verbose(L"\x1b[01;33m* App subsystem is console, use %s as "
-                 L"middleware.\x1b[0m\n",
-                 *tie);
+      DbgPrint(L"App subsystem is console, use %s as middleware.", *tie);
       return AppExecuteTie(*tie, ea.sv(), am);
     }
   }
@@ -551,15 +554,15 @@ int AppExecute(wsudo::AppMode &am) {
   }
 
   if (isconsole) {
-    am.Verbose(L"\x1b[01;33m* App subsystem is console, %s\x1b[0m\n", am.Visible());
+    DbgPrint(L"App subsystem is console, %s", am.Visible());
   }
 
   for (size_t i = 1; i < am.args.size(); i++) {
     ea.Append(am.args[i]);
   }
-  am.Verbose(L"\x1b[01;33m* App real command '%s'\x1b[0m\n", argv0);
+  DbgPrint(L"App real command '%s'", argv0);
   am.envctx.Apply([&](std::wstring_view k, std::wstring_view v) {
-    am.Verbose(L"\x1b[01;33m* App apply env '%s' = '%s'\x1b[0m\n", k, v);
+    DbgPrint(L"App apply env '%s' = '%s'", k, v);
   });
   priv::Process p(ea.sv());
   p.ChangeVisibleMode(am.visible);
@@ -584,22 +587,9 @@ int AppExecute(wsudo::AppMode &am) {
   }
   return 1;
 }
-
-bool InitializeExecutable() {
-  bela::error_code ec;
-  auto finalexeparent = bela::ExecutableFinalPathParent(ec);
-  if (!finalexeparent) {
-    bela::FPrintF(stderr, L"\x1b[31mwsudo unable resolve executable %s \x1b[0m\n", ec.message);
-    return false;
-  }
-  wsudo::ExecutableFinalPathParent.assign(std::move(*finalexeparent));
-  return true;
-}
+} // namespace wsudo
 
 int wmain(int argc, wchar_t **argv) {
-  if (!InitializeExecutable()) {
-    return 1;
-  }
   wsudo::AppMode am;
   if (am.ParseArgv(argc, argv) != 0) {
     return 1;
@@ -610,12 +600,12 @@ int wmain(int argc, wchar_t **argv) {
     return 1;
   }
   if (am.args[0] == L"alias") {
-    return wsudo::AliasSubcmd(am.args, am.verbose);
+    return wsudo::AliasSubcmd(am.args);
   }
   am.Verbose();
   priv::dotcom_global_initializer di;
   if (am.level == priv::ExecLevel::AppContainer) {
-    return AppExecuteAppContainer(am);
+    return wsudo::AppExecuteAppContainer(am);
   }
-  return AppExecute(am);
+  return wsudo::AppExecute(am);
 }

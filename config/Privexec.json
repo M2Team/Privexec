@@ -1,19 +1,14 @@
 {
-    "Alias": [
+    "alias": [
         {
-            "Desc": "Edit Hosts",
-            "Alias": "edithosts",
-            "Target": "Notepad %windir%\\System32\\Drivers\\etc\\hosts"
+            "description": "Edit Hosts",
+            "name": "edit-hosts",
+            "target": "Notepad %windir%\\System32\\Drivers\\etc\\hosts"
         },
         {
-            "Desc": "PowerShell ISE",
-            "Alias": "pwshise",
-            "Target": "powershell_ise"
-        },
-        {
-            "Desc": "Windows Debugger",
-            "Alias": "windbg",
-            "Target": "\"%ProgramFiles(x86)%\\Windows Kits\\10\\Debuggers\\x64\\windbg.exe\""
+            "description": "Windows Debugger",
+            "name": "windbg",
+            "target": "\"%ProgramFiles(x86)%\\Windows Kits\\10\\Debuggers\\x64\\windbg.exe\""
         }
     ]
 }
