@@ -43,12 +43,12 @@ Privexec 支持别名，在 Privexec 二进制目录下的 `Privexec.json`（或
 ```
 
 
-## Screenshot
+## 截图
 
 ![ui](docs/images/admin.png)
 
 
-Alias:
+别名:
 
 ![alias](docs/images/alias.png)
 
@@ -59,27 +59,27 @@ AppContainer:
 **wsudo**:
 
 
-wsudo usage:
+wsudo 帮助信息输出:
 
 ![wsudo](docs/images/wsudo.png)
 
-wsudo Verbose Mode:
+wsudo Verbose 模式:
 
 ![wsudo](docs/images/wsudo3.png)
 
-wsudo exec administrator process under mintty (Turn on ConPty):
+在开启了 ConPty 的 Mintty 中运行 wsudo 提升进程截图（借助 wsudo-tie 子进程继承了 wsudo 的控制台）:
 
 ![wsudo](docs/images/wsudo-tie-new-mintty.png)
 
-AppContainer Exec
+AppExec AppContainer 启动器：
 
 ![appexec](docs/images/appexec.png)
 
-## Usage
+## 使用帮助
 
-Privexec is a GUI client, Your can run as administrator (no administrator), System and TrustedInstaller require administrator!!!
+Privexec 是一个 GUI 客户端, 当以标准用户运行时你可以启动管理员进程；当以管理员运行时则可以提权到 `System` 或者 `TrustedInstaller`，需要注意 `System` 或者 `TrustedInstaller` 拥有太多特权，容易破坏系统运行，使用的时候需要慎重。
 
-Command and Process startup directory support `ExpandEnvironmentString`.
+命令行和和启动目录支持通过 `ExpandEnvironmentString` 推导.
 
 wsudo is a console command client
 
@@ -120,27 +120,27 @@ Builtin 'alias' command:
 
 ```
 
-## WSUDO Details
+## WSUDO 控制台行为细节
 
-The wsudo visible and wait related parameters are `--hide` `--wait` `--new-console`. The corresponding situation is as follows:
+wsudo 支持的参数 `--hide` `--wait` `--new-console` 行为细节如下:
 
-|PE Subsystem|`No relevant parameters`|`--new-console`|`--hide`|
+|PE 子系统|无参数|`--new-console`|`--hide`|
 |---|---|---|---
-|Windows CUI|wait/Inheritance console|no wait/New console|no wait/No console|
-|Windows GUI|no wait/New UI|no wait/New UI|no wait/ignore|
-|Windows CUI `-wait`|wait/Inheritance console|wait/New console|wait/No console|
-|Windows GUI `-wait`|wait/New UI|wait/New UI|wait/No ignore|
+|Windows CUI|等待退出/继承控制台|不等待退出/打开新的控制台|不等待退出/无控制台|
+|Windows GUI|不等待退出/打开图形化窗口|不等待退出/打开图形化窗口|不等待退出/忽略|
+|Windows CUI `-wait`|等待退出/继承控制台|等待退出/打开新的控制台|等待退出/无控制台|
+|Windows GUI `-wait`|等待退出/打开图形化窗口|等待退出/打开图形化窗口|等待退出/忽略|
 
-### WSUDO Environment
+### WSUDO 环境变量
 
-wsudo support `-e/--env` to set environment. such as:
+wsudo 支持通过参数 `-e/--env` 设置环境变量，例如:
 
 ```batch
 ::curl must enabled multiple SSL backends.
 wsudo  -U -V --env CURL_SSL_BACKEND=schannel curl --verbose  -I https://nghttp2.org
 ```
 
-Environment variables are deduced in cmd, so be careful to use quotes. In powershell, the environment variable format is different, and wsudo will eventually process the environment variable.
+环境变量会按照 Batch 的机制推导，即使用配对的 `%` 标记环境变量。
 
 ```powershell
 # powershell
@@ -154,8 +154,8 @@ wsudo -e "PATH=%PATH%;%TEMP%" -n -U cmd
 
 ## Changelog
 
-see: [changelog.md](./docs/changelog.md)
+可以查看: [changelog.md](./docs/changelog.md)
 
 ## LICENSE
 
-This project use MIT License, and JSON use [https://github.com/nlohmann/json](https://github.com/nlohmann/json) , some API use NSudo, but rewrite it.
+这个项目使用 MIT 协议，但其使用了一些其他开源库，可以查看相应的许可头和协议。比如这里使用了 [https://github.com/nlohmann/json](https://github.com/nlohmann/json) , 有些 API 借鉴了 NSudo 的，但已经重写。
