@@ -77,7 +77,7 @@ bool AppInitializeSettings(AppSettings &as) {
     return false;
   }
   try {
-    auto j = nlohmann::json::parse(fd.fd);
+    auto j = nlohmann::json::parse(fd.fd, nullptr, true, true);
     auto root = j["AppExec"];
     auto scolor = root["Background"].get<std::string_view>();
     COLORREF cr;
@@ -107,7 +107,7 @@ bool AppApplySettings(const AppSettings &as) {
   try {
     FD fd;
     if (_wfopen_s(&fd.fd, file.data(), L"rb") == 0) {
-      j = nlohmann::json::parse(fd.fd);
+      j = nlohmann::json::parse(fd.fd, nullptr, true, true);
     }
   } catch (const std::exception &e) {
     OutputDebugStringA(e.what());

@@ -57,7 +57,7 @@ bool AppAliasInitialize(HWND hbox, priv::alias_t &alias) {
     return false;
   }
   try {
-    auto json = nlohmann::json::parse(fd.fd);
+    auto json = nlohmann::json::parse(fd.fd, nullptr, true, true);
     auto cmds = json["alias"];
     for (auto &cmd : cmds) {
       auto desc = bela::ToWide(cmd["description"].get<std::string_view>());

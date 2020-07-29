@@ -25,7 +25,7 @@ bool wsudo::AliasEngine::Initialize(bool verbose) {
     return false;
   }
   try {
-    auto json = nlohmann::json::parse(fd.fd);
+    auto json = nlohmann::json::parse(fd.fd, nullptr, true, true);
     auto cmds = json["alias"];
     for (auto &cmd : cmds) {
       alias.emplace(bela::ToWide(cmd["name"].get<std::string_view>()),
