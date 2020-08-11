@@ -4,6 +4,7 @@
 #include <bela/path.hpp>
 #include <bela/pe.hpp>
 #include <bela/parseargv.hpp>
+#include <bela/simulator.hpp>
 #include <baseversion.h>
 #include <Shellapi.h>
 #include <Shlobj.h>
@@ -238,7 +239,7 @@ bool IsConsoleSuffix(std::wstring_view path) {
 bool AppSubsystemIsConsole(std::wstring &cmd, bool aliasexpand, const AppMode &am) {
   if (!aliasexpand) {
     std::wstring exe;
-    if (!bela::ExecutableExistsInPath(cmd, exe)) {
+    if (!bela::env::ExecutableExistsInPath(cmd, exe)) {
       // NOT FOUND
       return false;
     }
@@ -269,7 +270,7 @@ bool AppSubsystemIsConsole(std::wstring &cmd, bool aliasexpand, const AppMode &a
   }
   DbgPrint(L"App real argv0 '%s'", Argv[0]);
   std::wstring exe;
-  if (!bela::ExecutableExistsInPath(Argv[0], exe)) {
+  if (!bela::env::ExecutableExistsInPath(Argv[0], exe)) {
     LocalFree(Argv);
     return false;
   }
@@ -323,20 +324,20 @@ std::wstring ExpandArgv0(std::wstring_view argv0, bool disablealias, const wsudo
                          bool &aliasexpand) {
   aliasexpand = false;
   if (disablealias) {
-    return bela::ExpandEnv(argv0);
+    return bela::WindowsExpandEnv(argv0);
   }
   wsudo::AliasEngine ae;
   if (!ae.Initialize()) {
-    return bela::ExpandEnv(argv0);
+    return bela::WindowsExpandEnv(argv0);
   }
   auto cmd = std::wstring(argv0);
   auto al = ae.Target(cmd);
   if (!al) {
-    return bela::ExpandEnv(argv0);
+    return bela::WindowsExpandEnv(argv0);
   }
   aliasexpand = true;
   DbgPrint(L"App alias '%s' expand to '%s'", cmd, *al);
-  return bela::ExpandEnv(*al);
+  return bela::WindowsExpandEnv(*al);
 }
 
 int AppExecuteAppContainer(wsudo::AppMode &am) {
@@ -367,12 +368,12 @@ int AppExecuteAppContainer(wsudo::AppMode &am) {
   });
   priv::AppContainer p(ea.sv());
   if (!am.cwd.empty()) {
-    p.Chdir(bela::ExpandEnv(am.cwd));
+    p.Chdir(bela::WindowsExpandEnv(am.cwd));
   }
   if (!am.appname.empty()) {
     p.Name(am.appname);
   }
-  auto appx = bela::ExpandEnv(am.appx);
+  auto appx = bela::WindowsExpandEnv(am.appx);
   p.ChangeVisibleMode(am.visible);
   p.EnableLPAC(am.lpac);
   if (am.lpac) {
@@ -472,7 +473,7 @@ int AppExecuteTie(std::wstring_view tie, std::wstring_view arg0, wsudo::AppMode 
   }
   // spec cwd
   if (!am.cwd.empty()) {
-    ea.Append(L"--cwd").Append(bela::ExpandEnv(am.cwd));
+    ea.Append(L"--cwd").Append(bela::WindowsExpandEnv(am.cwd));
   }
   for (const auto &kv : am.envctx.Items()) {
     ea.Append(L"--env").Append(bela::StringCat(kv.first, L"=", kv.second));
@@ -567,7 +568,7 @@ int AppExecute(wsudo::AppMode &am) {
   priv::Process p(ea.sv());
   p.ChangeVisibleMode(am.visible);
   if (!am.cwd.empty()) {
-    p.Chdir(bela::ExpandEnv(am.cwd));
+    p.Chdir(bela::WindowsExpandEnv(am.cwd));
   }
   bela::FPrintF(stderr, L"\x1b[01;32mCommand: %s\x1b[0m\n", ea.sv());
   if (p.Exec(am.level)) {

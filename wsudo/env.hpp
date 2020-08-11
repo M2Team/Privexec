@@ -3,7 +3,7 @@
 #include <bela/base.hpp>
 #include <bela/phmap.hpp>
 #include <bela/ascii.hpp>
-#include <bela/env.hpp>
+#include <bela/simulator.hpp>
 #include <functional>
 
 namespace wsudo {
@@ -28,7 +28,7 @@ public:
       return false;
     }
     auto v = s.substr(pos + 1);
-    em.insert_or_assign(k, bela::ExpandEnv(v));
+    em.insert_or_assign(k, bela::WindowsExpandEnv(v));
     return true;
   }
   // Normal
@@ -39,7 +39,7 @@ public:
     }
     auto k = ws.substr(0, pos);
     auto v = ws.substr(pos + 1);
-    em.insert_or_assign(k, bela::ExpandEnv(v));
+    em.insert_or_assign(k, bela::WindowsExpandEnv(v));
     return true;
   }
   bool Apply(apply_t fn) const {

@@ -18,6 +18,7 @@ usage: wsudo-tie command args...
 #include <bela/str_split.hpp>
 #include <bela/path.hpp>
 #include <bela/parseargv.hpp>
+#include <bela/simulator.hpp>
 #include <baseversion.h>
 #include "env.hpp"
 
@@ -191,7 +192,7 @@ int wmain(int argc, wchar_t **argv) {
   });
   std::wstring exe;
   // CreateProcessW search path maybe failed.
-  if (bela::ExecutableExistsInPath(am.args[0], exe)) {
+  if (bela::env::ExecutableExistsInPath(am.args[0], exe)) {
     am.Verbose(L"\x1b[01;33m* App execute path '%s'\x1b[0m\n", exe);
   }
   am.Verbose(L"\x1b[01;33m* App real argv0 '%s'\x1b[0m\n", am.args[0]);

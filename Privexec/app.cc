@@ -98,13 +98,13 @@ std::wstring App::ResolveCMD() {
   auto cmd_ = cmd.Content();
   auto it = alias.find(cmd_);
   if (it != alias.end()) {
-    return bela::ExpandEnv(it->second);
+    return bela::WindowsExpandEnv(it->second);
   }
-  return bela::ExpandEnv(cmd_);
+  return bela::WindowsExpandEnv(cmd_);
 }
 
 std::wstring App::ResolveCWD(bool allowempty) {
-  auto cwd_ = bela::ExpandEnv(cwd.Content());
+  auto cwd_ = bela::WindowsExpandEnv(cwd.Content());
   if (!cwd_.empty() && (GetFileAttributesW(cwd_.data()) & FILE_ATTRIBUTE_DIRECTORY) != 0) {
     /// resolved cwd  valid
     return cwd_;
@@ -135,7 +135,7 @@ bool App::AppExecute() {
   if (appindex == (int)priv::ExecLevel::AppContainer) {
     //// TODO app container.
     auto cas = appcas.Capabilities();
-    auto xml = bela::ExpandEnv(appx.Content());
+    auto xml = bela::WindowsExpandEnv(appx.Content());
     if (!xml.empty() && !priv::MergeFromAppManifest(xml, cas)) {
       auto ec = bela::make_system_error_code();
       bela::BelaMessageBox(hWnd, L"Privexec appmanifest error", ec.message.c_str(),

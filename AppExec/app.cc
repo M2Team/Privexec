@@ -129,11 +129,11 @@ bool App::AppTheme() {
 
 std::wstring App::ResolveCMD() {
   auto cmd_ = cmd.Content();
-  return bela::ExpandEnv(cmd_);
+  return bela::WindowsExpandEnv(cmd_);
 }
 
 std::wstring App::ResolveCWD() {
-  auto cwd_ = bela::ExpandEnv(cwd.Content());
+  auto cwd_ = bela::WindowsExpandEnv(cwd.Content());
   if (!cwd_.empty() && (GetFileAttributesW(cwd_.c_str()) & FILE_ATTRIBUTE_DIRECTORY) != 0) {
     /// resolved cwd  valid
     return cwd_;
