@@ -18,8 +18,8 @@ namespace priv {
 
 int App::run(HINSTANCE hInstance) {
   hInst = hInstance;
-  return (int)DialogBoxParamW(hInstance, MAKEINTRESOURCEW(IDD_APPLICATION_DIALOG), NULL,
-                              App::WindowProc, reinterpret_cast<LPARAM>(this));
+  return (int)DialogBoxParamW(hInstance, MAKEINTRESOURCEW(IDD_APPLICATION_DIALOG), NULL, App::WindowProc,
+                              reinterpret_cast<LPARAM>(this));
 }
 
 INT_PTR WINAPI App::WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) {
@@ -123,12 +123,10 @@ std::wstring App::ResolveCWD(bool allowempty) {
 }
 
 bool App::AppExecute() {
-
   auto appindex = box.AppIndex();
   auto cmd_ = ResolveCMD();
   if (cmd_.empty()) {
-    bela::BelaMessageBox(hWnd, L"Please input command line", L"command empty", PRIVEXEC_APPLINKE,
-                         bela::mbs_t::FATAL);
+    bela::BelaMessageBox(hWnd, L"Please input command line", L"command empty", PRIVEXEC_APPLINKE, bela::mbs_t::FATAL);
     return false;
   }
 
@@ -138,8 +136,8 @@ bool App::AppExecute() {
     auto xml = bela::WindowsExpandEnv(appx.Content());
     if (!xml.empty() && !priv::MergeFromAppManifest(xml, cas)) {
       auto ec = bela::make_system_error_code();
-      bela::BelaMessageBox(hWnd, L"Privexec appmanifest error", ec.message.c_str(),
-                           PRIVEXEC_APPLINKE, bela::mbs_t::FATAL);
+      bela::BelaMessageBox(hWnd, L"Privexec appmanifest error", ec.message.c_str(), PRIVEXEC_APPLINKE,
+                           bela::mbs_t::FATAL);
       return false;
     }
     priv::AppContainer p(cmd_);
@@ -151,8 +149,8 @@ bool App::AppExecute() {
       if (!p.Message().empty()) {
         bela::StrAppend(&ec.message, L"(", p.Message(), L")");
       }
-      bela::BelaMessageBox(hWnd, L"Privexec create appconatiner process failed", ec.message.c_str(),
-                           PRIVEXEC_APPLINKE, bela::mbs_t::FATAL);
+      bela::BelaMessageBox(hWnd, L"Privexec create appconatiner process failed", ec.message.c_str(), PRIVEXEC_APPLINKE,
+                           bela::mbs_t::FATAL);
       return false;
     }
     return true;
@@ -169,8 +167,8 @@ bool App::AppExecute() {
     if (!p.Message().empty()) {
       bela::StrAppend(&ec.message, L"(", p.Message(), L")");
     }
-    bela::BelaMessageBox(hWnd, L"Privexec create process failed", ec.message.data(),
-                         PRIVEXEC_APPLINKE, bela::mbs_t::FATAL);
+    bela::BelaMessageBox(hWnd, L"Privexec create process failed", ec.message.data(), PRIVEXEC_APPLINKE,
+                         bela::mbs_t::FATAL);
     return false;
   }
   return true;
@@ -188,9 +186,8 @@ bool App::AppLookupExecute() {
 }
 
 bool App::AppLookupManifest() {
-  const bela::filter_t filters[] = {
-      {L"Windows Appxmanifest (*.appxmanifest;*.xml)", L"*.appxmanifest;*.xml"},
-      {L"All Files (*.*)", L"*.*"}};
+  const bela::filter_t filters[] = {{L"Windows Appxmanifest (*.appxmanifest;*.xml)", L"*.appxmanifest;*.xml"},
+                                    {L"All Files (*.*)", L"*.*"}};
   auto xml = bela::FilePicker(hWnd, L"Privexec: Select AppManifest", filters);
   if (xml) {
     appx.Update(*xml);
@@ -242,8 +239,7 @@ INT_PTR App::MessageHandler(UINT message, WPARAM wParam, LPARAM lParam) {
   case WM_SYSCOMMAND:
     switch (LOWORD(wParam)) {
     case IDM_PRIVEXEC_ABOUT:
-      bela::BelaMessageBox(hWnd, L"About Privexec", PRIVEXEC_APPVERSION, PRIVEXEC_APPLINK,
-                           bela::mbs_t::ABOUT);
+      bela::BelaMessageBox(hWnd, L"About Privexec", PRIVEXEC_APPVERSION, PRIVEXEC_APPLINK, bela::mbs_t::ABOUT);
       break;
     default:
       break;

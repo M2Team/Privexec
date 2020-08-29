@@ -69,8 +69,7 @@ private:
 };
 
 typedef BOOL(WINAPI *DeriveCapabilitySidsFromNameImpl)(LPCWSTR CapName, PSID **CapabilityGroupSids,
-                                                       DWORD *CapabilityGroupSidCount,
-                                                       PSID **CapabilitySids,
+                                                       DWORD *CapabilityGroupSidCount, PSID **CapabilitySids,
                                                        DWORD *CapabilitySidCount);
 
 bool AppContainer::InitializeFile(std::wstring_view file) {
@@ -94,8 +93,7 @@ bool AppContainer::Initialize(const bela::Span<std::wstring> caps) {
     DWORD dwn = 0, dwca = 0;
     SidArray capability_group_sids;
     SidArray capability_sids;
-    if (!_DeriveCapabilitySidsFromName(n.c_str(), capability_group_sids.sids_ptr(),
-                                       capability_group_sids.count_ptr(),
+    if (!_DeriveCapabilitySidsFromName(n.c_str(), capability_group_sids.sids_ptr(), capability_group_sids.count_ptr(),
                                        capability_sids.sids_ptr(), capability_sids.count_ptr())) {
       continue;
     }
@@ -117,9 +115,8 @@ bool AppContainer::Initialize(const bela::Span<std::wstring> caps) {
     name = appid;
   }
   DeleteAppContainerProfile(name.data()); // ignore error
-  if (CreateAppContainerProfile(name.data(), name.data(), name.data(),
-                                (ca.empty() ? NULL : ca.data()), (DWORD)ca.size(),
-                                &appcontainersid) != S_OK) {
+  if (CreateAppContainerProfile(name.data(), name.data(), name.data(), (ca.empty() ? NULL : ca.data()),
+                                (DWORD)ca.size(), &appcontainersid) != S_OK) {
     kmessage = L"CreateAppContainerProfile error";
     return false;
   }
@@ -160,9 +157,8 @@ bool AppContainer::Initialize(const bela::Span<wid_t> wids) {
     name = appid;
   }
   DeleteAppContainerProfile(name.data()); // ignore error
-  if (CreateAppContainerProfile(name.data(), name.data(), name.data(),
-                                (ca.empty() ? NULL : ca.data()), (DWORD)ca.size(),
-                                &appcontainersid) != S_OK) {
+  if (CreateAppContainerProfile(name.data(), name.data(), name.data(), (ca.empty() ? NULL : ca.data()),
+                                (DWORD)ca.size(), &appcontainersid) != S_OK) {
     kmessage = L"CreateAppContainerProfile";
     return false;
   }

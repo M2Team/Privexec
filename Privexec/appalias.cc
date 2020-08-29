@@ -18,9 +18,8 @@ struct alias_item_t {
 };
 bool AppAliasInitializeBuilt(std::wstring_view file) {
   constexpr alias_item_t items[] = {
-      {"windbg", "Windows Debugger",
-       "\"%ProgramFiles(x86)%\\Windows Kits\\10\\Debuggers\\x64\\windbg.exe\""},       //
-      {"edit-hosts", "Edit Hosts", "Notepad %windir%\\System32\\Drivers\\etc\\hosts"}, //
+      {"windbg", "Windows Debugger", "\"%ProgramFiles(x86)%\\Windows Kits\\10\\Debuggers\\x64\\windbg.exe\""}, //
+      {"edit-hosts", "Edit Hosts", "Notepad %windir%\\System32\\Drivers\\etc\\hosts"},                         //
   };
   try {
     nlohmann::json j;

@@ -10,9 +10,8 @@ namespace wsudo {
 
 class Derivator {
 public:
-  using value_type =
-      bela::flat_hash_map<std::wstring, std::wstring, bela::env::StringCaseInsensitiveHash,
-                          bela::env::StringCaseInsensitiveEq>;
+  using value_type = bela::flat_hash_map<std::wstring, std::wstring, bela::env::StringCaseInsensitiveHash,
+                                         bela::env::StringCaseInsensitiveEq>;
   using apply_t = std::function<void(std::wstring_view, std::wstring_view)>;
   Derivator() = default;
   Derivator(const Derivator &) = delete;

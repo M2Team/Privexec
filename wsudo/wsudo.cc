@@ -52,8 +52,8 @@ Builtin 'alias' command:
    wsudo alias delete ehs
 )";
   char32_t sh = 0x1F496; //  💖
-  bela::FPrintF(stderr, L"\x1b[%dmwsudo %c %d.%d %s\x1b[0m\n", err ? 31 : 36, sh,
-                PRIVEXEC_VERSION_MAJOR, PRIVEXEC_VERSION_MINOR, kUsage);
+  bela::FPrintF(stderr, L"\x1b[%dmwsudo %c %d.%d %s\x1b[0m\n", err ? 31 : 36, sh, PRIVEXEC_VERSION_MAJOR,
+                PRIVEXEC_VERSION_MINOR, kUsage);
 }
 
 namespace wsudo {
@@ -320,8 +320,7 @@ int AppWait(DWORD pid) {
   return static_cast<int>(exitcode);
 }
 
-std::wstring ExpandArgv0(std::wstring_view argv0, bool disablealias, const wsudo::AppMode &am,
-                         bool &aliasexpand) {
+std::wstring ExpandArgv0(std::wstring_view argv0, bool disablealias, const wsudo::AppMode &am, bool &aliasexpand) {
   aliasexpand = false;
   if (disablealias) {
     return bela::WindowsExpandEnv(argv0);
@@ -363,9 +362,7 @@ int AppExecuteAppContainer(wsudo::AppMode &am) {
     ea.Append(am.args[i]);
   }
   DbgPrint(L"App real command '%s'", argv0);
-  am.envctx.Apply([&](std::wstring_view k, std::wstring_view v) {
-    DbgPrint(L"App apply env '%s' = '%s'", k, v);
-  });
+  am.envctx.Apply([&](std::wstring_view k, std::wstring_view v) { DbgPrint(L"App apply env '%s' = '%s'", k, v); });
   priv::AppContainer p(ea.sv());
   if (!am.cwd.empty()) {
     p.Chdir(bela::WindowsExpandEnv(am.cwd));
@@ -405,8 +402,7 @@ int AppExecuteAppContainer(wsudo::AppMode &am) {
   if (!p.Exec()) {
     auto ec = bela::make_system_error_code();
     if (p.Message().empty()) {
-      bela::FPrintF(stderr, L"\x1b[31mcreate appconatiner process  last error %d : %s\x1b[0m\n",
-                    ec.code, ec.message);
+      bela::FPrintF(stderr, L"\x1b[31mcreate appconatiner process  last error %d : %s\x1b[0m\n", ec.code, ec.message);
     } else {
       bela::FPrintF(stderr,
                     L"\x1b[31mcreate appconatiner process  last error %d  "
@@ -415,8 +411,7 @@ int AppExecuteAppContainer(wsudo::AppMode &am) {
     }
     return 1;
   }
-  bela::FPrintF(stderr, L"\x1b[01;32mnew appcontainer process is running: %d\nsid: %s\x1b[0m\n",
-                p.PID(), p.SSID());
+  bela::FPrintF(stderr, L"\x1b[01;32mnew appcontainer process is running: %d\nsid: %s\x1b[0m\n", p.PID(), p.SSID());
   if (waitable) {
     return AppWait(p.PID());
   }
@@ -538,8 +533,8 @@ int AppExecute(wsudo::AppMode &am) {
   DbgPrint(L"App real arg0 '%s'", argv0);
   auto elevated = priv::IsUserAdministratorsGroup();
   // If wsudo-tie exists. we will use wsudo-tie as administrator proxy
-  if (!elevated && am.level == priv::ExecLevel::Elevated && isconsole &&
-      am.visible == priv::VisibleMode::None && IsConhosted(am)) {
+  if (!elevated && am.level == priv::ExecLevel::Elevated && isconsole && am.visible == priv::VisibleMode::None &&
+      IsConhosted(am)) {
     auto tie = AppTieExecuteExists();
     if (tie) {
       DbgPrint(L"App subsystem is console, use %s as middleware.", *tie);
@@ -562,9 +557,7 @@ int AppExecute(wsudo::AppMode &am) {
     ea.Append(am.args[i]);
   }
   DbgPrint(L"App real command '%s'", argv0);
-  am.envctx.Apply([&](std::wstring_view k, std::wstring_view v) {
-    DbgPrint(L"App apply env '%s' = '%s'", k, v);
-  });
+  am.envctx.Apply([&](std::wstring_view k, std::wstring_view v) { DbgPrint(L"App apply env '%s' = '%s'", k, v); });
   priv::Process p(ea.sv());
   p.ChangeVisibleMode(am.visible);
   if (!am.cwd.empty()) {
@@ -580,11 +573,10 @@ int AppExecute(wsudo::AppMode &am) {
   }
   auto ec = bela::make_system_error_code();
   if (p.Message().empty()) {
-    bela::FPrintF(stderr, L"\x1b[31mcreate process  last error %d : %s\x1b[0m\n", ec.code,
-                  ec.message);
+    bela::FPrintF(stderr, L"\x1b[31mcreate process  last error %d : %s\x1b[0m\n", ec.code, ec.message);
   } else {
-    bela::FPrintF(stderr, L"\x1b[31mcreate process  last error %d  (%s): %s\x1b[0m\n", ec.code,
-                  p.Message(), ec.message);
+    bela::FPrintF(stderr, L"\x1b[31mcreate process  last error %d  (%s): %s\x1b[0m\n", ec.code, p.Message(),
+                  ec.message);
   }
   return 1;
 }

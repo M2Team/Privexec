@@ -66,8 +66,8 @@ usage: wsudo-tie command args...
 
 )";
   char32_t sh = 0x1F496; //  💖
-  bela::FPrintF(stderr, L"\x1b[%dmwsudo-tie %c %d.%d %s\x1b[0m\n", err ? 31 : 36, sh,
-                PRIVEXEC_VERSION_MAJOR, PRIVEXEC_VERSION_MINOR, kUsage);
+  bela::FPrintF(stderr, L"\x1b[%dmwsudo-tie %c %d.%d %s\x1b[0m\n", err ? 31 : 36, sh, PRIVEXEC_VERSION_MAJOR,
+                PRIVEXEC_VERSION_MINOR, kUsage);
 }
 
 int AppMode::ParseArgv(int argc, wchar_t **argv) {
@@ -91,8 +91,7 @@ int AppMode::ParseArgv(int argc, wchar_t **argv) {
           exit(0);
         case 'P': // parent
           if (!bela::SimpleAtoi(va, &parentid)) {
-            bela::BelaMessageBox(nullptr, L"Parent process PID format is incorrect", va, nullptr,
-                                 bela::mbs_t::FATAL);
+            bela::BelaMessageBox(nullptr, L"Parent process PID format is incorrect", va, nullptr, bela::mbs_t::FATAL);
           }
           break;
         case 'V':
@@ -114,8 +113,7 @@ int AppMode::ParseArgv(int argc, wchar_t **argv) {
       },
       ec);
   if (!result) {
-    bela::BelaMessageBox(nullptr, L"wsudo-tie ParseArgv:", ec.message.data(), nullptr,
-                         bela::mbs_t::FATAL);
+    bela::BelaMessageBox(nullptr, L"wsudo-tie ParseArgv:", ec.message.data(), nullptr, bela::mbs_t::FATAL);
     return 1;
   }
   /// Copy TO
@@ -125,22 +123,21 @@ int AppMode::ParseArgv(int argc, wchar_t **argv) {
 
 bool AppMode::InitializeApp() {
   if (parentid == 0) {
-    bela::BelaMessageBox(nullptr, L"wsudo-tie InitializeApp error:", L"missing process pid",
-                         nullptr, bela::mbs_t::FATAL);
+    bela::BelaMessageBox(nullptr, L"wsudo-tie InitializeApp error:", L"missing process pid", nullptr,
+                         bela::mbs_t::FATAL);
     return false;
   }
   FreeConsole();
   if (AttachConsole(parentid) != TRUE) {
     auto ec = bela::make_system_error_code();
     bela::StrAppend(&ec.message, L"parent process id: ", parentid);
-    bela::BelaMessageBox(nullptr, L"wsudo-tie AttachConsole error:", ec.message.data(), nullptr,
-                         bela::mbs_t::FATAL);
+    bela::BelaMessageBox(nullptr, L"wsudo-tie AttachConsole error:", ec.message.data(), nullptr, bela::mbs_t::FATAL);
     return false;
   }
   if (!pwd.empty() && SetCurrentDirectoryW(pwd.data()) != TRUE) {
     auto ec = bela::make_system_error_code();
-    bela::BelaMessageBox(nullptr, L"wsudo-tie SetCurrentDirectoryW error:", ec.message.data(),
-                         nullptr, bela::mbs_t::FATAL);
+    bela::BelaMessageBox(nullptr, L"wsudo-tie SetCurrentDirectoryW error:", ec.message.data(), nullptr,
+                         bela::mbs_t::FATAL);
     return false;
   }
   return true;
@@ -202,9 +199,8 @@ int wmain(int argc, wchar_t **argv) {
   PROCESS_INFORMATION pi;
   ZeroMemory(&pi, sizeof(pi));
   DWORD createflags = CREATE_UNICODE_ENVIRONMENT;
-  if (CreateProcessW(exe.empty() ? nullptr : exe.data(), ea.data(), nullptr, nullptr, FALSE,
-                     createflags, nullptr, am.cwd.empty() ? nullptr : am.cwd.data(), &si,
-                     &pi) != TRUE) {
+  if (CreateProcessW(exe.empty() ? nullptr : exe.data(), ea.data(), nullptr, nullptr, FALSE, createflags, nullptr,
+                     am.cwd.empty() ? nullptr : am.cwd.data(), &si, &pi) != TRUE) {
     auto ec = bela::make_system_error_code();
     bela::FPrintF(stderr,
                   L"\x1b[31mwsudo-tie unable CreateProcessW "
@@ -213,8 +209,7 @@ int wmain(int argc, wchar_t **argv) {
     dumpPathEnv();
     return 1;
   }
-  bela::FPrintF(stderr, L"\x1b[01;32mnew administrator process is running: %d\x1b[0m\n",
-                pi.dwProcessId);
+  bela::FPrintF(stderr, L"\x1b[01;32mnew administrator process is running: %d\x1b[0m\n", pi.dwProcessId);
   SetConsoleCtrlHandler(nullptr, TRUE);
   if (WaitForSingleObject(pi.hProcess, INFINITE) == WAIT_FAILED) {
     auto ec = bela::make_system_error_code();

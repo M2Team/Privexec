@@ -28,9 +28,8 @@
 
 #define CS_LISTVIEW WS_BORDER | WS_VSCROLL | WS_TABSTOP | LVS_REPORT | LVS_NOCOLUMNHEADER
 
-#define CS_BASE                                                                                    \
-  BS_PUSHBUTTON | BS_TEXT | BS_DEFPUSHBUTTON | BS_CHECKBOX | BS_AUTOCHECKBOX | WS_CHILD |          \
-      WS_OVERLAPPED | WS_VISIBLE
+#define CS_BASE                                                                                                        \
+  BS_PUSHBUTTON | BS_TEXT | BS_DEFPUSHBUTTON | BS_CHECKBOX | BS_AUTOCHECKBOX | WS_CHILD | WS_OVERLAPPED | WS_VISIBLE
 
 // Next default values for new objects
 //

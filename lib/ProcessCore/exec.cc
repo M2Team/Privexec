@@ -25,8 +25,8 @@ bool Process::ExecNone() {
   } else if (visible == VisibleMode::Hide) {
     createflags |= CREATE_NO_WINDOW;
   }
-  if (CreateProcessW(nullptr, cmd.data(), nullptr, nullptr, FALSE, createflags, nullptr,
-                     string_nullable(cwd), &si, &pi) != TRUE) {
+  if (CreateProcessW(nullptr, cmd.data(), nullptr, nullptr, FALSE, createflags, nullptr, string_nullable(cwd), &si,
+                     &pi) != TRUE) {
     return false;
   }
   pid = pi.dwProcessId;
@@ -49,8 +49,7 @@ bool GetNoElevatedToken(PHANDLE hNewToken) {
     if (WTSQueryUserToken(eo.SID(), &hToken) != TRUE) {
       return false;
     }
-    if (DuplicateTokenEx(hToken, MAXIMUM_ALLOWED, NULL, SecurityIdentification, TokenPrimary,
-                         hNewToken) != TRUE) {
+    if (DuplicateTokenEx(hToken, MAXIMUM_ALLOWED, NULL, SecurityIdentification, TokenPrimary, hNewToken) != TRUE) {
       return false;
     }
     return true;
@@ -60,8 +59,7 @@ bool GetNoElevatedToken(PHANDLE hNewToken) {
   if (!OpenProcessToken(GetCurrentProcess(), MAXIMUM_ALLOWED, &hCurrentToken)) {
     return false;
   }
-  if (!DuplicateTokenEx(hCurrentToken, MAXIMUM_ALLOWED, NULL, SecurityImpersonation, TokenPrimary,
-                        hNewToken)) {
+  if (!DuplicateTokenEx(hCurrentToken, MAXIMUM_ALLOWED, NULL, SecurityImpersonation, TokenPrimary, hNewToken)) {
     CloseHandle(hCurrentToken);
     return false;
   }
@@ -201,8 +199,8 @@ bool Process::ExecWithToken(HANDLE hToken, bool desktop) {
   } else if (visible == VisibleMode::Hide) {
     createflags |= CREATE_NO_WINDOW;
   }
-  if (CreateProcessAsUserW(hToken, nullptr, cmd.data(), nullptr, nullptr, FALSE, createflags,
-                           lpEnvironment, string_nullable(cwd), &si, &pi) != TRUE) {
+  if (CreateProcessAsUserW(hToken, nullptr, cmd.data(), nullptr, nullptr, FALSE, createflags, lpEnvironment,
+                           string_nullable(cwd), &si, &pi) != TRUE) {
     return false;
   }
   pid = pi.dwProcessId;

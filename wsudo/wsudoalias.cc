@@ -29,8 +29,7 @@ bool wsudo::AliasEngine::Initialize(bool verbose) {
     auto cmds = json["alias"];
     for (auto &cmd : cmds) {
       alias.emplace(bela::ToWide(cmd["name"].get<std::string_view>()),
-                    AliasTarget(cmd["target"].get<std::string_view>(),
-                                cmd["description"].get<std::string_view>()));
+                    AliasTarget(cmd["target"].get<std::string_view>(), cmd["description"].get<std::string_view>()));
     }
   } catch (const std::exception &e) {
     bela::FPrintF(stderr, L"\x1b[31mAliasEngine::Initialize: %s\x1b[0m\n", e.what());
@@ -56,8 +55,8 @@ bool wsudo::AliasEngine::Apply() {
   if (!std::filesystem::exists(parent, e)) {
     if (!std::filesystem::create_directories(parent, e)) {
       auto ec = bela::from_std_error_code(e);
-      bela::FPrintF(stderr, L"\x1b[31mAliasEngine::Apply: unable create dir %s %s\x1b[0m\n",
-                    parent.c_str(), ec.message);
+      bela::FPrintF(stderr, L"\x1b[31mAliasEngine::Apply: unable create dir %s %s\x1b[0m\n", parent.c_str(),
+                    ec.message);
       return false;
     }
   }
@@ -87,8 +86,7 @@ bool wsudo::AliasEngine::Apply() {
 
 int wsudo::AliasSubcmd(const std::vector<std::wstring_view> &argv) {
   if (argv.size() < 2) {
-    bela::FPrintF(stderr, L"\x1b[31mwsudo alias missing argument, current have: %ld\x1b[0m\n",
-                  argv.size());
+    bela::FPrintF(stderr, L"\x1b[31mwsudo alias missing argument, current have: %ld\x1b[0m\n", argv.size());
     return 1;
   }
   AliasEngine ae;
@@ -106,8 +104,7 @@ int wsudo::AliasSubcmd(const std::vector<std::wstring_view> &argv) {
   }
   if (argv[1] == L"add") {
     if (argv.size() < 5) {
-      bela::FPrintF(
-          stderr, L"\x1b[31mwsudo alias add command style is:  alias target description\x1b[0m\n");
+      bela::FPrintF(stderr, L"\x1b[31mwsudo alias add command style is:  alias target description\x1b[0m\n");
       return 1;
     }
     ae.Set(argv[2], argv[3], argv[4]);

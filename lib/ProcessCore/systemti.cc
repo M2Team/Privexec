@@ -59,8 +59,7 @@ bool TiElevator::Elevate() {
   bool sleeped = false;
   bool startcallonce = false;
   for (;;) {
-    if (!QueryServiceStatusEx(hsrv, SC_STATUS_PROCESS_INFO, reinterpret_cast<LPBYTE>(&ssp),
-                              sizeof(ssp), &dwNeed)) {
+    if (!QueryServiceStatusEx(hsrv, SC_STATUS_PROCESS_INFO, reinterpret_cast<LPBYTE>(&ssp), sizeof(ssp), &dwNeed)) {
       return false;
     }
     if (ssp.dwCurrentState == SERVICE_STOPPED) {
@@ -105,8 +104,7 @@ bool TiElevator::Duplicate(PHANDLE phToken) {
   if (OpenProcessToken(hProcess, MAXIMUM_ALLOWED, &hToken) != TRUE) {
     return false;
   }
-  return DuplicateTokenEx(hToken, MAXIMUM_ALLOWED, nullptr, SecurityIdentification, TokenPrimary,
-                          phToken) == TRUE;
+  return DuplicateTokenEx(hToken, MAXIMUM_ALLOWED, nullptr, SecurityIdentification, TokenPrimary, phToken) == TRUE;
 }
 
 } // namespace system_internal
@@ -152,8 +150,7 @@ bool PrivilegesEnableView(HANDLE hToken, const PrivilegeView *pv) {
     tp.Privileges[0].Attributes = SE_PRIVILEGE_ENABLED;
     // Enable the privilege or disable all privileges.
 
-    if (::AdjustTokenPrivileges(hToken, FALSE, &tp, sizeof(TOKEN_PRIVILEGES), nullptr, nullptr) !=
-        TRUE) {
+    if (::AdjustTokenPrivileges(hToken, FALSE, &tp, sizeof(TOKEN_PRIVILEGES), nullptr, nullptr) != TRUE) {
       continue;
     }
     if (::GetLastError() == ERROR_NOT_ALL_ASSIGNED) {
@@ -227,8 +224,7 @@ bool PrepareElevate(DWORD &sid, std::wstring &klast) {
   tp.Privileges[0].Attributes = SE_PRIVILEGE_ENABLED;
   // Enable the privilege or disable all privileges.
 
-  if (::AdjustTokenPrivileges(hToken, FALSE, &tp, sizeof(TOKEN_PRIVILEGES), nullptr, nullptr) !=
-      TRUE) {
+  if (::AdjustTokenPrivileges(hToken, FALSE, &tp, sizeof(TOKEN_PRIVILEGES), nullptr, nullptr) != TRUE) {
     klast = L"unable enable process SeDebugPrivilege";
     return false;
   }
@@ -251,8 +247,8 @@ bool Elevator::ElevateImitate(std::wstring &klast) {
     return false;
   }
   auto htdeleter = bela::finally([&] { CloseHandle(hExistingToken); });
-  if (DuplicateTokenEx(hExistingToken, MAXIMUM_ALLOWED, nullptr, SecurityImpersonation,
-                       TokenImpersonation, &hToken) != TRUE) {
+  if (DuplicateTokenEx(hExistingToken, MAXIMUM_ALLOWED, nullptr, SecurityImpersonation, TokenImpersonation, &hToken) !=
+      TRUE) {
     klast = L"unable duplicate winlogon.exe process token";
     return false;
   }
@@ -309,8 +305,7 @@ bool Process::ExecSystem() {
     kmessage = L"systemexec<OpenProcessToken>";
     return false;
   }
-  if (DuplicateTokenEx(hToken, TOKEN_ALL_ACCESS, nullptr, SecurityImpersonation, TokenPrimary,
-                       &hPrimary) != TRUE) {
+  if (DuplicateTokenEx(hToken, TOKEN_ALL_ACCESS, nullptr, SecurityImpersonation, TokenPrimary, &hPrimary) != TRUE) {
     kmessage = L"systemexec<DuplicateTokenEx>";
     return false;
   }
