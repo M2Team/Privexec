@@ -384,8 +384,7 @@ int AppExecuteAppContainer(wsudo::AppMode &am) {
   p.ChangeVisibleMode(am.visible);
   p.EnableLPAC(am.lpac);
   if (am.lpac) {
-    DbgPrint(L"AppContainer: Less Privileged AppContainer Is "
-             L"Enabled.");
+    DbgPrint(L"AppContainer: Less Privileged AppContainer Is Enabled.");
   }
   if (!am.appname.empty()) {
     p.Name(am.appname);

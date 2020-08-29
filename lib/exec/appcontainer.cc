@@ -266,7 +266,7 @@ bool appcommand::execute(bela::error_code &ec) {
     return false;
   }
   DWORD dwvalue = 1;
-  if (enablelpc) {
+  if (islpac) {
     // ProcThreadAttributeAllApplicationPackagesPolicy
     // UpdateProcThreadAttribute(siex.lpAttributeList,0,)
     if (UpdateProcThreadAttribute(siex.lpAttributeList, 0, PROC_THREAD_ATTRIBUTE_ALL_APPLICATION_PACKAGES_POLICY_EX,

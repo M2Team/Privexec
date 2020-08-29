@@ -47,7 +47,7 @@ struct appcommand {
   std::vector<std::wstring> caps;
   visible_t visible;
   uint32_t pid{0};
-  bool enablelpc{false};
+  bool islpac{false};
   bool initialize(bela::error_code &ec);
   bool execute(bela::error_code &ec);
 };
