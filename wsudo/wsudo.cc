@@ -183,8 +183,18 @@ int AppMode::ParseArgv(int argc, wchar_t **argv) {
     bela::FPrintF(stderr, L"\x1b[31mwsudo ParseArgv: %s\x1b[0m\n", ec.message);
     return 1;
   }
-  /// Copy TO
-  args = pa.UnresolvedArgs();
+  auto &Argv = pa.UnresolvedArgs();
+  for (size_t i = 0; i < Argv.size(); i++) {
+    const auto arg = Argv[i];
+    auto pos = arg.find(L'=');
+    if (pos == std::wstring::npos) {
+      for (size_t j = i; j < Argv.size(); j++) {
+        args.emplace_back(Argv[j]);
+      }
+      break;
+    }
+    envctx.Append(arg);
+  }
   return 0;
 }
 

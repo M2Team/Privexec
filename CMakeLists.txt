@@ -127,6 +127,7 @@ configure_file("config/Privexec.json" "${CMAKE_BINARY_DIR}/bin/Privexec.json" CO
 
 install(FILES config/Privexec.json DESTINATION .)
 add_subdirectory(vendor/bela)
+add_subdirectory(lib/exec)
 add_subdirectory(lib/ProcessCore)
 add_subdirectory(AppExec)
 add_subdirectory(Privexec)

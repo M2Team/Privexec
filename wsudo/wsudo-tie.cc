@@ -26,10 +26,11 @@ namespace wsudo::tie {
 struct AppMode {
   Derivator envctx;
   std::vector<std::wstring_view> args;
-  std::wstring_view cwd; // --cwd -c
-  std::wstring_view pwd; // --pwd self cwd
-  DWORD parentid{0};     // parent process pid
-  bool verbose{false};   // --verbose -V
+  std::wstring_view cwd;   // --cwd -c
+  std::wstring_view pwd;   // --pwd self cwd
+  std::wstring executable; //
+  DWORD parentid{0};       // parent process pid
+  bool verbose{false};     // --verbose -V
   void Verbose(const wchar_t *fmt) const {
     if (verbose) {
       bela::terminal::WriteAuto(stderr, fmt);
@@ -63,6 +64,7 @@ usage: wsudo-tie command args...
    -d|--pwd            wsudo-tie switch to workdir
    -c|--cwd            Use a working directory to launch the process.
    -e|--env            Set Environment Variable.
+   --executable        Executable file real path
 
 )";
   char32_t sh = 0x1F496; //  💖
@@ -78,7 +80,8 @@ int AppMode::ParseArgv(int argc, wchar_t **argv) {
       .Add(L"pwd", bela::required_argument, L'd')
       .Add(L"parent", bela::required_argument, L'P')
       .Add(L"cwd", bela::required_argument, L'c')
-      .Add(L"env", bela::required_argument, L'e');
+      .Add(L"env", bela::required_argument, L'e')
+      .Add(L"executable", bela::required_argument, 1000);
   bela::error_code ec;
   auto result = pa.Execute(
       [&](int val, const wchar_t *va, const wchar_t *) {
@@ -105,6 +108,9 @@ int AppMode::ParseArgv(int argc, wchar_t **argv) {
           break;
         case 'e':
           envctx.Append(va);
+          break;
+        case 1000:
+          executable.assign(va);
           break;
         default:
           break;
