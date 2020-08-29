@@ -51,7 +51,7 @@ struct appcommand {
   bool initialize(bela::error_code &ec);
   bool execute(bela::error_code &ec);
 };
-
+bool ExpandArgv(std::wstring_view cmd, std::wstring &path, std::vector<std::wstring> &argv, bela::error_code &ec);
 } // namespace wsudo::exec
 
 #endif
