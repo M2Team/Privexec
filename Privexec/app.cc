@@ -1,5 +1,4 @@
 ///
-#include <process.hpp>
 #include "app.hpp" // included windows.h
 #include <Windowsx.h>
 // C RunTime Header Files
@@ -12,6 +11,7 @@
 #include <string>
 #include <bela/env.hpp>
 #include <bela/picker.hpp>
+#include <exec.hpp>
 #include "resource.h"
 
 namespace priv {
@@ -44,7 +44,7 @@ bool App::Initialize(HWND window) {
   ChangeWindowMessageFilter(0x0049, MSGFLT_ADD);
   ::DragAcceptFiles(hWnd, TRUE);
 
-  auto elevated = priv::IsUserAdministratorsGroup();
+  auto elevated = wsudo::exec::IsUserAdministratorsGroup();
   if (elevated) {
     // Update title when app run as admin
     WCHAR title[256];
@@ -54,16 +54,16 @@ bool App::Initialize(HWND window) {
   }
   box = GetDlgItem(hWnd, IDC_USER_COMBOX);
 
-  box.Append((int)priv::ExecLevel::AppContainer, L"AppContainer");
-  box.Append((int)priv::ExecLevel::MIC, L"Mandatory Integrity Control");
+  box.Append((int)wsudo::exec::privilege_t::appcontainer, L"AppContainer");
+  box.Append((int)wsudo::exec::privilege_t::mic, L"Mandatory Integrity Control");
   if (elevated) {
-    box.Append((int)priv::ExecLevel::NoElevated, L"Not Elevated (UAC)", true);
-    box.Append((int)priv::ExecLevel::Elevated, L"Administrator");
-    box.Append((int)priv::ExecLevel::System, L"System");
-    box.Append((int)priv::ExecLevel::TrustedInstaller, L"TrustedInstaller");
+    box.Append((int)wsudo::exec::privilege_t::standard, L"Not Elevated (UAC)", true);
+    box.Append((int)wsudo::exec::privilege_t::elevated, L"Administrator");
+    box.Append((int)wsudo::exec::privilege_t::system, L"System");
+    box.Append((int)wsudo::exec::privilege_t::trustedinstaller, L"TrustedInstaller");
   } else {
-    box.Append((int)priv::ExecLevel::NoElevated, L"Not Elevated (UAC)");
-    box.Append((int)priv::ExecLevel::Elevated, L"Administrator", true);
+    box.Append((int)wsudo::exec::privilege_t::standard, L"Not Elevated (UAC)");
+    box.Append((int)wsudo::exec::privilege_t::elevated, L"Administrator", true);
   }
   HMENU hSystemMenu = ::GetSystemMenu(hWnd, FALSE);
   InsertMenuW(hSystemMenu, SC_CLOSE, MF_ENABLED, IDM_PRIVEXEC_ABOUT, L"About Privexec\tAlt+F1");
@@ -82,7 +82,7 @@ bool App::Initialize(HWND window) {
 }
 
 bool App::SelChanged() {
-  if (box.IsMatch((int)priv::ExecLevel::AppContainer)) {
+  if (box.IsMatch((int)wsudo::exec::privilege_t::appcontainer)) {
     appx.Update(L"");
     appx.Visible(TRUE);
     appcas.Visible(TRUE);
@@ -124,49 +124,44 @@ std::wstring App::ResolveCWD(bool allowempty) {
 
 bool App::AppExecute() {
   auto appindex = box.AppIndex();
-  auto cmd_ = ResolveCMD();
-  if (cmd_.empty()) {
+  auto commandline = ResolveCMD();
+  if (commandline.empty()) {
     bela::BelaMessageBox(hWnd, L"Please input command line", L"command empty", PRIVEXEC_APPLINKE, bela::mbs_t::FATAL);
     return false;
   }
-
-  if (appindex == (int)priv::ExecLevel::AppContainer) {
-    //// TODO app container.
-    auto cas = appcas.Capabilities();
-    auto xml = bela::WindowsExpandEnv(appx.Content());
-    if (!xml.empty() && !priv::MergeFromAppManifest(xml, cas)) {
-      auto ec = bela::make_system_error_code();
-      bela::BelaMessageBox(hWnd, L"Privexec appmanifest error", ec.message.c_str(), PRIVEXEC_APPLINKE,
+  bela::error_code ec;
+  if (appindex == (int)wsudo::exec::privilege_t::appcontainer) {
+    wsudo::exec::appcommand cmd;
+    if (!wsudo::exec::SplitArgv(commandline, cmd.path, cmd.argv, ec)) {
+      bela::BelaMessageBox(hWnd, L"Privexec SplitArgv failed", ec.message.data(), PRIVEXEC_APPLINKE,
                            bela::mbs_t::FATAL);
       return false;
     }
-    priv::AppContainer p(cmd_);
-    p.EnableLPAC(appcas.IsLowPrivilegeAppContainer());
-    auto cwd_ = ResolveCWD(true); // app startup directory
-    p.Chdir(cwd_);
-    if (!p.Initialize({cas.data(), cas.size()}) || !p.Exec()) {
-      auto ec = bela::make_system_error_code();
-      if (!p.Message().empty()) {
-        bela::StrAppend(&ec.message, L"(", p.Message(), L")");
-      }
-      bela::BelaMessageBox(hWnd, L"Privexec create appconatiner process failed", ec.message.c_str(), PRIVEXEC_APPLINKE,
+    cmd.caps = appcas.Capabilities();
+    cmd.appmanifest = bela::WindowsExpandEnv(appx.Content());
+    cmd.islpac = appcas.IsLowPrivilegeAppContainer();
+    cmd.cwd = ResolveCWD(true);
+    if (!cmd.initialize(ec)) {
+      bela::BelaMessageBox(hWnd, L"Privexec AppContainer init", ec.message.data(), PRIVEXEC_APPLINKE,
+                           bela::mbs_t::FATAL);
+      return false;
+    }
+    if (!cmd.execute(ec)) {
+      bela::BelaMessageBox(hWnd, L"Privexec create AppContainer process failed", ec.message.data(), PRIVEXEC_APPLINKE,
                            bela::mbs_t::FATAL);
       return false;
     }
     return true;
   }
 
-  priv::Process p(cmd_);
-  auto cwd_ = ResolveCWD(); // app startup directory
-  p.Chdir(cwd_);
-  if (!p.Exec((priv::ExecLevel)appindex)) {
-    if (appindex == (int)priv::ExecLevel::Elevated && !priv::IsUserAdministratorsGroup()) {
-      return false;
-    }
-    auto ec = bela::make_system_error_code();
-    if (!p.Message().empty()) {
-      bela::StrAppend(&ec.message, L"(", p.Message(), L")");
-    }
+  wsudo::exec::command cmd;
+  cmd.priv = static_cast<wsudo::exec::privilege_t>(appindex);
+  if (!wsudo::exec::SplitArgv(commandline, cmd.path, cmd.argv, ec)) {
+    bela::BelaMessageBox(hWnd, L"Privexec SplitArgv failed", ec.message.data(), PRIVEXEC_APPLINKE, bela::mbs_t::FATAL);
+    return false;
+  }
+  cmd.cwd = ResolveCWD();
+  if (!cmd.execute(ec)) {
     bela::BelaMessageBox(hWnd, L"Privexec create process failed", ec.message.data(), PRIVEXEC_APPLINKE,
                          bela::mbs_t::FATAL);
     return false;

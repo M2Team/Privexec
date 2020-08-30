@@ -5,7 +5,7 @@
 
 namespace wsudo::exec {
 //
-bool ExpandArgv(std::wstring_view cmd, std::wstring &path, std::vector<std::wstring> &argv, bela::error_code &ec) {
+bool SplitArgv(std::wstring_view cmd, std::wstring &path, std::vector<std::wstring> &argv, bela::error_code &ec) {
   bela::Tokenizer tokenizer;
   if (!tokenizer.Tokenize(cmd)) {
     ec = bela::make_error_code(1, L"bad command '", cmd, L"'");

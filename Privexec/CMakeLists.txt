@@ -15,7 +15,7 @@ endif()
 
 target_link_libraries(
   Privexec
-  ProcessCore
+  Exec
   belashl
   Comctl32
   Shlwapi

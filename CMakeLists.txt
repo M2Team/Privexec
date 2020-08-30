@@ -121,7 +121,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED YES)
 set(CMAKE_RC_FLAGS "${CMAKE_RC_FLAGS} -c65001")
 add_definitions(-D_UNICODE=1 -DUNICODE=1)
 
-include_directories("${CMAKE_BINARY_DIR}/include" ./include ./vendor/bela/include ./vendor/pugixml ./lib/ProcessCore)
+include_directories("${CMAKE_BINARY_DIR}/include" ./include ./vendor/bela/include ./vendor/pugixml ./lib/exec ./lib/ProcessCore)
 
 configure_file("config/Privexec.json" "${CMAKE_BINARY_DIR}/bin/Privexec.json" COPYONLY)
 

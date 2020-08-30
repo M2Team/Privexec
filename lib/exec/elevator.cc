@@ -139,6 +139,20 @@ bool LookupSystemProcess(DWORD sid, DWORD &syspid) {
   return false;
 }
 
+bool GetCurrentSessionId(DWORD &dwSessionId) {
+  HANDLE hToken = INVALID_HANDLE_VALUE;
+  if (!OpenProcessToken(GetCurrentProcess(), MAXIMUM_ALLOWED, &hToken)) {
+    return false;
+  }
+  DWORD Length = 0;
+  if (GetTokenInformation(hToken, TokenSessionId, &dwSessionId, sizeof(DWORD), &Length) != TRUE) {
+    CloseHandle(hToken);
+    return false;
+  }
+  CloseHandle(hToken);
+  return true;
+}
+
 // Improve self-generated permissions
 bool Elevator::elevate(const PrivilegeView *pv, bela::error_code &ec) {
   if (!PrepareElevate(sid, ec)) {

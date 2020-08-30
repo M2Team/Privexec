@@ -51,7 +51,24 @@ struct appcommand {
   bool initialize(bela::error_code &ec);
   bool execute(bela::error_code &ec);
 };
-bool ExpandArgv(std::wstring_view cmd, std::wstring &path, std::vector<std::wstring> &argv, bela::error_code &ec);
+
+inline bool IsUserAdministratorsGroup() {
+  SID_IDENTIFIER_AUTHORITY NtAuthority = SECURITY_NT_AUTHORITY;
+  PSID AdministratorsGroup;
+  if (!AllocateAndInitializeSid(&NtAuthority, 2, SECURITY_BUILTIN_DOMAIN_RID, DOMAIN_ALIAS_RID_ADMINS, 0, 0, 0, 0, 0, 0,
+                                &AdministratorsGroup)) {
+    return false;
+  }
+  BOOL b = FALSE;
+  if (!CheckTokenMembership(NULL, AdministratorsGroup, &b)) {
+    b = FALSE;
+  }
+  FreeSid(AdministratorsGroup);
+  return b == TRUE;
+}
+
+
+bool SplitArgv(std::wstring_view cmd, std::wstring &path, std::vector<std::wstring> &argv, bela::error_code &ec);
 } // namespace wsudo::exec
 
 #endif

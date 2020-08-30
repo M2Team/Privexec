@@ -155,7 +155,7 @@ bool executeti(command &cmd, bela::error_code &ec) {
   if (!te.duplicate(&hToken, ec)) {
     return false;
   }
-  auto deleter = bela::finally([hToken] { CloseHandle(hToken); });
+  auto closer = bela::finally([&] { FreeToken(hToken); });
   DWORD dwSessionId;
   if (!GetCurrentSessionId(dwSessionId)) {
     ec = bela::make_system_error_code(L"executeti<GetCurrentSessionId> ");

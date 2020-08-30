@@ -1,5 +1,5 @@
 # exec lib
-add_library(exec STATIC
+add_library(Exec STATIC
     appcontainer.cc
     argv.cc
     elevator.cc
@@ -7,6 +7,6 @@ add_library(exec STATIC
     system.cc
 )
 
-target_link_libraries(exec
+target_link_libraries(Exec
   belawin
 )
