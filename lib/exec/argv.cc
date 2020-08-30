@@ -26,6 +26,7 @@ bool SplitArgv(std::wstring_view cmd, std::wstring &path, std::vector<std::wstri
     ec = bela::make_error_code(1, L"command not found '", arg0, L"'");
     return false;
   }
+  path.assign(std::move(p));
   return true;
 }
 

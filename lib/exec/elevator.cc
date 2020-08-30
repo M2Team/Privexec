@@ -8,7 +8,7 @@ namespace wsudo::exec {
 // Get Current Process SessionID and Enable SeDebugPrivilege
 bool PrepareElevate(DWORD &sid, bela::error_code &ec) {
   if (!IsUserAdministratorsGroup()) {
-    bela::make_error_code(1, L"PrepareElevate: not runing in administrator or group");
+    ec = bela::make_error_code(1, L"current process not runing in administrator");
     return false;
   }
   auto hToken = INVALID_HANDLE_VALUE;

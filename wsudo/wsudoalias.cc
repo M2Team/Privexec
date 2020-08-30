@@ -21,7 +21,9 @@ bool wsudo::AliasEngine::Initialize(bool verbose) {
   auto file = priv::PathSearcher::Instance().JoinEtc(L"Privexec.json");
   DbgPrint(L"use %s", file);
   priv::FD fd;
-  if (_wfopen_s(&fd.fd, file.data(), L"rb") != 0) {
+  if (auto en = _wfopen_s(&fd.fd, file.data(), L"rb"); en != 0) {
+    auto ec = bela::make_stdc_error_code(en);
+    bela::FPrintF(stderr, L"open %s: %s\n", file, ec.message);
     return false;
   }
   try {
@@ -84,25 +86,24 @@ bool wsudo::AliasEngine::Apply() {
   return true;
 }
 
-int wsudo::AliasSubcmd(const std::vector<std::wstring_view> &argv) {
+int wsudo::AliasSubcmd(const std::vector<std::wstring> &argv) {
   if (argv.size() < 2) {
-    bela::FPrintF(stderr, L"\x1b[31mwsudo alias missing argument, current have: %ld\x1b[0m\n", argv.size());
+    bela::FPrintF(stderr, L"\x1b[31mwsudo alias missing argument, current have: %d\x1b[0m\n", argv.size());
     return 1;
   }
   AliasEngine ae;
   if (!ae.Initialize()) {
-    bela::FPrintF(stderr, L"\x1b[31mwsudo Alias Engine Initialize error, "
-                          L"Please check it exists\x1b[0m\n");
+    bela::FPrintF(stderr, L"\x1b[31mwsudo Alias Engine Initialize error, Please check it exists\x1b[0m\n");
     return 1;
   }
-  if (argv[1] == L"delete") {
+  if (bela::EqualsIgnoreCase(argv[1], L"delete") || bela::EqualsIgnoreCase(argv[1], L"del")) {
     for (size_t i = 2; i < argv.size(); i++) {
-      ae.Delete(argv[i].data());
-      DbgPrint(L"wsudo alias delete: %s", argv[i].data());
+      ae.Delete(argv[i]);
+      DbgPrint(L"wsudo alias delete: %s", argv[i]);
     }
     return 0;
   }
-  if (argv[1] == L"add") {
+  if (bela::EqualsIgnoreCase(argv[1], L"add")) {
     if (argv.size() < 5) {
       bela::FPrintF(stderr, L"\x1b[31mwsudo alias add command style is:  alias target description\x1b[0m\n");
       return 1;

@@ -1,13 +1,14 @@
 /////
-#ifndef PRIVEXEC_WSUDO_HPP
-#define PRIVEXEC_WSUDO_HPP
+#ifndef WSUDO_HPP
+#define WSUDO_HPP
 #include <cstring>
 #include <string>
 #include <vector>
 #include <optional>
 #include <string_view>
 #include <bela/terminal.hpp>
-#include <process.hpp>
+#include <bela/simulator.hpp>
+#include <exec.hpp>
 #include "env.hpp"
 
 namespace wsudo {
@@ -51,6 +52,7 @@ template <typename... Args> bela::ssize_t DbgPrintEx(char32_t prefix, const wcha
   str.append(L"\x1b[0m\n");
   return bela::terminal::WriteAuto(stderr, str);
 }
+
 inline bela::ssize_t DbgPrintEx(char32_t prefix, const wchar_t *fmt) {
   if (!IsDebugMode) {
     return 0;
@@ -62,36 +64,59 @@ inline bela::ssize_t DbgPrintEx(char32_t prefix, const wchar_t *fmt) {
   return bela::terminal::WriteAuto(stderr, bela::StringCat(L"\x1b[32m", prefix, L" ", msg, L"\x1b[0m\n"));
 }
 
-struct AppMode {
-  Derivator envctx;
-  std::wstring message;
-  std::vector<std::wstring_view> args;
-  std::wstring_view cwd;     // --cwd -c
-  std::wstring_view appx;    // --appx -x
-  std::wstring_view appname; // --appname
-  // int level{priv::ProcessNoElevated}; // -u --user
-  priv::ExecLevel level{priv::ExecLevel::NoElevated};
+struct App {
+  bela::env::Simulator simulator;
+  std::vector<std::wstring> argv;
+  std::vector<std::wstring> envlist;
+  std::wstring path;
+  std::wstring cwd;   // --cwd -c
+  std::wstring appx;  // --appx -x
+  std::wstring appid; // --appid
+  wsudo::exec::privilege_t level{wsudo::exec::privilege_t::standard};
+  wsudo::exec::visible_t visible{wsudo::exec::visible_t::none};
   bool disablealias{false}; // --disable-alias
-  bool wait{false};         // -w --wait
   bool lpac{false};
-  priv::VisibleMode visible{priv::VisibleMode::None};
-  const wchar_t *Visible() {
-    switch (visible) {
-    case priv::VisibleMode::None:
-      return L"shared console window";
-    case priv::VisibleMode::NewConsole:
-      return L"new console window";
-    case priv::VisibleMode::Hide:
-      return L"no console window";
-    default:
-      break;
+  bool wait{false};
+  bool nowait{false};
+  bool console{true};
+  int AppExecute();
+  int Execute();
+  int DelegateExecute();
+  void SetEnv(std::wstring_view es) {
+    auto envstr = bela::WindowsExpandEnv(es);
+    std::wstring_view nv(envstr);
+    if (auto pos = nv.find(L'='); pos != std::wstring_view::npos) {
+      auto name = nv.substr(0, pos);
+      if (bela::EqualsIgnoreCase(name, L"Path")) {
+        std::vector<std::wstring_view> paths =
+            bela::StrSplit(nv.substr(pos + 1), bela::ByChar(L';'), bela::SkipEmpty());
+        for (const auto p : paths) {
+          simulator.PathPushFront(p);
+        }
+      } else {
+        simulator.SetEnv(name, nv.substr(pos + 1), true);
+      }
     }
-    return L"none";
+    // simulator.PutEnv(bela::WindowsExpandEnv(va), true);
+    envlist.emplace_back(envstr);
   }
   int ParseArgv(int argc, wchar_t **argv);
-  void Verbose();
+  bool SplitArgv();
+  // normal
+  bool Waitable() const {
+    if (nowait) {
+      return false;
+    }
+    if (wait) {
+      return true;
+    }
+    if (!console) {
+      return false;
+    }
+    return visible == wsudo::exec::visible_t::none;
+  }
 };
-
+int WaitForExit(DWORD pid);
 } // namespace wsudo
 
 #endif

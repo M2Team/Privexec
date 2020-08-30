@@ -1,6 +1,6 @@
 # privexec
 
-add_executable(wsudo wsudo.cc wsudoalias.cc wsudo.rc wsudo.manifest)
+add_executable(wsudo delegate.cc wsudo.cc wsudoalias.cc wsudo.rc wsudo.manifest)
 
 if(PRIVEXEC_ENABLE_LTO)
   set_property(TARGET wsudo PROPERTY INTERPROCEDURAL_OPTIMIZATION TRUE)
@@ -8,7 +8,8 @@ endif()
 
 target_link_libraries(
   wsudo
-  ProcessCore
+  Exec
+  Exec
   Comctl32
   Shlwapi
   Pathcch
@@ -21,7 +22,7 @@ target_link_libraries(
 
 install(TARGETS wsudo DESTINATION .)
 
-add_executable(wsudo-tie wsudo-tie.cc wsudo-tie.rc wsudo.manifest)
+add_executable(wsudo-tie wsudo-tie.cc wsudotietrace.cc wsudo-tie.rc wsudo.manifest)
 
 if(PRIVEXEC_ENABLE_LTO)
   set_property(TARGET wsudo-tie PROPERTY INTERPROCEDURAL_OPTIMIZATION TRUE)
@@ -29,7 +30,7 @@ endif()
 
 target_link_libraries(
   wsudo-tie
-  ProcessCore
+  Exec
   belashl
   Comctl32
   Shlwapi

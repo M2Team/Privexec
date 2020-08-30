@@ -27,6 +27,7 @@ enum class visible_t : uint8_t {
 struct command {
   std::wstring path;
   std::wstring cwd;
+  std::wstring env;
   std::vector<std::wstring> argv;
   uint32_t pid{0};
   privilege_t priv{privilege_t::standard};
@@ -41,6 +42,7 @@ struct appcommand {
   std::wstring appmanifest;
   std::wstring sid;
   std::wstring folder;
+  std::wstring env;
   std::vector<std::wstring> argv;
   std::vector<std::wstring> allowdirs;
   std::vector<std::wstring> regdirs;
@@ -66,7 +68,6 @@ inline bool IsUserAdministratorsGroup() {
   FreeSid(AdministratorsGroup);
   return b == TRUE;
 }
-
 
 bool SplitArgv(std::wstring_view cmd, std::wstring &path, std::vector<std::wstring> &argv, bela::error_code &ec);
 } // namespace wsudo::exec

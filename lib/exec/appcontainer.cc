@@ -292,7 +292,7 @@ bool appcommand::execute(bela::error_code &ec) {
   for (const auto &a : argv) {
     ea.Append(a);
   }
-  if (CreateProcessW(string_nullable(path), ea.data(), nullptr, nullptr, FALSE, createflags, nullptr,
+  if (CreateProcessW(string_nullable(path), ea.data(), nullptr, nullptr, FALSE, createflags, string_nullable(env),
                      string_nullable(cwd), reinterpret_cast<STARTUPINFOW *>(&siex), &pi) != TRUE) {
     ec = bela::make_system_error_code(L"appcommand::execute<CreateProcessW> ");
     return false;

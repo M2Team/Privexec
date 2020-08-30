@@ -21,14 +21,14 @@ bool execute(command &cmd, bela::error_code &ec) {
   for (const auto &a : cmd.argv) {
     ea.Append(a);
   }
-  DWORD createflags = 0;
+  DWORD createflags = CREATE_UNICODE_ENVIRONMENT;
   if (cmd.visible == visible_t::newconsole) {
     createflags |= CREATE_NEW_CONSOLE;
   } else if (cmd.visible == visible_t::hide) {
     createflags |= CREATE_NO_WINDOW;
   }
-  if (CreateProcessW(string_nullable(cmd.path), ea.data(), nullptr, nullptr, FALSE, createflags, nullptr,
-                     string_nullable(cmd.cwd), &si, &pi) != TRUE) {
+  if (CreateProcessW(string_nullable(cmd.path), ea.data(), nullptr, nullptr, FALSE, createflags,
+                     string_nullable(cmd.env), string_nullable(cmd.cwd), &si, &pi) != TRUE) {
     ec = bela::make_system_error_code(L"CreateProcessAsUserW");
     return false;
   }
@@ -48,32 +48,18 @@ bool execute(HANDLE hToken, bool desktop, command &cmd, bela::error_code &ec) {
   if (desktop) {
     si.lpDesktop = lpDesktop;
   }
-  LPVOID lpEnvironment = nullptr;
-  HANDLE hProcessToken = nullptr;
-  if (OpenProcessToken(GetCurrentProcess(), MAXIMUM_ALLOWED, &hProcessToken)) {
-    ::CreateEnvironmentBlock(&lpEnvironment, hProcessToken, TRUE);
-    CloseHandle(hProcessToken);
-  }
-  auto deleter = bela::finally([&] {
-    if (lpEnvironment != nullptr) {
-      ::DestroyEnvironmentBlock(lpEnvironment);
-    }
-  });
   bela::EscapeArgv ea;
   for (const auto &a : cmd.argv) {
     ea.Append(a);
   }
-  DWORD createflags = 0;
-  if (lpEnvironment = nullptr) {
-    createflags |= CREATE_UNICODE_ENVIRONMENT;
-  }
+  DWORD createflags = CREATE_UNICODE_ENVIRONMENT;
   if (cmd.visible == visible_t::newconsole) {
     createflags |= CREATE_NEW_CONSOLE;
   } else if (cmd.visible == visible_t::hide) {
     createflags |= CREATE_NO_WINDOW;
   }
   if (CreateProcessAsUserW(hToken, string_nullable(cmd.path), ea.data(), nullptr, nullptr, FALSE, createflags,
-                           lpEnvironment, string_nullable(cmd.cwd), &si, &pi) != TRUE) {
+                           string_nullable(cmd.env), string_nullable(cmd.cwd), &si, &pi) != TRUE) {
     ec = bela::make_system_error_code(L"CreateProcessAsUserW");
     return false;
   }
@@ -144,7 +130,7 @@ bool executelow(command &cmd, bela::error_code &ec) {
     ec = bela::make_system_error_code(L"SetTokenInformation: ");
     return false;
   }
-  return true;
+  return execute(hNewToken, false, cmd, ec);
 }
 
 bool executeelevated(command &cmd, bela::error_code &ec) {
@@ -181,7 +167,7 @@ bool executeelevated(command &cmd, bela::error_code &ec) {
 bool command::execute(bela::error_code &ec) {
   switch (priv) {
   case privilege_t::appcontainer:
-    ec = bela::make_error_code(1, L"Please use appcommand run AppContainer process");
+    ec = bela::make_error_code(1, L"BUG: please use appcommand run appcontainer");
     return false;
   case privilege_t::mic:
     return wsudo::exec::executelow(*this, ec);

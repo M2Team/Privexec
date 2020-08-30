@@ -1,17 +1,4 @@
 // wsudotie.cc
-/*
-wsudo-tie wsudo administrator level permission middleware.
-usage: wsudo-tie command args...
- -v|--version        print version and exit
- -h|--help           print help information and exit
- -p|--parent         wsudo prcocess pid.
- -V|--verbose        Make the operation more talkative
- -d|--pwd           wsudo-tie switch to workdir
- -c|--cwd            Use a working directory to launch the process.
- -e|--env            Set Environment Variable.
-
-*/
-// other's command line
 #include <bela/terminal.hpp>
 #include <bela/escapeargv.hpp>
 #include <bela/picker.hpp>
@@ -20,33 +7,109 @@ usage: wsudo-tie command args...
 #include <bela/parseargv.hpp>
 #include <bela/simulator.hpp>
 #include <baseversion.h>
-#include "env.hpp"
+#include <exec.hpp>
 
 namespace wsudo::tie {
-struct AppMode {
-  Derivator envctx;
-  std::vector<std::wstring_view> args;
-  std::wstring_view cwd;   // --cwd -c
-  std::wstring_view pwd;   // --pwd self cwd
-  std::wstring executable; //
-  DWORD parentid{0};       // parent process pid
-  bool verbose{false};     // --verbose -V
-  void Verbose(const wchar_t *fmt) const {
-    if (verbose) {
-      bela::terminal::WriteAuto(stderr, fmt);
-    }
-  }
-  template <typename... Args> void Verbose(const wchar_t *fmt, Args... args) const {
-    if (verbose) {
-      const bela::format_internal::FormatArg arg_array[] = {args...};
-      auto str = bela::format_internal::StrFormatInternal(fmt, arg_array, sizeof...(args));
-      bela::terminal::WriteAuto(stderr, str);
-    }
-  }
+bool IsDebugMode = false;
+int WriteTrace(std::wstring_view msg);
 
-  int ParseArgv(int argc, wchar_t **argv);
+template <typename... Args> bela::ssize_t DbgPrintP(const wchar_t *fmt, Args... args) {
+  if (!IsDebugMode) {
+    return 0;
+  }
+  const bela::format_internal::FormatArg arg_array[] = {args...};
+  std::wstring str;
+  bela::format_internal::StrAppendFormatInternal(&str, fmt, arg_array, sizeof...(args));
+  if (str.back() == '\n') {
+    str.pop_back();
+  }
+  return WriteTrace(str);
+}
+inline bela::ssize_t DbgPrintP(const wchar_t *fmt) {
+  if (!IsDebugMode) {
+    return 0;
+  }
+  std::wstring_view msg(fmt);
+  if (!msg.empty() && msg.back() == '\n') {
+    msg.remove_suffix(1);
+  }
+  return WriteTrace(msg);
+}
+
+int WriteError(std::wstring_view msg);
+template <typename... Args> bela::ssize_t PrintError(const wchar_t *fmt, Args... args) {
+  if (!IsDebugMode) {
+    return 0;
+  }
+  const bela::format_internal::FormatArg arg_array[] = {args...};
+  std::wstring str;
+  bela::format_internal::StrAppendFormatInternal(&str, fmt, arg_array, sizeof...(args));
+  if (str.back() == '\n') {
+    str.pop_back();
+  }
+  return WriteError(str);
+}
+inline bela::ssize_t PrintError(const wchar_t *fmt) {
+  if (!IsDebugMode) {
+    return 0;
+  }
+  std::wstring_view msg(fmt);
+  if (!msg.empty() && msg.back() == '\n') {
+    msg.remove_suffix(1);
+  }
+  return WriteError(msg);
+}
+
+// DbgPrint added newline
+template <typename... Args> bela::ssize_t DbgPrint(const wchar_t *fmt, Args... args) {
+  if (!IsDebugMode) {
+    return 0;
+  }
+  const bela::format_internal::FormatArg arg_array[] = {args...};
+  std::wstring str;
+  str.append(L"\x1b[33m* ");
+  bela::format_internal::StrAppendFormatInternal(&str, fmt, arg_array, sizeof...(args));
+  if (str.back() == '\n') {
+    str.pop_back();
+  }
+  str.append(L"\x1b[0m\n");
+  return bela::terminal::WriteAuto(stderr, str);
+}
+inline bela::ssize_t DbgPrint(const wchar_t *fmt) {
+  if (!IsDebugMode) {
+    return 0;
+  }
+  std::wstring_view msg(fmt);
+  if (!msg.empty() && msg.back() == '\n') {
+    msg.remove_suffix(1);
+  }
+  return bela::terminal::WriteAuto(stderr, bela::StringCat(L"\x1b[33m* ", msg, L"\x1b[0m\n"));
+}
+
+struct App {
+  wsudo::exec::command cmd;
+  bela::env::Simulator simulator;
+  std::wstring pwd;
+  DWORD parentid{0}; // parent process pid
+  bool ParseArgv(int argc, wchar_t **argv);
   bool InitializeApp();
-  void Verbose();
+  int Execute();
+  void SetEnv(std::wstring_view es) {
+    auto envstr = bela::WindowsExpandEnv(es);
+    std::wstring_view nv(envstr);
+    if (auto pos = nv.find(L'='); pos != std::wstring_view::npos) {
+      auto name = nv.substr(0, pos);
+      if (bela::EqualsIgnoreCase(name, L"Path")) {
+        std::vector<std::wstring_view> paths =
+            bela::StrSplit(nv.substr(pos + 1), bela::ByChar(L';'), bela::SkipEmpty());
+        for (const auto p : paths) {
+          simulator.PathPushFront(p);
+        }
+      } else {
+        simulator.SetEnv(name, nv.substr(pos + 1), true);
+      }
+    }
+  }
 };
 
 void Version() {
@@ -63,8 +126,10 @@ usage: wsudo-tie command args...
    -V|--verbose        Make the operation more talkative
    -d|--pwd            wsudo-tie switch to workdir
    -c|--cwd            Use a working directory to launch the process.
-   -e|--env            Set Environment Variable.
-   --executable        Executable file real path
+   -e|--env            Use specific environment variables to start child processes.
+   -u|--user           run as user (optional), support '-uX', '-u X', '--user=X', '--user X'
+                       Supported user categories (Ignore case):
+                       Administrator   System    TrustedInstaller
 
 )";
   char32_t sh = 0x1F496; //  💖
@@ -72,7 +137,31 @@ usage: wsudo-tie command args...
                 PRIVEXEC_VERSION_MINOR, kUsage);
 }
 
-int AppMode::ParseArgv(int argc, wchar_t **argv) {
+bool IsAppLevel(std::wstring_view k, wsudo::exec::privilege_t &level) {
+  static struct {
+    const std::wstring_view s;
+    wsudo::exec::privilege_t level;
+  } userlevels[] = {
+      //
+      {L"appcontainer", wsudo::exec::privilege_t::appcontainer},
+      {L"mic", wsudo::exec::privilege_t::mic},
+      {L"noelevated", wsudo::exec::privilege_t::standard},
+      {L"administrator", wsudo::exec::privilege_t::elevated},
+      {L"system", wsudo::exec::privilege_t::system},
+      {L"trustedinstaller", wsudo::exec::privilege_t::trustedinstaller}
+      //
+  };
+  for (const auto &u : userlevels) {
+    if (bela::EqualsIgnoreCase(u.s, k)) {
+      level = u.level;
+      return true;
+    }
+  }
+  return false;
+}
+
+bool App::ParseArgv(int argc, wchar_t **argv) {
+  simulator.InitializeEnv();
   bela::ParseArgv pa(argc, argv, true);
   pa.Add(L"version", bela::no_argument, L'v')
       .Add(L"help", bela::no_argument, L'h')
@@ -81,8 +170,9 @@ int AppMode::ParseArgv(int argc, wchar_t **argv) {
       .Add(L"parent", bela::required_argument, L'P')
       .Add(L"cwd", bela::required_argument, L'c')
       .Add(L"env", bela::required_argument, L'e')
-      .Add(L"executable", bela::required_argument, 1000);
+      .Add(L"user", bela::required_argument, L'u');
   bela::error_code ec;
+  cmd.priv = wsudo::exec::privilege_t::elevated;
   auto result = pa.Execute(
       [&](int val, const wchar_t *va, const wchar_t *) {
         switch (val) {
@@ -94,23 +184,24 @@ int AppMode::ParseArgv(int argc, wchar_t **argv) {
           exit(0);
         case 'P': // parent
           if (!bela::SimpleAtoi(va, &parentid)) {
-            bela::BelaMessageBox(nullptr, L"Parent process PID format is incorrect", va, nullptr, bela::mbs_t::FATAL);
+            PrintError(L"Incorrect parent process id %s", va);
           }
           break;
         case 'V':
-          verbose = true;
+          IsDebugMode = true;
+          break;
+        case 'u':
+          DbgPrintP(L"Privilege %s", va);
+          IsAppLevel(va, cmd.priv);
           break;
         case 'd':
           pwd = va;
           break;
         case 'c':
-          cwd = va;
+          cmd.cwd = va;
           break;
         case 'e':
-          envctx.Append(va);
-          break;
-        case 1000:
-          executable.assign(va);
+          SetEnv(va);
           break;
         default:
           break;
@@ -119,48 +210,56 @@ int AppMode::ParseArgv(int argc, wchar_t **argv) {
       },
       ec);
   if (!result) {
-    bela::BelaMessageBox(nullptr, L"wsudo-tie ParseArgv:", ec.message.data(), nullptr, bela::mbs_t::FATAL);
-    return 1;
-  }
-  /// Copy TO
-  args = pa.UnresolvedArgs();
-  return 0;
-}
-
-bool AppMode::InitializeApp() {
-  if (parentid == 0) {
-    bela::BelaMessageBox(nullptr, L"wsudo-tie InitializeApp error:", L"missing process pid", nullptr,
-                         bela::mbs_t::FATAL);
+    PrintError(L"ParseArgv %s", ec.message);
     return false;
   }
+  if (cmd.cwd.empty() && !pwd.empty()) {
+    cmd.cwd = pwd;
+  }
+
+  auto &Argv = pa.UnresolvedArgs();
+  for (size_t i = 0; i < Argv.size(); i++) {
+    const auto arg = Argv[i];
+    if (auto pos = arg.find(L'='); pos == std::wstring::npos) {
+      for (size_t j = i; j < Argv.size(); j++) {
+        cmd.argv.emplace_back(Argv[j]);
+      }
+      break;
+    }
+    SetEnv(arg);
+  }
+  if (cmd.argv.empty()) {
+    PrintError(L"wsudo-tie: no command input");
+    return false;
+  }
+  cmd.path = cmd.argv[0];
+  cmd.env.assign(simulator.MakeEnv());
+  DbgPrintP(L"resolve path: %s", cmd.path);
+  return true;
+}
+
+bool App::InitializeApp() {
+  if (parentid == 0) {
+    PrintError(L"wsudo-tie: parent process id=0");
+    return false;
+  }
+  DbgPrintP(L"wsudo-tie FreeConsole. parentid: %d", parentid);
   FreeConsole();
   if (AttachConsole(parentid) != TRUE) {
     auto ec = bela::make_system_error_code();
-    bela::StrAppend(&ec.message, L"parent process id: ", parentid);
-    bela::BelaMessageBox(nullptr, L"wsudo-tie AttachConsole error:", ec.message.data(), nullptr, bela::mbs_t::FATAL);
+    PrintError(L"wsudo-tie: AttachConsole parent %d error: %s", parentid, ec.message);
     return false;
   }
   if (!pwd.empty() && SetCurrentDirectoryW(pwd.data()) != TRUE) {
     auto ec = bela::make_system_error_code();
-    bela::BelaMessageBox(nullptr, L"wsudo-tie SetCurrentDirectoryW error:", ec.message.data(), nullptr,
-                         bela::mbs_t::FATAL);
+    PrintError(L"wsudo-tie: SetCurrentDirectoryW parent %d error: %s", parentid, ec.message);
     return false;
   }
+  DbgPrintP(L"wsudo-tie AttachConsole done. parentid: %d", parentid);
   return true;
 }
 
-void AppMode::Verbose() {
-  if (!verbose) {
-    return;
-  }
-  if (!cwd.empty()) {
-    bela::FPrintF(stderr, L"\x1b[01;33m* App cwd: %s\x1b[0m\n", cwd);
-  }
-}
-
-} // namespace wsudo::tie
-
-void dumpPathEnv() {
+inline void dumpPathEnv() {
   auto path = bela::GetEnv(L"PATH");
   std::vector<std::wstring_view> pv = bela::StrSplit(path, bela::ByChar(L';'), bela::SkipEmpty());
   for (auto p : pv) {
@@ -168,70 +267,84 @@ void dumpPathEnv() {
   }
 }
 
+int WaitForExit(DWORD pid) {
+  if (pid == 0) {
+    return -1;
+  }
+  auto hProcess = OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION | SYNCHRONIZE, FALSE, pid);
+  if (hProcess == INVALID_HANDLE_VALUE) {
+    auto ec = bela::make_system_error_code();
+    bela::FPrintF(stderr, L"\x1b[31munable open process '%s'\x1b[0m\n", ec.message);
+    return -1;
+  }
+  SetConsoleCtrlHandler(nullptr, TRUE);
+  if (WaitForSingleObject(hProcess, INFINITE) == WAIT_FAILED) {
+    auto ec = bela::make_system_error_code();
+    bela::FPrintF(stderr, L"\x1b[31munable wait process '%s'\x1b[0m\n", ec.message);
+    SetConsoleCtrlHandler(nullptr, FALSE);
+    CloseHandle(hProcess);
+    return -1;
+  }
+  SetConsoleCtrlHandler(nullptr, FALSE);
+  DWORD exitcode = 0;
+  if (GetExitCodeProcess(hProcess, &exitcode) != TRUE) {
+    auto ec = bela::make_system_error_code();
+    bela::FPrintF(stderr, L"\x1b[31munable get process exit code '%s'\x1b[0m\n", ec.message);
+  }
+  CloseHandle(hProcess);
+  return static_cast<int>(exitcode);
+}
+
+const std::wstring_view AppSLevel(const wsudo::exec::privilege_t level) {
+  constexpr static struct {
+    const wchar_t *s;
+    wsudo::exec::privilege_t level;
+  } userlevels[] = {
+      //
+      {L"appcontainer", wsudo::exec::privilege_t::appcontainer},
+      {L"mandatory integrity control", wsudo::exec::privilege_t::mic},
+      {L"standard", wsudo::exec::privilege_t::standard},
+      {L"administrator", wsudo::exec::privilege_t::elevated},
+      {L"system", wsudo::exec::privilege_t::system},
+      {L"trustedinstaller", wsudo::exec::privilege_t::trustedinstaller}
+      //
+  };
+  for (const auto &u : userlevels) {
+    if (u.level == level) {
+      return u.s;
+    }
+  }
+  return L"UNKNOWN Level";
+}
+
+int App::Execute() {
+  if (IsDebugMode) {
+    dumpPathEnv();
+  }
+  DbgPrint(L"App[tie]: %s", cmd.path);
+  bela::error_code ec;
+  if (!cmd.execute(ec)) {
+    bela::FPrintF(stderr, L"start command %s error: %s\n", cmd.argv[0], ec.message);
+    return 1;
+  }
+  bela::FPrintF(stderr, L"\x1b[32mnew \x1b[36m%s\x1b[32m process is running: %d\x1b[0m\n", AppSLevel(cmd.priv),
+                cmd.pid);
+  return WaitForExit(cmd.pid);
+}
+
+} // namespace wsudo::tie
+
 // FreeConsole
 // AttachConsole to parent process
 // CreateProcessW cmdline cwd env...
 
 int wmain(int argc, wchar_t **argv) {
-  wsudo::tie::AppMode am;
-  if (am.ParseArgv(argc, argv) != 0) {
-    return -1;
-  }
-  if (!am.InitializeApp()) {
-    return -1;
-  }
-  am.Verbose();
-  if (am.args.empty()) {
-    bela::FPrintF(stderr, L"\x1b[31mwsudo-tie unable start new process. "
-                          L"cmdline missing\x1b[0m\n");
-    return false;
-  }
-  bela::EscapeArgv ea;
-  for (auto s : am.args) {
-    ea.Append(s);
-  }
-  am.envctx.Apply([&](std::wstring_view k, std::wstring_view v) {
-    am.Verbose(L"\x1b[01;33m* App apply env '%s' = '%s'\x1b[0m\n", k, v);
-  });
-  std::wstring exe;
-  // CreateProcessW search path maybe failed.
-  if (bela::env::ExecutableExistsInPath(am.args[0], exe)) {
-    am.Verbose(L"\x1b[01;33m* App execute path '%s'\x1b[0m\n", exe);
-  }
-  am.Verbose(L"\x1b[01;33m* App real argv0 '%s'\x1b[0m\n", am.args[0]);
-  STARTUPINFOW si;
-  ZeroMemory(&si, sizeof(si));
-  si.cb = sizeof(si);
-  PROCESS_INFORMATION pi;
-  ZeroMemory(&pi, sizeof(pi));
-  DWORD createflags = CREATE_UNICODE_ENVIRONMENT;
-  if (CreateProcessW(exe.empty() ? nullptr : exe.data(), ea.data(), nullptr, nullptr, FALSE, createflags, nullptr,
-                     am.cwd.empty() ? nullptr : am.cwd.data(), &si, &pi) != TRUE) {
-    auto ec = bela::make_system_error_code();
-    bela::FPrintF(stderr,
-                  L"\x1b[31mwsudo-tie unable CreateProcessW "
-                  L"%s\x1b[0m\n\x1b[31mcommand: [%s]\x1b[0m\n",
-                  ec.message, ea.sv());
-    dumpPathEnv();
+  wsudo::tie::App app;
+  if (!app.ParseArgv(argc, argv)) {
     return 1;
   }
-  bela::FPrintF(stderr, L"\x1b[01;32mnew administrator process is running: %d\x1b[0m\n", pi.dwProcessId);
-  SetConsoleCtrlHandler(nullptr, TRUE);
-  if (WaitForSingleObject(pi.hProcess, INFINITE) == WAIT_FAILED) {
-    auto ec = bela::make_system_error_code();
-    bela::FPrintF(stderr, L"\x1b[31munable wait process '%s'\x1b[0m\n", ec.message);
-    SetConsoleCtrlHandler(nullptr, FALSE);
-    CloseHandle(pi.hThread);
-    CloseHandle(pi.hProcess);
-    return -1;
+  if (!app.InitializeApp()) {
+    return 1;
   }
-  SetConsoleCtrlHandler(nullptr, FALSE);
-  DWORD exitcode = 0;
-  if (GetExitCodeProcess(pi.hProcess, &exitcode) != TRUE) {
-    auto ec = bela::make_system_error_code();
-    bela::FPrintF(stderr, L"\x1b[31munable get process exit code '%s'\x1b[0m\n", ec.message);
-  }
-  CloseHandle(pi.hThread);
-  CloseHandle(pi.hProcess);
-  return static_cast<int>(exitcode);
+  return app.Execute();
 }
