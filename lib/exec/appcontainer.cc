@@ -29,7 +29,7 @@ template <typename T> struct Entry {
 bool LoadAppx(std::wstring_view file, std::vector<std::wstring> &caps, bela::error_code &ec) {
   pugi::xml_document doc;
   if (!doc.load_file(file.data())) {
-
+    ec = bela::make_system_error_code(L"xml_document load ");
     return false;
   }
   auto addCapability = [&](std::wstring &&sv) {
@@ -37,8 +37,8 @@ bool LoadAppx(std::wstring_view file, std::vector<std::wstring> &caps, bela::err
       if (bela::EqualsIgnoreCase(sv, s)) {
         return;
       }
-      caps.emplace_back(std::move(sv));
     }
+    caps.emplace_back(std::move(sv));
   };
   // Capability
   // rescap:Capability
@@ -48,8 +48,7 @@ bool LoadAppx(std::wstring_view file, std::vector<std::wstring> &caps, bela::err
   // wincap:Capability
   // DeviceCapability
   for (auto it : doc.child("Package").child("Capabilities")) {
-    auto n = it.attribute("Name").as_string();
-    addCapability(bela::ToWide(n));
+    addCapability(bela::ToWide(it.attribute("Name").as_string()));
   }
   return true;
 }
