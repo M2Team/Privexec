@@ -16,7 +16,7 @@ endif()
 
 target_link_libraries(
   AppExec
-  ProcessCore
+  Exec
   belashl
   Comctl32
   Shlwapi

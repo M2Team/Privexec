@@ -170,7 +170,7 @@ bool App::AppExecute() {
 }
 
 bool App::AppLookupExecute() {
-  const bela::filter_t filters[] = {{L"Windows Execute(*.exe;*.com;*.bat)", L"*.exe;*.com;*.bat"},
+  const bela::filter_t filters[] = {{L"Windows Execute(*.exe;*.com;*.bat;*.cmd)", L"*.exe;*.com;*.bat;*.cmd"},
                                     {L"All Files (*.*)", L"*.*"}};
   auto exe = bela::FilePicker(hWnd, L"Privexec: Select Execute", filters);
   if (exe) {

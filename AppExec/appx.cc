@@ -4,14 +4,15 @@
 // https://www.appveyor.com/docs/windows-images-software/#visual-studio-2017
 // Appveyor Visual Studio Community 2017 version 15.9.4
 #include <bela/path.hpp>
-#include <process.hpp>
+#include <appx.hpp>
 
 namespace priv {
 bool App::ParseAppx(std::wstring_view file) {
   auto basename = bela::BaseName(file);
   title.Update(basename);
   std::vector<std::wstring> caps;
-  if (!priv::MergeFromAppManifest(file, caps)) {
+  bela::error_code ec;
+  if (!wsudo::exec::LoadAppx(file, caps, ec)) {
     return false;
   }
   auto N = ListView_GetItemCount(appx.hlview);

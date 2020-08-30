@@ -1,5 +1,4 @@
 ///
-#include <process.hpp>
 #include <bela/env.hpp>
 #include <bela/path.hpp>
 #include <bela/match.hpp>
@@ -13,6 +12,7 @@
 #include <Shlwapi.h>
 #include <shellapi.h>
 #include <bela/picker.hpp>
+#include <exec.hpp>
 #include "resource.h"
 
 namespace priv {
@@ -22,8 +22,8 @@ namespace priv {
 int App::run(HINSTANCE hInstance) {
   hInst = hInstance;
   AppInitializeSettings(as);
-  return (int)DialogBoxParamW(hInstance, MAKEINTRESOURCEW(IDD_APPLICATION_DIALOG), NULL,
-                              App::WindowProc, reinterpret_cast<LPARAM>(this));
+  return (int)DialogBoxParamW(hInstance, MAKEINTRESOURCEW(IDD_APPLICATION_DIALOG), NULL, App::WindowProc,
+                              reinterpret_cast<LPARAM>(this));
 }
 App::~App() {
   if (hbrBkgnd != nullptr) {
@@ -55,7 +55,7 @@ bool App::Initialize(HWND window) {
   ChangeWindowMessageFilter(0x0049, MSGFLT_ADD);
   ::DragAcceptFiles(hWnd, TRUE);
 
-  auto elevated = priv::IsUserAdministratorsGroup();
+  auto elevated = wsudo::exec::IsUserAdministratorsGroup();
   if (elevated) {
     // Update title when app run as admin
     WCHAR title[256];
@@ -66,8 +66,7 @@ bool App::Initialize(HWND window) {
 
   HMENU hSystemMenu = ::GetSystemMenu(hWnd, FALSE);
   InsertMenuW(hSystemMenu, SC_CLOSE, MF_ENABLED, IDM_APPTHEME, L"Change Panel Color");
-  InsertMenuW(hSystemMenu, SC_CLOSE, MF_ENABLED, IDM_APPEXEC_ABOUT,
-              L"About AppContainer Exec\tAlt+F1");
+  InsertMenuW(hSystemMenu, SC_CLOSE, MF_ENABLED, IDM_APPEXEC_ABOUT, L"About AppContainer Exec\tAlt+F1");
   cmd.hInput = GetDlgItem(hWnd, IDC_COMMAND_EDIT);
   cmd.hButton = GetDlgItem(hWnd, IDB_COMMAND_TARGET);
   ///
@@ -168,9 +167,8 @@ bool IsRegistryKey(std::wstring_view path) {
   if (pv.empty()) {
     return false;
   }
-  constexpr std::wstring_view keys[] = {
-      L"HKEY_CLASSES_ROOT",  L"HKCR", L"HKEY_CURRENT_USER", L"HKCU",
-      L"HKEY_LOCAL_MACHINE", L"HKLM", L"HKEY_USERS",        L"HKU"};
+  constexpr std::wstring_view keys[] = {L"HKEY_CLASSES_ROOT",  L"HKCR", L"HKEY_CURRENT_USER", L"HKCU",
+                                        L"HKEY_LOCAL_MACHINE", L"HKLM", L"HKEY_USERS",        L"HKU"};
   for (auto k : keys) {
     if (bela::EqualsIgnoreCase(k, pv[0])) {
       return true;
@@ -188,12 +186,13 @@ bool App::AppLookupAcl(std::vector<std::wstring> &fsdir, std::vector<std::wstrin
   }
   auto dirs = NewlineTokenize(acl);
   for (auto d : dirs) {
-    if (IsRegistryKey(d)) {
-      trace.Append(L"Registry Access", d);
-      registries.emplace_back(d);
+    auto dir = bela::WindowsExpandEnv(d);
+    if (IsRegistryKey(dir)) {
+      trace.Append(L"Registry Access", dir);
+      registries.emplace_back(dir);
     } else {
-      trace.Append(L"Fs Access", d);
-      fsdir.emplace_back(d);
+      trace.Append(L"Fs Access", dir);
+      fsdir.emplace_back(dir);
     }
   }
   return true;
@@ -201,41 +200,45 @@ bool App::AppLookupAcl(std::vector<std::wstring> &fsdir, std::vector<std::wstrin
 
 bool App::AppExecute() {
   trace.Clear();
-  auto cmd_ = ResolveCMD();
-  if (cmd_.empty()) {
-    bela::BelaMessageBox(hWnd, L"Please input command line", L"command empty", PRIVEXEC_APPLINKE,
+  auto commandline = ResolveCMD();
+  if (commandline.empty()) {
+    bela::BelaMessageBox(hWnd, L"Please input command line", L"command empty", PRIVEXEC_APPLINKE, bela::mbs_t::FATAL);
+    return false;
+  }
+  bela::error_code ec;
+  wsudo::exec::appcommand cmd;
+  if (!wsudo::exec::SplitArgv(commandline, cmd.path, cmd.argv, ec)) {
+    bela::BelaMessageBox(hWnd, L"Privexec SplitArgv failed", ec.message.data(), PRIVEXEC_APPLINKE, bela::mbs_t::FATAL);
+    return false;
+  }
+  trace.Append(L"Command", commandline);
+  cmd.cwd = ResolveCWD(); // app startup directory
+  //// TODO app container.
+  if (!cmd.cwd.empty()) {
+    trace.Append(L"CurrentDir", cmd.cwd);
+  }
+  cmd.caps = appx.Capabilities();
+  cmd.islpac = appx.IsLowPrivilegeAppContainer();
+  cmd.appid = appx.AppContainerName();
+  AppLookupAcl(cmd.allowdirs, cmd.regdirs);
+
+  if (!cmd.initialize(ec)) {
+    bela::BelaMessageBox(hWnd, L"Privexec AppContainer init", ec.message.data(), PRIVEXEC_APPLINKE, bela::mbs_t::FATAL);
+    return false;
+  }
+  if (!cmd.execute(ec)) {
+    bela::BelaMessageBox(hWnd, L"Privexec create AppContainer process failed", ec.message.data(), PRIVEXEC_APPLINKE,
                          bela::mbs_t::FATAL);
     return false;
   }
-  trace.Append(L"Command", cmd_);
-  auto cwd_ = ResolveCWD(); // app startup directory
-  //// TODO app container.
-  if (!cwd_.empty()) {
-    trace.Append(L"CurrentDir", cwd_);
-  }
-  auto cas = appx.Capabilities();
-  priv::AppContainer p(cmd_);
-  p.EnableLPAC(appx.IsLowPrivilegeAppContainer());
-  p.Chdir(cwd_);
-  p.Name(appx.AppContainerName());
-  AppLookupAcl(p.AllowedDirs(), p.Registries());
-  if (!p.Initialize({cas.data(), cas.size()}) || !p.Exec()) {
-    auto ec = bela::make_system_error_code();
-    if (!p.Message().empty()) {
-      bela::StrAppend(&ec.message, L"(", p.Message(), L")");
-    }
-    bela::BelaMessageBox(hWnd, L"Appexec create appconatiner process failed", ec.message.data(),
-                         PRIVEXEC_APPLINKE, bela::mbs_t::FATAL);
-    return false;
-  }
-  trace.Append(L"AppContainer Name", p.Name());
-  trace.Append(L"AppContainer SID", p.SSID());
-  trace.Append(L"AppContainer Folder", p.ConatinerFolder());
+  trace.Append(L"AppContainer Name", cmd.appid);
+  trace.Append(L"AppContainer SID", cmd.sid);
+  trace.Append(L"AppContainer Folder", cmd.folder);
   return true;
 }
 
 bool App::AppLookupExecute() {
-  const bela::filter_t filters[] = {{L"Windows Execute(*.exe;*.com;*.bat)", L"*.exe;*.com;*.bat"},
+  const bela::filter_t filters[] = {{L"Windows Execute(*.exe;*.com;*.bat;*.cmd)", L"*.exe;*.com;*.bat;*.cmd"},
                                     {L"All Files (*.*)", L"*.*"}};
   auto exe = bela::FilePicker(hWnd, L"Privexec: Select Execute", filters);
   if (exe) {
@@ -294,8 +297,7 @@ INT_PTR App::MessageHandler(UINT message, WPARAM wParam, LPARAM lParam) {
   case WM_SYSCOMMAND:
     switch (LOWORD(wParam)) {
     case IDM_APPEXEC_ABOUT:
-      bela::BelaMessageBox(hWnd, L"About AppContainer Exec", PRIVEXEC_APPVERSION, PRIVEXEC_APPLINK,
-                           bela::mbs_t::ABOUT);
+      bela::BelaMessageBox(hWnd, L"About AppContainer Exec", PRIVEXEC_APPVERSION, PRIVEXEC_APPLINK, bela::mbs_t::ABOUT);
       break;
     case IDM_APPTHEME:
       AppTheme();
@@ -309,9 +311,8 @@ INT_PTR App::MessageHandler(UINT message, WPARAM wParam, LPARAM lParam) {
     switch (LOWORD(wParam)) {
     case IDB_APPX_IMPORT: {
 
-      const bela::filter_t filters[] = {
-          {L"Windows Appxmanifest (*.appxmanifest;*.xml)", L"*.appxmanifest;*.xml"},
-          {L"All Files (*.*)", L"*.*"}};
+      const bela::filter_t filters[] = {{L"Windows Appxmanifest (*.appxmanifest;*.xml)", L"*.appxmanifest;*.xml"},
+                                        {L"All Files (*.*)", L"*.*"}};
       auto xml = bela::FilePicker(hWnd, L"AppExec: Select AppManifest", filters);
       if (xml) {
         ParseAppx(*xml);

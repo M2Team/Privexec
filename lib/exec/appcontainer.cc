@@ -26,7 +26,7 @@ template <typename T> struct Entry {
   inline bool operator==(const char *okey) const { return key == okey; }
 };
 
-bool mergefromfile(std::wstring_view file, std::vector<std::wstring> &caps, bela::error_code &ec) {
+bool LoadAppx(std::wstring_view file, std::vector<std::wstring> &caps, bela::error_code &ec) {
   pugi::xml_document doc;
   if (!doc.load_file(file.data())) {
 
@@ -83,7 +83,7 @@ typedef BOOL(WINAPI *DeriveCapabilitySidsFromNameImpl)(LPCWSTR CapName, PSID **C
 
 bool appcommand::initialize(bela::error_code &ec) {
   if (!appmanifest.empty()) {
-    if (!mergefromfile(appmanifest, caps, ec)) {
+    if (!LoadAppx(appmanifest, caps, ec)) {
       return false;
     }
   }
