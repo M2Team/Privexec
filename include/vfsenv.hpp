@@ -1,4 +1,6 @@
 ///
+#ifndef VFSENV_HPP
+#define VFSENV_HPP
 #include <bela/base.hpp>
 #include <bela/path.hpp>
 
@@ -58,3 +60,4 @@ private:
 };
 
 } // namespace priv
+#endif
