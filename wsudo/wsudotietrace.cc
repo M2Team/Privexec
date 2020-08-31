@@ -92,7 +92,7 @@ public:
       return -1;
     }
     auto um =
-        bela::narrow::StringCat("[DEBUG] ", TimeNow(), " [", GetCurrentProcessId(), "] ", bela::ToNarrow(msg), "\n");
+        bela::narrow::StringCat("[ERROR] ", TimeNow(), " [", GetCurrentProcessId(), "] ", bela::ToNarrow(msg), "\n");
     DWORD written = 0;
     if (WriteFile(fd, um.data(), static_cast<DWORD>(um.size()), &written, nullptr) != TRUE) {
       return -1;
