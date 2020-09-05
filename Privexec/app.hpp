@@ -19,17 +19,10 @@ namespace priv {
 
 using wid_t = WELL_KNOWN_SID_TYPE;
 using alias_t = bela::flat_hash_map<std::wstring, std::wstring>;
+std::wstring AppAliasFile();
 bool AppAliasInitialize(HWND hbox, priv::alias_t &alias);
 static constexpr const auto whitecolor = RGB(255, 255, 255);
 static constexpr const auto blackcolor = RGB(0, 0, 0);
-
-struct AppSettings {
-  COLORREF bk{whitecolor};
-  COLORREF textcolor{blackcolor};
-};
-
-bool AppInitializeSettings(AppSettings &as);
-bool AppApplySettings(const AppSettings &as);
 
 struct Appbox {
   Appbox &operator=(HWND hc) {
@@ -163,6 +156,7 @@ private:
   bool AppLookupManifest();
   bool AppLookupCWD();
   bool AppExecute();
+  bool AppAliasEdit();
   HINSTANCE hInst{nullptr};
   HWND hWnd{nullptr};
   Appbox box;

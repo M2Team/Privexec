@@ -10,7 +10,9 @@
 #include <shellapi.h>
 #include <string>
 #include <bela/env.hpp>
+#include <bela/simulator.hpp>
 #include <bela/picker.hpp>
+#include <bela/process.hpp>
 #include <exec.hpp>
 #include "resource.h"
 
@@ -66,6 +68,7 @@ bool App::Initialize(HWND window) {
     box.Append((int)wsudo::exec::privilege_t::elevated, L"Administrator", true);
   }
   HMENU hSystemMenu = ::GetSystemMenu(hWnd, FALSE);
+  InsertMenuW(hSystemMenu, SC_CLOSE, MF_ENABLED, IDM_EDIT_ALIASFILE, L"Open Privexec.json");
   InsertMenuW(hSystemMenu, SC_CLOSE, MF_ENABLED, IDM_PRIVEXEC_ABOUT, L"About Privexec\tAlt+F1");
   cmd.hInput = GetDlgItem(hWnd, IDC_COMMAND_COMBOX);
   cmd.hButton = GetDlgItem(hWnd, IDB_COMMAND_TARGET);
@@ -78,6 +81,27 @@ bool App::Initialize(HWND window) {
   InitializeCapabilities();
   SelChanged(); /// disable appcontainer.
 
+  return true;
+}
+
+bool App::AppAliasEdit() {
+  auto aliasFile = priv::AppAliasFile();
+  wsudo::exec::command cmd;
+  std::wstring code;
+  if (bela::env::ExecutableExistsInPath(L"code.cmd", code)) {
+    cmd.path = std::move(code);
+    cmd.argv.emplace_back(L"code.cmd");
+    cmd.visible = wsudo::exec::visible_t::hide; // hide console window
+  } else {
+    cmd.argv.emplace_back(L"notepad.exe");
+  }
+  cmd.argv.emplace_back(std::move(aliasFile));
+  cmd.priv = wsudo::exec::privilege_t::standard;
+  bela::error_code ec;
+  if (!cmd.execute(ec)) {
+    bela::BelaMessageBox(hWnd, L"open editor edit alias failed", ec.message.data(), nullptr, bela::mbs_t::FATAL);
+    return false;
+  }
   return true;
 }
 
@@ -235,6 +259,9 @@ INT_PTR App::MessageHandler(UINT message, WPARAM wParam, LPARAM lParam) {
     switch (LOWORD(wParam)) {
     case IDM_PRIVEXEC_ABOUT:
       bela::BelaMessageBox(hWnd, L"About Privexec", PRIVEXEC_APPVERSION, PRIVEXEC_APPLINK, bela::mbs_t::ABOUT);
+      break;
+    case IDM_EDIT_ALIASFILE:
+      AppAliasEdit();
       break;
     default:
       break;
