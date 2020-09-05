@@ -12,7 +12,6 @@
 #include <bela/env.hpp>
 #include <bela/simulator.hpp>
 #include <bela/picker.hpp>
-#include <bela/process.hpp>
 #include <exec.hpp>
 #include "resource.h"
 
