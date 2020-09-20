@@ -2,48 +2,12 @@
 #include <json.hpp>
 #include <file.hpp>
 #include <bela/path.hpp>
+#include <bela/color.hpp>
 #include <vfsenv.hpp>
 #include <filesystem>
-#include <charconv>
 #include "app.hpp"
 
 namespace priv {
-
-namespace color {
-inline bool decode(std::string_view sr, COLORREF &cr) {
-  if (sr.empty()) {
-    return false;
-  }
-  if (sr.front() == '#') {
-    sr.remove_prefix(1);
-  }
-  if (sr.size() != 6) {
-    return false;
-  }
-  uint8_t r = 0;
-  uint8_t g = 0;
-  uint8_t b = 0;
-  auto r1 = std::from_chars(sr.data(), sr.data() + 2, r, 16);
-  auto r2 = std::from_chars(sr.data() + 2, sr.data() + 4, g, 16);
-  auto r3 = std::from_chars(sr.data() + 4, sr.data() + 6, b, 16);
-  if (r1.ec != std::errc{} || r2.ec != std::errc{} || r3.ec != std::errc{}) {
-    return false;
-  }
-  cr = RGB(r, g, b);
-  return true;
-}
-
-inline std::string encode(COLORREF cr) {
-  std::string s;
-  s.resize(8);
-  uint8_t r = GetRValue(cr);
-  uint8_t g = GetGValue(cr);
-  uint8_t b = GetBValue(cr);
-  _snprintf(s.data(), 8, "#%02x%02x%02x", r, g, b);
-  s.resize(7);
-  return s;
-}
-} // namespace color
 
 bool AppInitializeSettings(AppSettings &as) {
   auto file = PathSearcher::Instance().JoinEtc(L"AppExec.json");
@@ -55,10 +19,10 @@ bool AppInitializeSettings(AppSettings &as) {
     auto j = nlohmann::json::parse(fd.fd, nullptr, true, true);
     auto root = j["AppExec"];
     auto scolor = root["Background"].get<std::string_view>();
-    COLORREF cr;
-    if (color::decode(scolor, cr)) {
-      as.bk = cr;
-      as.textcolor = calcLuminance(cr);
+    bela::color c;
+    if (bela::color::Decode(scolor, c)) {
+      as.bk = c;
+      as.textcolor = calcLuminance(c.r, c.g, c.b);
     }
   } catch (const std::exception &e) {
     OutputDebugStringA(e.what());
@@ -94,7 +58,7 @@ bool AppApplySettings(const AppSettings &as) {
     if (it != j.end()) {
       a = *it;
     }
-    a["Background"] = color::encode(as.bk);
+    a["Background"] = bela::color(as.bk).NarrowEncode();
     j["AppExec"] = a;
     auto buf = j.dump(4);
     FD fd;
