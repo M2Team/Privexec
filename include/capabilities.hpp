@@ -3,6 +3,7 @@
 
 /// SEE:
 /// https://github.com/googleprojectzero/sandbox-attacksurface-analysis-tools/blob/master/NtApiDotNet/SecurityCapabilities.cs
+// 7845fc068f74f77b93ed8c6d10ccf7c0f95ccaed
 // $source=Get-Content -Path .\SecurityCapabilities.cs -Raw
 // Add-Type -TypeDefinition $source
 
@@ -638,6 +639,7 @@ constexpr const wchar_t *KnownCapabilityNames[] = {
     L"audioDeviceConfiguration",
     L"backgroundMediaPlayback",
     L"backgroundMediaRecording",
+    L"backgroundSpatialPerception",
     L"backgroundVoIP",
     L"biometricSystem",
     L"blockedChatMessages",
@@ -677,6 +679,7 @@ constexpr const wchar_t *KnownCapabilityNames[] = {
     L"cortanaSpeechAccessory",
     L"cortanaSurface",
     L"curatedTileCollections",
+    L"customInstallActions",
     L"dateAndTimeDeviceSettings",
     L"developerSettings",
     L"developmentModeNetwork",
@@ -752,6 +755,7 @@ constexpr const wchar_t *KnownCapabilityNames[] = {
     L"languageSettings",
     L"liveIdService",
     L"localExperienceInternal",
+    L"localSystemServices",
     L"location",
     L"locationHistory",
     L"locationSystem",
@@ -779,6 +783,7 @@ constexpr const wchar_t *KnownCapabilityNames[] = {
     L"microsoftEdgeRemoteDebugging",
     L"mixedRealityEnvironmentInternal",
     L"mmsTransportSystem",
+    L"modifiableApp",
     L"multiplaneOverlay",
     L"muma",
     L"musicLibrary",
@@ -801,6 +806,8 @@ constexpr const wchar_t *KnownCapabilityNames[] = {
     L"packageManagement",
     L"packagePolicySystem",
     L"packageQuery",
+    L"packagedServices",
+    L"packageWriteRedirectionCompatibilityShim",
     L"perceptionMonitoring",
     L"perceptionSensorsExperimental",
     L"perceptionSystem",
@@ -810,6 +817,7 @@ constexpr const wchar_t *KnownCapabilityNames[] = {
     L"phoneCallHistoryPublic",
     L"phoneCallHistorySystem",
     L"phoneCallSystem",
+    L"phoneLineTransportManagement",
     L"picturesLibrary",
     L"pointOfService",
     L"powerDeviceSettings",
@@ -864,7 +872,9 @@ constexpr const wchar_t *KnownCapabilityNames[] = {
     L"systemRegistrar",
     L"targetedContent",
     L"targetedContentSubscription",
+    L"teamEditionDeviceCredential",
     L"teamEditionExperience",
+    L"teamEditionView",
     L"telemetryData",
     L"terminalPowerManagement",
     L"thumbnailCache",
@@ -905,7 +915,8 @@ constexpr const wchar_t *KnownCapabilityNames[] = {
     L"xboxGameSpeechWindow",
     L"xboxLiveAuthenticationProvider",
     L"xboxSystemApplicationClipQuery",
-    L"xboxTrackingStream"};
+    L"xboxTrackingStream",
+};
 // kv
 struct CapabilityName {
   const wchar_t *name;
@@ -963,6 +974,7 @@ constexpr const CapabilityName wncas[] = {
     {L"audioDeviceConfiguration", L"audioDeviceConfiguration"},
     {L"backgroundMediaPlayback", L"backgroundMediaPlayback"},
     {L"backgroundMediaRecording", L"backgroundMediaRecording"},
+    {L"backgroundSpatialPerception", L"backgroundSpatialPerception"},
     {L"backgroundVoIP", L"backgroundVoIP"},
     {L"biometricSystem", L"biometricSystem"},
     {L"blockedChatMessages", L"blockedChatMessages"},
@@ -1001,6 +1013,7 @@ constexpr const CapabilityName wncas[] = {
     {L"cortanaSpeechAccessory", L"cortanaSpeechAccessory"},
     {L"cortanaSurface", L"cortanaSurface"},
     {L"curatedTileCollections", L"curatedTileCollections"},
+    {L"customInstallActions", L"customInstallActions"},
     {L"dateAndTimeDeviceSettings", L"dateAndTimeDeviceSettings"},
     {L"developerSettings", L"developerSettings"},
     {L"developmentModeNetwork", L"developmentModeNetwork"},
@@ -1072,6 +1085,7 @@ constexpr const CapabilityName wncas[] = {
     {L"languageSettings", L"languageSettings"},
     {L"liveIdService", L"liveIdService"},
     {L"localExperienceInternal", L"localExperienceInternal"},
+    {L"localSystemServices", L"localSystemServices"},
     {L"location", L"location"},
     {L"locationHistory", L"locationHistory"},
     {L"locationSystem", L"locationSystem"},
@@ -1082,6 +1096,7 @@ constexpr const CapabilityName wncas[] = {
     {L"microsoftEdgeRemoteDebugging", L"microsoftEdgeRemoteDebugging"},
     {L"mixedRealityEnvironmentInternal", L"mixedRealityEnvironmentInternal"},
     {L"mmsTransportSystem", L"mmsTransportSystem"},
+    {L"modifiableApp", L"modifiableApp"},
     {L"multiplaneOverlay", L"multiplaneOverlay"},
     {L"muma", L"muma"},
     {L"networkConnectionManagerProvisioning", L"networkConnectionManagerProvisioning"},
@@ -1103,6 +1118,8 @@ constexpr const CapabilityName wncas[] = {
     {L"packageManagement", L"packageManagement"},
     {L"packagePolicySystem", L"packagePolicySystem"},
     {L"packageQuery", L"packageQuery"},
+    {L"packagedServices", L"packagedServices"},
+    {L"packageWriteRedirectionCompatibilityShim", L"packageWriteRedirectionCompatibilityShim"},
     {L"perceptionMonitoring", L"perceptionMonitoring"},
     {L"perceptionSensorsExperimental", L"perceptionSensorsExperimental"},
     {L"perceptionSystem", L"perceptionSystem"},
@@ -1112,6 +1129,7 @@ constexpr const CapabilityName wncas[] = {
     {L"phoneCallHistoryPublic", L"phoneCallHistoryPublic"},
     {L"phoneCallHistorySystem", L"phoneCallHistorySystem"},
     {L"phoneCallSystem", L"phoneCallSystem"},
+    {L"phoneLineTransportManagement", L"phoneLineTransportManagement"},
     {L"pointOfService", L"pointOfService"},
     {L"powerDeviceSettings", L"powerDeviceSettings"},
     {L"preemptiveCamera", L"preemptiveCamera"},
@@ -1162,7 +1180,9 @@ constexpr const CapabilityName wncas[] = {
     {L"systemRegistrar", L"systemRegistrar"},
     {L"targetedContent", L"targetedContent"},
     {L"targetedContentSubscription", L"targetedContentSubscription"},
+    {L"teamEditionDeviceCredential", L"teamEditionDeviceCredential"},
     {L"teamEditionExperience", L"teamEditionExperience"},
+    {L"teamEditionView", L"teamEditionView"},
     {L"telemetryData", L"telemetryData"},
     {L"terminalPowerManagement", L"terminalPowerManagement"},
     {L"thumbnailCache", L"thumbnailCache"},
