@@ -168,7 +168,7 @@ int App::ParseArgv(int argc, wchar_t **argv) {
           visible = wsudo::exec::visible_t::newconsole;
           break;
         case 'H':
-          visible = wsudo::exec::visible_t::newconsole;
+          visible = wsudo::exec::visible_t::hide;
           break;
         case 'w':
           wait = true;
@@ -358,14 +358,8 @@ int App::AppExecute() {
 
 int App::Execute() {
   auto elevated = wsudo::exec::IsUserAdministratorsGroup();
-  if (!elevated && console && level >= wsudo::exec::privilege_t::elevated) {
-    if (bela::terminal::IsTerminal(stderr) && visible == wsudo::exec::visible_t::none) {
-      return DelegateExecute();
-    }
-    // console not wait when wsudo
-    if (visible == wsudo::exec::visible_t::none) {
-      nowait = true;
-    }
+  if (!elevated && level >= wsudo::exec::privilege_t::elevated) {
+    return DelegateExecute();
   }
   wsudo::exec::command cmd;
   cmd.path.assign(std::move(path));

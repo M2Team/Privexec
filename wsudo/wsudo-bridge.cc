@@ -1,4 +1,4 @@
-// wsudotie.cc
+// wsudo-bridge.cc
 #include <bela/terminal.hpp>
 #include <bela/escapeargv.hpp>
 #include <bela/picker.hpp>
@@ -9,7 +9,7 @@
 #include <baseversion.h>
 #include <exec.hpp>
 
-namespace wsudo::tie {
+namespace wsudo::bridge {
 bool IsDebugMode = false;
 int WriteTrace(std::wstring_view msg);
 
@@ -91,6 +91,8 @@ struct App {
   bela::env::Simulator simulator;
   std::wstring pwd;
   DWORD parentid{0}; // parent process pid
+  bool attachConsole{false};
+  bool waitForExit{false};
   bool ParseArgv(int argc, wchar_t **argv);
   bool InitializeApp();
   int Execute();
@@ -118,22 +120,25 @@ void Version() {
 }
 
 void Usage(bool err = false) {
-  constexpr const wchar_t *kUsage = LR"(wsudo-tie wsudo administrator level permission middleware.
-usage: wsudo-tie command args...
+  constexpr const wchar_t *kUsage = LR"(wsudo-bridge wsudo administrator level permission middleware.
+usage: wsudo-bridge command args...
    -v|--version        print version and exit
    -h|--help           print help information and exit
    -p|--parent         wsudo prcocess pid.
    -V|--verbose        Make the operation more talkative
-   -d|--pwd            wsudo-tie switch to workdir
+   -d|--pwd            wsudo-bridge switch to workdir
    -c|--cwd            Use a working directory to launch the process.
-   -e|--env            Use specific environment variables to start child processes.
+   -e|--env            Use specific environment variables to start child processes
+   -w|--wait           Start application and wait for it to terminate.
+   -A|--attach         Attached to the console of the parent process
    -u|--user           run as user (optional), support '-uX', '-u X', '--user=X', '--user X'
                        Supported user categories (Ignore case):
                        Administrator   System    TrustedInstaller
+   --visible           Visibility level passed by wsudo
 
 )";
   char32_t sh = 0x1F496; //  💖
-  bela::FPrintF(stderr, L"\x1b[%dmwsudo-tie %c %d.%d %s\x1b[0m\n", err ? 31 : 36, sh, PRIVEXEC_VERSION_MAJOR,
+  bela::FPrintF(stderr, L"\x1b[%dmwsudo-bridge %c %d.%d %s\x1b[0m\n", err ? 31 : 36, sh, PRIVEXEC_VERSION_MAJOR,
                 PRIVEXEC_VERSION_MINOR, kUsage);
 }
 
@@ -170,7 +175,10 @@ bool App::ParseArgv(int argc, wchar_t **argv) {
       .Add(L"parent", bela::required_argument, L'P')
       .Add(L"cwd", bela::required_argument, L'c')
       .Add(L"env", bela::required_argument, L'e')
-      .Add(L"user", bela::required_argument, L'u');
+      .Add(L"user", bela::required_argument, L'u')
+      .Add(L"wait", bela::no_argument, L'w')
+      .Add(L"attach", bela::no_argument, L'A')
+      .Add(L"visible", bela::required_argument, 1001);
   bela::error_code ec;
   cmd.priv = wsudo::exec::privilege_t::elevated;
   auto result = pa.Execute(
@@ -203,6 +211,18 @@ bool App::ParseArgv(int argc, wchar_t **argv) {
         case 'e':
           SetEnv(va);
           break;
+        case 'A':
+          attachConsole = true;
+          break;
+        case 'w':
+          waitForExit = true;
+          break;
+        case 1001:
+          int v;
+          if (bela::SimpleAtoi(va, &v) && v >= 0 && v <= static_cast<int>(wsudo::exec::visible_t::hide)) {
+            cmd.visible = static_cast<wsudo::exec::visible_t>(v);
+          }
+          break;
         default:
           break;
         }
@@ -229,7 +249,7 @@ bool App::ParseArgv(int argc, wchar_t **argv) {
     SetEnv(arg);
   }
   if (cmd.argv.empty()) {
-    PrintError(L"wsudo-tie: no command input");
+    PrintError(L"wsudo-bridge: no command input");
     return false;
   }
   cmd.path = cmd.argv[0];
@@ -239,23 +259,27 @@ bool App::ParseArgv(int argc, wchar_t **argv) {
 }
 
 bool App::InitializeApp() {
+  if (!attachConsole) {
+    // no need call gui
+    return true;
+  }
   if (parentid == 0) {
-    PrintError(L"wsudo-tie: parent process id=0");
+    PrintError(L"wsudo-bridge: parent process id=0");
     return false;
   }
-  DbgPrintP(L"wsudo-tie FreeConsole. parentid: %d", parentid);
+  DbgPrintP(L"wsudo-bridge FreeConsole. parentid: %d", parentid);
   FreeConsole();
   if (AttachConsole(parentid) != TRUE) {
     auto ec = bela::make_system_error_code();
-    PrintError(L"wsudo-tie: AttachConsole parent %d error: %s", parentid, ec.message);
+    PrintError(L"wsudo-bridge: AttachConsole parent %d error: %s", parentid, ec.message);
     return false;
   }
   if (!pwd.empty() && SetCurrentDirectoryW(pwd.data()) != TRUE) {
     auto ec = bela::make_system_error_code();
-    PrintError(L"wsudo-tie: SetCurrentDirectoryW parent %d error: %s", parentid, ec.message);
+    PrintError(L"wsudo-bridge: SetCurrentDirectoryW parent %d error: %s", parentid, ec.message);
     return false;
   }
-  DbgPrintP(L"wsudo-tie AttachConsole done. parentid: %d", parentid);
+  DbgPrintP(L"wsudo-bridge AttachConsole done. parentid: %d", parentid);
   return true;
 }
 
@@ -321,7 +345,7 @@ int App::Execute() {
   if (IsDebugMode) {
     dumpPathEnv();
   }
-  DbgPrint(L"App[tie]: %s", cmd.path);
+  DbgPrint(L"App[bridge]: %s", cmd.path);
   bela::error_code ec;
   if (!cmd.execute(ec)) {
     bela::FPrintF(stderr, L"start command %s error: %s\n", cmd.argv[0], ec.message);
@@ -329,17 +353,20 @@ int App::Execute() {
   }
   bela::FPrintF(stderr, L"\x1b[32mnew \x1b[36m%s\x1b[32m process is running: %d\x1b[0m\n", AppSLevel(cmd.priv),
                 cmd.pid);
+  if (!waitForExit) {
+    return 0;
+  }
   return WaitForExit(cmd.pid);
 }
 
-} // namespace wsudo::tie
+} // namespace wsudo::bridge
 
 // FreeConsole
 // AttachConsole to parent process
 // CreateProcessW cmdline cwd env...
 
 int wmain(int argc, wchar_t **argv) {
-  wsudo::tie::App app;
+  wsudo::bridge::App app;
   if (!app.ParseArgv(argc, argv)) {
     return 1;
   }

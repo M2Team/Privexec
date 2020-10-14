@@ -135,7 +135,7 @@ When wsudo starts the administrator process as a standard user, if it is current
 
 wsudo exec administrator process under mintty (Turn on ConPty):
 
-![wsudo](docs/images/wsudo-tie-new-mintty.png)
+![wsudo](docs/images/wsudo-bridge-new-mintty.png)
 
 ### WSUDO Environment
 

@@ -61,7 +61,7 @@ std::optional<std::wstring> AppTieExecuteExists() {
     bela::FPrintF(stderr, L"\x1b[31mwsudo unable resolve executable %s \x1b[0m\n", ec.message);
     return std::nullopt;
   }
-  auto file = bela::StringCat(*finalexeparent, L"\\wsudo-tie.exe");
+  auto file = bela::StringCat(*finalexeparent, L"\\wsudo-bridge.exe");
   if (bela::PathExists(file)) {
     return std::make_optional(std::move(file));
   }
@@ -85,7 +85,7 @@ int App::DelegateExecute() {
   if (!tie) {
     return 1;
   }
-  DbgPrint(L"App use wsudo-tie: %s", *tie);
+  DbgPrint(L"App use wsudo-bridge: %s", *tie);
   bela::EscapeArgv ea;
   auto self = GetCurrentProcessId();
   // parent pid
@@ -94,7 +94,15 @@ int App::DelegateExecute() {
   if (!pwd.empty()) {
     ea.Append(L"--pwd").Append(pwd);
   }
-  // parent work dir (wsudo-tie will chdir to)
+  ea.Append(bela::StringCat(L"--visible=", static_cast<int>(visible)));
+  // is parent is terminal attach console
+  if (bela::terminal::IsTerminal(stderr)) {
+    ea.Append(L"--attach");
+  }
+  if (Waitable()) {
+    ea.Append(L"--wait");
+  }
+  // parent work dir (wsudo-bridge will chdir to)
   // env values...
   if (wsudo::IsDebugMode) {
     ea.Append(L"--verbose");

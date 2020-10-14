@@ -22,14 +22,14 @@ target_link_libraries(
 
 install(TARGETS wsudo DESTINATION .)
 
-add_executable(wsudo-tie wsudo-tie.cc wsudotietrace.cc wsudo-tie.rc wsudo.manifest)
+add_executable(wsudo-bridge wsudo-bridge.cc wsudo-bridge.trace.cc wsudo-bridge.rc wsudo.manifest)
 
 if(PRIVEXEC_ENABLE_LTO)
-  set_property(TARGET wsudo-tie PROPERTY INTERPROCEDURAL_OPTIMIZATION TRUE)
+  set_property(TARGET wsudo-bridge PROPERTY INTERPROCEDURAL_OPTIMIZATION TRUE)
 endif()
 
 target_link_libraries(
-  wsudo-tie
+  wsudo-bridge
   Exec
   belashl
   Comctl32
@@ -42,4 +42,4 @@ target_link_libraries(
   Gdi32
   Advapi32)
 
-install(TARGETS wsudo-tie DESTINATION .)
+install(TARGETS wsudo-bridge DESTINATION .)

@@ -70,12 +70,12 @@ BEGIN
         BLOCK "080404b0"
         BEGIN
             VALUE "CompanyName", "Force Charlie"
-            VALUE "FileDescription", "Windows sudo(tie) utility"
+            VALUE "FileDescription", "Windows sudo bridge"
             VALUE "FileVersion", PRIVEXEC_VERSION
-            VALUE "InternalName", "wsudo-tie.exe"
+            VALUE "InternalName", "wsudo-bridge.exe"
             VALUE "LegalCopyright", PRIVEXECUI_COPYRIGHT
-            VALUE "OriginalFilename", "wsudo-tie.exe"
-            VALUE "ProductName", "Windows sudo(tie) utility"
+            VALUE "OriginalFilename", "wsudo-bridge.exe"
+            VALUE "ProductName", "Windows sudo utility"
             VALUE "ProductVersion", PRIVEXEC_VERSION
         END
     END

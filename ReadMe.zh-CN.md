@@ -128,9 +128,9 @@ wsudo 支持的参数 `--hide` `--wait` `--new-console` 行为细节如下:
 wsudo 在以标准用户启动管理员进程时，如果当前运行在控制台时，支持继承控制台窗口，如果不是运行在控制台，则无能为力，较新的 Cygwin 目前已经支持在较新的 Windows 10 上以 ConPty 启动控制台，因此时可以继承控制台窗口的，也就是终端。 下图就是佐证。
 
 
-在开启了 ConPty 的 Mintty 中运行 wsudo 提升进程截图（借助 wsudo-tie 子进程继承了 wsudo 的控制台）:
+在开启了 ConPty 的 Mintty 中运行 wsudo 提升进程截图（借助 wsudo-bridge 子进程继承了 wsudo 的控制台）:
 
-![wsudo](docs/images/wsudo-tie-new-mintty.png)
+![wsudo](docs/images/wsudo-bridge-new-mintty.png)
 
 ### WSUDO 环境变量
 

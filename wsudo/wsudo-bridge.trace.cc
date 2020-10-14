@@ -2,7 +2,7 @@
 #include <bela/path.hpp>
 #include <bela/narrow/strcat.hpp>
 
-namespace wsudo::tie {
+namespace wsudo::bridge {
 extern bool IsDebugMode;
 inline std::string TimeNow() {
   auto t = std::time(nullptr);
@@ -49,7 +49,7 @@ private:
     if (!p) {
       return false;
     }
-    auto file = bela::StringCat(*p, L"\\wsudo-tie.trace.log");
+    auto file = bela::StringCat(*p, L"\\wsudo-bridge.trace.log");
     if (fd = CreateFileW(file.data(), FILE_GENERIC_READ | FILE_GENERIC_WRITE, FILE_SHARE_READ, nullptr, OPEN_ALWAYS,
                          FILE_ATTRIBUTE_NORMAL, nullptr);
         fd == INVALID_HANDLE_VALUE) {
@@ -108,7 +108,7 @@ private:
     if (!p) {
       return false;
     }
-    auto file = bela::StringCat(*p, L"\\wsudo-tie.error.log");
+    auto file = bela::StringCat(*p, L"\\wsudo-bridge.error.log");
     if (fd = CreateFileW(file.data(), FILE_GENERIC_READ | FILE_GENERIC_WRITE, FILE_SHARE_READ, nullptr, OPEN_ALWAYS,
                          FILE_ATTRIBUTE_NORMAL, nullptr);
         fd == INVALID_HANDLE_VALUE) {
@@ -126,4 +126,4 @@ int WriteError(std::wstring_view msg) {
   return TraceHelper::Instance().WriteMessage(msg);
 }
 
-} // namespace wsudo::tie
+} // namespace wsudo::bridge
