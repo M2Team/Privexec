@@ -125,7 +125,15 @@ include_directories("${CMAKE_BINARY_DIR}/include" ./include ./vendor/bela/includ
 
 configure_file("config/Privexec.json" "${CMAKE_BINARY_DIR}/bin/Privexec.json" COPYONLY)
 
-install(FILES config/Privexec.json DESTINATION .)
+install(FILES "config/Privexec.json" DESTINATION .)
+
+# File context menu integration script
+install(FILES "script/RunAsSystem.bat" DESTINATION script)
+install(FILES "script/RunAsSystem.ps1" DESTINATION script)
+install(FILES "script/RunAsTrustedInstaller.bat" DESTINATION script)
+install(FILES "script/RunAsTrustedInstaller.ps1" DESTINATION script)
+install(FILES "script/UninstallAll.bat" DESTINATION script)
+
 add_subdirectory(vendor/bela)
 add_subdirectory(lib/exec)
 add_subdirectory(AppExec)
