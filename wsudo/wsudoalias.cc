@@ -23,7 +23,7 @@ bool wsudo::AliasEngine::Initialize(bool verbose) {
   priv::FD fd;
   if (auto en = _wfopen_s(&fd.fd, file.data(), L"rb"); en != 0) {
     auto ec = bela::make_stdc_error_code(en);
-    bela::FPrintF(stderr, L"open %s: %s\n", file, ec.message);
+    DbgPrint(L"open %s: %s", file, ec.message);
     return false;
   }
   try {
