@@ -6,6 +6,7 @@
 #include "baseversion.h"
 
 #define IDI_APPICON 1001
+#define IDI_SHIELD  1002
 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS

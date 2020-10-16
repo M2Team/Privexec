@@ -128,11 +128,11 @@ configure_file("config/Privexec.json" "${CMAKE_BINARY_DIR}/bin/Privexec.json" CO
 install(FILES "config/Privexec.json" DESTINATION .)
 
 # File context menu integration script
-install(FILES "script/RunAsSystem.bat" DESTINATION script)
-install(FILES "script/RunAsSystem.ps1" DESTINATION script)
-install(FILES "script/RunAsTrustedInstaller.bat" DESTINATION script)
-install(FILES "script/RunAsTrustedInstaller.ps1" DESTINATION script)
-install(FILES "script/UninstallAll.bat" DESTINATION script)
+install(FILES "script/runassys.bat" DESTINATION script)
+install(FILES "script/runassys.ps1" DESTINATION script)
+install(FILES "script/runasti.bat" DESTINATION script)
+install(FILES "script/runasti.ps1" DESTINATION script)
+install(FILES "script/uninstall.bat" DESTINATION script)
 
 add_subdirectory(vendor/bela)
 add_subdirectory(lib/exec)

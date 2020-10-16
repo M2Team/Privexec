@@ -45,8 +45,8 @@ END
 
 /////////
 // ICON
-IDI_APPICON    ICON                    "wsudo.ico"
 
+IDI_APPICON    ICON                    "shield.ico"
 /////////////////////////////////////////////////////////////////////////////
 //
 // Version
