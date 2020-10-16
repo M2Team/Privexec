@@ -44,7 +44,7 @@ END
 #endif    // APSTUDIO_INVOKED
 
 /////////
-// ICON
+// ICON main icon
 IDI_APPICON    ICON                    "wsudo.ico"
 
 /////////////////////////////////////////////////////////////////////////////
