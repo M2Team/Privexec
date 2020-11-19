@@ -317,8 +317,8 @@ bool App::SplitArgv() {
     return true;
   }
   DbgPrint(L"App real path '%s'", *re);
-  if (auto pe = bela::pe::Expose(*re, ec); pe) {
-    console = pe->subsystem == bela::pe::Subsystem::CUI;
+  if (auto pe = bela::pe::NewFile(*re, ec); pe) {
+    console = pe->Subsystem() == bela::pe::Subsystem::CUI;
     DbgPrint(L"App subsystem is console: %b", console);
     return true;
   }
