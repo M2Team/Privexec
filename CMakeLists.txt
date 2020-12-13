@@ -1,5 +1,5 @@
 # Privexec cmake
-cmake_minimum_required(VERSION 3.15)
+cmake_minimum_required(VERSION 3.18)
 
 project(Privexec)
 
@@ -116,7 +116,7 @@ if(lto_supported)
 endif()
 
 set(CMAKE_C_STANDARD 11)
-set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED YES)
 set(CMAKE_RC_FLAGS "${CMAKE_RC_FLAGS} -c65001")
 add_definitions(-D_UNICODE=1 -DUNICODE=1)

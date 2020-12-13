@@ -35,14 +35,26 @@
 
 namespace bela {
 
-bool EqualsIgnoreCase(std::wstring_view piece1, std::wstring_view piece2) {
+bool EqualsIgnoreCase(std::wstring_view piece1, std::wstring_view piece2) noexcept {
   return (piece1.size() == piece2.size() &&
           strings_internal::memcasecmp(piece1.data(), piece2.data(), piece1.size()) == 0);
 }
-bool StartsWithIgnoreCase(std::wstring_view text, std::wstring_view prefix) {
+bool StartsWithIgnoreCase(std::wstring_view text, std::wstring_view prefix) noexcept {
   return (text.size() >= prefix.size()) && EqualsIgnoreCase(text.substr(0, prefix.size()), prefix);
 }
-bool EndsWithIgnoreCase(std::wstring_view text, std::wstring_view suffix) {
+bool EndsWithIgnoreCase(std::wstring_view text, std::wstring_view suffix) noexcept {
   return (text.size() >= suffix.size()) && EqualsIgnoreCase(text.substr(text.size() - suffix.size()), suffix);
 }
+
+bool EqualsIgnoreCase(std::string_view piece1, std::string_view piece2) noexcept {
+  return (piece1.size() == piece2.size() &&
+          strings_internal::memcasecmp_narrow(piece1.data(), piece2.data(), piece1.size()) == 0);
+}
+bool StartsWithIgnoreCase(std::string_view text, std::string_view prefix) noexcept {
+  return (text.size() >= prefix.size()) && EqualsIgnoreCase(text.substr(0, prefix.size()), prefix);
+}
+bool EndsWithIgnoreCase(std::string_view text, std::string_view suffix) noexcept {
+  return (text.size() >= suffix.size()) && EqualsIgnoreCase(text.substr(text.size() - suffix.size()), suffix);
+}
+
 } // namespace bela

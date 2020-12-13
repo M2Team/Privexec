@@ -22,7 +22,7 @@ bool SplitArgv(std::wstring_view cmd, std::wstring &path, std::vector<std::wstri
   }
   std::wstring_view arg0 = path.empty() ? argv[0] : path;
   std::wstring p;
-  if (!bela::env::ExecutableExistsInPath(arg0, p)) {
+  if (!bela::env::LookPath(arg0, p, true)) {
     ec = bela::make_error_code(1, L"command not found '", arg0, L"'");
     return false;
   }

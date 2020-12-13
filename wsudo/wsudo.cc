@@ -253,21 +253,11 @@ int App::ParseArgv(int argc, wchar_t **argv) {
   return 0;
 }
 
-bool IsConsoleSuffix(std::wstring_view path) {
-  constexpr std::wstring_view suffixs[] = {L".bat", L".cmd", L".com"};
-  for (auto s : suffixs) {
-    if (bela::EndsWithIgnoreCase(path, s)) {
-      return true;
-    }
-  }
-  return false;
-}
-
 bool SplitArgvInternal(std::wstring &path, std::vector<std::wstring> &argv) {
   std::wstring_view arg0(argv[0]);
   auto a0 = bela::WindowsExpandEnv(arg0);
   argv[0].assign(std::move(a0));
-  if (!bela::env::ExecutableExistsInPath(argv[0], a0)) {
+  if (!bela::env::LookPath(argv[0], a0, true)) {
     bela::FPrintF(stderr, L"%s not found in path\n", argv[0]);
     return false;
   }
@@ -317,12 +307,7 @@ bool App::SplitArgv() {
     return true;
   }
   DbgPrint(L"App real path '%s'", *re);
-  if (auto pe = bela::pe::NewFile(*re, ec); pe) {
-    console = pe->Subsystem() == bela::pe::Subsystem::CUI;
-    DbgPrint(L"App subsystem is console: %b", console);
-    return true;
-  }
-  console = IsConsoleSuffix(*re);
+  console = bela::pe::IsSubsystemConsole(*re);
   DbgPrint(L"App (script) subsystem is console %b", console);
   return true;
 }

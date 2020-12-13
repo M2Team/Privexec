@@ -87,7 +87,7 @@ bool App::AppAliasEdit() {
   auto aliasFile = priv::AppAliasFile();
   wsudo::exec::command cmd;
   std::wstring code;
-  if (bela::env::ExecutableExistsInPath(L"code.cmd", code)) {
+  if (bela::env::LookPath(L"code.cmd", code)) {
     cmd.path = std::move(code);
     cmd.argv.emplace_back(L"code.cmd");
     cmd.visible = wsudo::exec::visible_t::hide; // hide console window

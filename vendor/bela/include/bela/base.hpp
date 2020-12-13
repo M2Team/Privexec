@@ -32,6 +32,17 @@ struct error_code {
   long code{None};
   const wchar_t *data() const { return message.data(); }
   explicit operator bool() const noexcept { return code != None; }
+  error_code &assgin(error_code &&o) {
+    message = o.message;
+    o.message.clear();
+    code = o.code;
+    o.code = None;
+    return *this;
+  }
+  void clear() {
+    code = None;
+    message.clear();
+  }
 };
 
 inline bela::error_code make_error_code(const AlphaNum &a) {
@@ -91,7 +102,7 @@ inline error_code make_system_error_code(std::wstring_view prefix = L"") {
   return ec;
 }
 
-std::wstring resolve_module_error_message(const wchar_t *module, DWORD ec, std::wstring_view prefix);
+std::wstring resolve_module_error_message(const wchar_t *moduleName, DWORD ec, std::wstring_view prefix);
 // bela::fromascii
 inline std::wstring fromascii(std::string_view sv) {
   auto sz = MultiByteToWideChar(CP_ACP, 0, sv.data(), (int)sv.size(), nullptr, 0);
@@ -156,6 +167,8 @@ private:
 template <class F> inline final_act<F> finally(const F &f) noexcept { return final_act<F>(f); }
 
 template <class F> inline final_act<F> finally(F &&f) noexcept { return final_act<F>(std::forward<F>(f)); }
+
+constexpr int64_t SizeUnInitialized{-1};
 
 } // namespace bela
 
