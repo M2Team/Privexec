@@ -76,7 +76,7 @@ inline bool StrContains(std::string_view haystack, char needle) noexcept {
 }
 
 inline bool StartsWith(std::string_view text, std::string_view prefix) noexcept {
-  return prefix.empty() || (text.size() >= prefix.size() && memcmp(text.data(), prefix.data(), prefix.size())) == 0;
+  return prefix.empty() || (text.size() >= prefix.size() && memcmp(text.data(), prefix.data(), prefix.size()) == 0);
 }
 
 inline bool EndsWith(std::string_view text, std::string_view suffix) noexcept {

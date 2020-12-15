@@ -237,12 +237,19 @@ bool App::AppExecute() {
   return true;
 }
 
+inline std::wstring quotesText(std::wstring_view text) {
+  if (auto pos = text.find(L' '); pos != std::wstring_view::npos) {
+    return bela::StringCat(L"\"", text, L"\"");
+  }
+  return std::wstring(text);
+}
+
 bool App::AppLookupExecute() {
   const bela::filter_t filters[] = {{L"Windows Execute(*.exe;*.com;*.bat;*.cmd)", L"*.exe;*.com;*.bat;*.cmd"},
                                     {L"All Files (*.*)", L"*.*"}};
   auto exe = bela::FilePicker(hWnd, L"Privexec: Select Execute", filters);
   if (exe) {
-    cmd.Update(*exe);
+    cmd.Update(quotesText(*exe));
     return true;
   }
   return false;
@@ -263,7 +270,7 @@ bool App::DropFiles(WPARAM wParam, LPARAM lParam) {
   WCHAR dfile[4096] = {0};
   for (UINT i = 0; i < nfilecounts; i++) {
     DragQueryFileW(hDrop, i, dfile, 4096);
-    cmd.Update(dfile);
+    cmd.Update(quotesText(dfile));
   }
   DragFinish(hDrop);
   return true;

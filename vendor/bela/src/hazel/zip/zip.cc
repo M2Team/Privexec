@@ -453,11 +453,11 @@ msoffice_t Reader::LooksLikeOffice() const {
     if (bela::StartsWith(file.name, "word/")) {
       return OfficeDocx;
     }
-    if (bela::StartsWith(file.name, "word/")) {
-      return OfficeDocx;
+    if (bela::StartsWith(file.name, "ppt/")) {
+      return OfficePptx;
     }
-    if (bela::StartsWith(file.name, "word/")) {
-      return OfficeDocx;
+    if (bela::StartsWith(file.name, "xl/")) {
+      return OfficeXlsx;
     }
   }
   return OfficeNone;
