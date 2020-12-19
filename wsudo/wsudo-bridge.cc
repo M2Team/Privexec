@@ -13,7 +13,7 @@ namespace wsudo::bridge {
 bool IsDebugMode = false;
 int WriteTrace(std::wstring_view msg);
 
-template <typename... Args> bela::ssize_t DbgPrintP(const wchar_t *fmt, Args... args) {
+template <typename... Args> bela::ssize_t DbgPrintP(const wchar_t *fmt, const Args&... args) {
   if (!IsDebugMode) {
     return 0;
   }
@@ -37,7 +37,7 @@ inline bela::ssize_t DbgPrintP(const wchar_t *fmt) {
 }
 
 int WriteError(std::wstring_view msg);
-template <typename... Args> bela::ssize_t PrintError(const wchar_t *fmt, Args... args) {
+template <typename... Args> bela::ssize_t PrintError(const wchar_t *fmt, const Args&... args) {
   if (!IsDebugMode) {
     return 0;
   }
