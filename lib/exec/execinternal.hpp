@@ -4,7 +4,7 @@
 #include <vector>
 #include <bela/base.hpp>
 #include <bela/match.hpp>
-#include <bela/strcat.hpp>
+#include <bela/str_cat.hpp>
 #include <bela/str_join.hpp>
 #include "exec.hpp"
 

@@ -1,6 +1,6 @@
 #include <bela/terminal.hpp>
 #include <bela/path.hpp>
-#include <bela/narrow/strcat.hpp>
+#include <bela/str_cat_narrow.hpp>
 
 namespace wsudo::bridge {
 extern bool IsDebugMode;
