@@ -219,6 +219,7 @@ public:
   int64_t Size() const { return size; }
   const auto &Sections() const { return sections; }
   const auto &Progs() const { return progs; }
+  const auto &Fh() const { return fh; }
   bool DynString(int tag, std::vector<std::string> &sv, bela::error_code &ec);
   bool DynamicSymbols(std::vector<Symbol> &syms, bela::error_code &ec);
   bool ImportedSymbols(std::vector<ImportedSymbol> &symbols, bela::error_code &ec);
