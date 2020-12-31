@@ -63,12 +63,12 @@ public:
   File(const File &) = delete;
   File &operator=(const File &) = delete;
   ~File() { Free(); }
-  File(File &&o) {
+  File(File &&o) noexcept {
     Free();
     fd = o.fd;
     o.fd = INVALID_HANDLE_VALUE;
   }
-  File &operator=(File &&o) {
+  File &operator=(File &&o) noexcept {
     Free();
     fd = o.fd;
     o.fd = INVALID_HANDLE_VALUE;
@@ -108,7 +108,7 @@ inline ssize_t File::Read(void *buffer, size_t len, bela::error_code &ec) {
     ec = bela::make_system_error_code(L"ReadFile: ");
     return -1;
   }
-  return static_cast<ssize_t>(len);
+  return static_cast<ssize_t>(drSize);
 }
 
 inline ssize_t File::ReadAt(void *buffer, size_t len, int64_t pos, bela::error_code &ec) {
@@ -154,7 +154,7 @@ inline bool File::Open(std::wstring_view file, bela::error_code &ec) {
   return true;
 }
 
-// Open 
+// Open
 inline bool File::Open(std::wstring_view file, DWORD dwDesiredAccess, DWORD dwShareMode,
                        LPSECURITY_ATTRIBUTES lpSecurityAttributes, DWORD dwCreationDisposition,
                        DWORD dwFlagsAndAttributes, HANDLE hTemplateFile, bela::error_code &ec) {
