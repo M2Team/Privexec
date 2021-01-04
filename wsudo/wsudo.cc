@@ -116,7 +116,7 @@ const wchar_t *VisibleName(wsudo::exec::visible_t vi) {
   case wsudo::exec::visible_t::newconsole:
     return L"new console window";
   case wsudo::exec::visible_t::hide:
-    return L"no console window";
+    return L"no window";
   default:
     break;
   }

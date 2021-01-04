@@ -26,6 +26,8 @@ bool execute(command &cmd, bela::error_code &ec) {
     createflags |= CREATE_NEW_CONSOLE;
   } else if (cmd.visible == visible_t::hide) {
     createflags |= CREATE_NO_WINDOW;
+    si.dwFlags |= STARTF_USESHOWWINDOW;
+    si.wShowWindow = SW_HIDE;
   }
   if (CreateProcessW(string_nullable(cmd.path), ea.data(), nullptr, nullptr, FALSE, createflags,
                      string_nullable(cmd.env), string_nullable(cmd.cwd), &si, &pi) != TRUE) {
@@ -57,6 +59,8 @@ bool execute(HANDLE hToken, bool desktop, command &cmd, bela::error_code &ec) {
     createflags |= CREATE_NEW_CONSOLE;
   } else if (cmd.visible == visible_t::hide) {
     createflags |= CREATE_NO_WINDOW;
+    si.dwFlags |= STARTF_USESHOWWINDOW;
+    si.wShowWindow = SW_HIDE;
   }
   if (CreateProcessAsUserW(hToken, string_nullable(cmd.path), ea.data(), nullptr, nullptr, FALSE, createflags,
                            string_nullable(cmd.env), string_nullable(cmd.cwd), &si, &pi) != TRUE) {

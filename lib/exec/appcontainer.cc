@@ -287,6 +287,8 @@ bool appcommand::execute(bela::error_code &ec) {
     createflags |= CREATE_NEW_CONSOLE;
   } else if (visible == visible_t::hide) {
     createflags |= CREATE_NO_WINDOW;
+    siex.StartupInfo.dwFlags |= STARTF_USESHOWWINDOW;
+    siex.StartupInfo.wShowWindow = SW_HIDE;
   }
   bela::EscapeArgv ea;
   for (const auto &a : argv) {

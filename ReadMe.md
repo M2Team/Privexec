@@ -127,9 +127,9 @@ The wsudo visible and wait related parameters are `--hide` `--wait` `--new-conso
 |PE Subsystem|`No relevant parameters`|`--new-console`|`--hide`|
 |---|---|---|---
 |Windows CUI|wait/Inheritance console|no wait/New console|no wait/No console|
-|Windows GUI|no wait/New UI|no wait/New UI|no wait/ignore|
+|Windows GUI|no wait/New UI|no wait/New UI|no wait/No window|
 |Windows CUI `-wait`|wait/Inheritance console|wait/New console|wait/No console|
-|Windows GUI `-wait`|wait/New UI|wait/New UI|wait/No ignore|
+|Windows GUI `-wait`|wait/New UI|wait/New UI|wait/No window|
 
 When wsudo starts the administrator process as a standard user, if it is currently running in the console, it supports inheriting the console window. If it is not running in the console, it can do nothing. The newer Cygwin currently supports the newer Windows 10 `ConPty` starts the console, so it can inherit the console window, which is the terminal. The picture below is the proof.
 
