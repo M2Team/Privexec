@@ -162,19 +162,15 @@ std::vector<std::wstring_view> NewlineTokenize(std::wstring_view sv) {
   return output;
 }
 
-bool IsRegistryKey(std::wstring_view path) {
-  auto pv = bela::SplitPath(path);
-  if (pv.empty()) {
-    return false;
-  }
-  constexpr std::wstring_view keys[] = {L"HKEY_CLASSES_ROOT",  L"HKCR", L"HKEY_CURRENT_USER", L"HKCU",
-                                        L"HKEY_LOCAL_MACHINE", L"HKLM", L"HKEY_USERS",        L"HKU"};
-  for (auto k : keys) {
-    if (bela::EqualsIgnoreCase(k, pv[0])) {
-      return true;
+std::optional<std::wstring> MakeRegistryKey(std::wstring_view path) {
+  constexpr std::wstring_view prefix = {L"Registry::"};
+  if (bela::StartsWithIgnoreCase(path, prefix)) {
+    if (path.size() > prefix.size() && bela::IsPathSeparator(path[prefix.size()])) {
+      return std::make_optional<std::wstring>(path.substr(prefix.size() + 1));
     }
+    return std::make_optional<std::wstring>(path.substr(prefix.size()));
   }
-  return false;
+  return std::nullopt;
 }
 
 bool App::AppLookupAcl(std::vector<std::wstring> &fsdir, std::vector<std::wstring> &registries) {
@@ -187,13 +183,13 @@ bool App::AppLookupAcl(std::vector<std::wstring> &fsdir, std::vector<std::wstrin
   auto dirs = NewlineTokenize(acl);
   for (auto d : dirs) {
     auto dir = bela::WindowsExpandEnv(d);
-    if (IsRegistryKey(dir)) {
-      trace.Append(L"Registry Access", dir);
-      registries.emplace_back(dir);
-    } else {
-      trace.Append(L"Fs Access", dir);
-      fsdir.emplace_back(dir);
+    if (auto reg = MakeRegistryKey(dir); reg && !reg->empty()) {
+      trace.Append(L"Registry Access", *reg);
+      registries.emplace_back(*reg);
+      continue;
     }
+    trace.Append(L"Fs Access", dir);
+    fsdir.emplace_back(dir);
   }
   return true;
 }

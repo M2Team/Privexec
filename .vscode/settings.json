@@ -76,6 +76,10 @@
         "locale": "cpp",
         "xlocbuf": "cpp",
         "xlocmes": "cpp",
-        "compare": "cpp"
+        "compare": "cpp",
+        "bit": "cpp",
+        "bitset": "cpp",
+        "span": "cpp",
+        "stop_token": "cpp"
     }
 }
