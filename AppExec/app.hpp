@@ -196,6 +196,7 @@ private:
   Appx appx;
   AppTrace trace;
   AppSettings as;
+  HWND hTip{nullptr};
   HBRUSH hbrBkgnd{nullptr};
 };
 } // namespace priv
