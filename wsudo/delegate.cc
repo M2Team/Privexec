@@ -38,7 +38,7 @@ int WaitForExit(DWORD pid) {
 inline std::wstring AppCwd() {
   std::wstring stack;
   stack.resize(256);
-  auto len = GetCurrentDirectory((DWORD)stack.size(), stack.data());
+  auto len = GetCurrentDirectoryW((DWORD)stack.size(), stack.data());
   if (len == 0) {
     return L"";
   }
@@ -46,7 +46,7 @@ inline std::wstring AppCwd() {
   if (len < 256) {
     return stack;
   }
-  auto newlen = GetCurrentDirectory((DWORD)stack.size(), stack.data());
+  auto newlen = GetCurrentDirectoryW((DWORD)stack.size(), stack.data());
   if (newlen == 0 || newlen >= len) {
     return L"";
   }
