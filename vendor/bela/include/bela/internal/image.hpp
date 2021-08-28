@@ -266,11 +266,10 @@ struct Symbol {
 
 struct ExportedSymbol {
   std::string Name; // UTF-8
-  std::string UndecoratedName;
   std::string ForwardName;
-  DWORD Address;
+  DWORD Address{UINT32_MAX};
   unsigned short Ordinal{0xFFFF};
-  int Hint{0};
+  int Hint{-1};
 };
 
 struct Function {

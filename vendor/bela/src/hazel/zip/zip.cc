@@ -1,7 +1,6 @@
 ///
 #include <bela/path.hpp>
 #include <bela/endian.hpp>
-#include <bela/algorithm.hpp>
 #include <bela/bufio.hpp>
 #include <bitset>
 #include <bela/terminal.hpp>
@@ -79,15 +78,15 @@ inline std::string cleanupName(const void *data, size_t N) {
 bool Reader::readDirectoryEnd(directoryEnd &d, bela::error_code &ec) {
   bela::Buffer buffer(16 * 1024);
   int64_t directoryEndOffset = 0;
-  constexpr int64_t offrange[] = {1024, 65 * 1024};
+  constexpr size_t offrange[] = {1024, 65 * 1024};
   bela::endian::LittenEndian b;
-  for (size_t i = 0; i < bela::ArrayLength(offrange); i++) {
+  for (size_t i = 0; i < std::size(offrange); i++) {
     auto blen = offrange[i];
-    if (blen > size) {
-      blen = size;
+    if (static_cast<int64_t>(blen) > size) {
+      blen = static_cast<size_t>(size);
     }
     buffer.grow(blen);
-    if (!fd.ReadAt(buffer, blen, size - blen, ec)) {
+    if (!fd.ReadAt(buffer, blen, size - static_cast<int64_t>(blen), ec)) {
       return false;
     }
     if (auto p = findSignatureInBlock(buffer); p >= 0) {
@@ -95,7 +94,7 @@ bool Reader::readDirectoryEnd(directoryEnd &d, bela::error_code &ec) {
       directoryEndOffset = size - blen + p;
       break;
     }
-    if (i == 1 || blen == size) {
+    if (i == 1 || static_cast<int64_t>(blen) == size) {
       ec = bela::make_error_code(L"zip: not a valid zip file");
       return false;
     }
@@ -263,6 +262,8 @@ bool readDirectoryHeader(bufioReader &br, bela::Buffer &buffer, File &file, bela
       continue;
     }
     if (fieldTag == infoZipUnicodePathID) {
+      // 4.6.9 -Info-ZIP Unicode Path Extra Field (0x7075):
+
       /*
        (UPath) 0x7075        Short       tag for this extra block type ("up")
          TSize         Short       total data size for this block
@@ -273,13 +274,15 @@ bool readDirectoryHeader(bufioReader &br, bela::Buffer &buffer, File &file, bela
       if (fb.Size() < 5 || (file.flags & 0x800) != 0) {
         continue;
       }
-      auto ver = fb.Pick();
+      (void)fb.Pick();
       auto crc32val = fb.Read<uint32_t>();
+      (void)crc32val; // TODO
       file.flags |= 0x800;
       file.name = bela::cstring_view({fb.Data<char>(), fb.Size()});
       continue;
     }
     if (fieldTag == infoZipUnicodeCommentExtraID) {
+      //  4.6.8 -Info-ZIP Unicode Comment Extra Field (0x6375):
       // (UCom) 0x6375        Short       tag for this extra block type ("uc")
       //  TSize         Short       total data size for this block
       //  Version       1 byte      version of this extra field, currently 1
@@ -288,8 +291,9 @@ bool readDirectoryHeader(bufioReader &br, bela::Buffer &buffer, File &file, bela
       if (fb.Size() < 5) {
         continue;
       }
-      auto ver = fb.Pick();
+      (void)fb.Pick();
       auto crc32val = fb.Read<uint32_t>();
+      (void)crc32val; // TODO
       file.comment = bela::cstring_view({fb.Data<char>(), fb.Size()});
       continue;
     }
@@ -333,7 +337,7 @@ bool Reader::Initialize(bela::error_code &ec) {
     return false;
   }
   comment.assign(std::move(d.comment));
-  files.reserve(d.directoryRecords);
+  files.reserve(static_cast<size_t>(d.directoryRecords));
   if (!fd.Seek(d.directoryOffset, ec)) {
     return false;
   }
@@ -518,7 +522,7 @@ bool Reader::LooksLikeODF(std::string *mime) const {
   for (const auto &file : files) {
     if (file.name == "mimetype" && file.method == ZIP_STORE && file.compressedSize < 120) {
       bela::error_code ec;
-      mime->reserve(file.compressedSize);
+      mime->reserve(static_cast<size_t>(file.compressedSize));
       return Decompress(
           file,
           [&](const void *data, size_t sz) -> bool {

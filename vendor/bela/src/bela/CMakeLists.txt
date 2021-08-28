@@ -5,7 +5,6 @@ add_library(
   errno.cc
   ascii.cc
   city.cc
-  ucwidth.cc
   codecvt.cc
   escaping.cc
   fmt.cc
@@ -14,7 +13,6 @@ add_library(
   match.cc
   memutil.cc
   numbers.cc
-  winansi.cc
   str_split.cc
   str_split_narrow.cc
   str_replace.cc

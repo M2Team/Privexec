@@ -39,41 +39,32 @@ bool File::LookupExports(std::vector<ExportedSymbol> &exports, bela::error_code 
     ied.AddressOfNames = bela::fromle(cied->AddressOfNames);               // RVA from base of image
     ied.AddressOfNameOrdinals = bela::fromle(cied->AddressOfNameOrdinals); // RVA from base of image
   }
-  if (ied.NumberOfNames == 0) {
+  if (ied.NumberOfFunctions == 0 || ied.AddressOfFunctions == 0) {
     return true;
   }
-  auto ordinalBase = static_cast<uint16_t>(ied.Base);
-  exports.resize(ied.NumberOfNames);
-  if (ied.AddressOfNameOrdinals > ds->VirtualAddress &&
-      ied.AddressOfNameOrdinals < ds->VirtualAddress + ds->VirtualSize) {
-    auto L = ied.AddressOfNameOrdinals - ds->VirtualAddress;
-    if (bv.size() - L > exports.size() * 2) {
-      for (size_t i = 0; i < exports.size(); i++) {
-        exports[i].Ordinal = bv.cast_fromle<uint16_t>(L + i * 2) + ordinalBase;
-        exports[i].Hint = static_cast<int>(i);
-      }
+  const auto exportDataEnd = exd->VirtualAddress + exd->Size;
+  exports.resize(ied.NumberOfFunctions);
+  auto ordinalTable = bv.subview(ied.AddressOfNameOrdinals - ds->VirtualAddress);
+  auto nameTable = bv.subview(ied.AddressOfNames - ds->VirtualAddress);
+  auto addressTable = bv.subview(ied.AddressOfFunctions - ds->VirtualAddress);
+  for (DWORD i = 0; i < ied.NumberOfFunctions; i++) {
+    auto address = addressTable.cast_fromle<uint32_t>(i * 4);
+    if (address > exd->VirtualAddress && address < exportDataEnd) {
+      exports[i].ForwardName = bv.make_cstring_view(address - ds->VirtualAddress);
     }
+    exports[i].Address = address;
+    exports[i].Ordinal = static_cast<uint16_t>(i + ied.Base);
   }
-  if (ied.AddressOfNames > ds->VirtualAddress && ied.AddressOfNames < ds->VirtualAddress + ds->VirtualSize) {
-    auto N = ied.AddressOfNames - ds->VirtualAddress;
-    if (bv.size() - N >= exports.size() * 4) {
-      for (size_t i = 0; i < exports.size(); i++) {
-        exports[i].Name = bv.make_cstring_view(bv.cast_fromle<uint32_t>(N + i * 4) - ds->VirtualAddress);
-      }
+  for (DWORD i = 0; i < ied.NumberOfNames; i++) {
+    auto nameRVA = nameTable.cast_fromle<uint32_t>(i * 4);
+    auto name = bv.make_cstring_view(nameRVA - ds->VirtualAddress);
+    uint16_t ordinalIndex = ordinalTable.cast_fromle<uint16_t>(i * 2);
+    if (ordinalIndex < 0 || static_cast<DWORD>(ordinalIndex) >= ied.NumberOfFunctions) {
+      continue;
     }
+    exports[ordinalIndex].Name = name;
+    exports[ordinalIndex].Hint = i;
   }
-  if (ied.AddressOfFunctions > ds->VirtualAddress && ied.AddressOfFunctions < ds->VirtualAddress + ds->VirtualSize) {
-    auto L = ied.AddressOfFunctions - ds->VirtualAddress;
-    for (size_t i = 0; i < exports.size(); i++) {
-      if (bv.size() - L > static_cast<size_t>(exports[i].Ordinal * 4 + 4)) {
-        exports[i].Address = bv.cast_fromle<uint32_t>(L + static_cast<int>(exports[i].Ordinal - ordinalBase) * 4);
-      }
-    }
-  }
-  std::sort(exports.begin(), exports.end(), [](const ExportedSymbol &a, const ExportedSymbol &b) -> bool {
-    //
-    return a.Ordinal < b.Ordinal;
-  });
   return true;
 }
 
