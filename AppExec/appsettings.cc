@@ -18,12 +18,9 @@ bool AppInitializeSettings(AppSettings &as) {
   try {
     auto j = nlohmann::json::parse(fd.fd, nullptr, true, true);
     auto root = j["AppExec"];
-    auto scolor = root["Background"].get<std::string_view>();
-    bela::color c;
-    if (bela::color::Decode(scolor, c)) {
-      as.bk = c;
-      as.textcolor = calcLuminance(c.r, c.g, c.b);
-    }
+    auto bk = bela::color::decode(root["Background"].get<std::string_view>(), bela::color(243, 243, 243));
+    as.bk = bk;
+    as.textcolor = calcLuminance(bk.r, bk.g, bk.b);
   } catch (const std::exception &e) {
     OutputDebugStringA(e.what());
     return false;
@@ -58,7 +55,7 @@ bool AppApplySettings(const AppSettings &as) {
     if (it != j.end()) {
       a = *it;
     }
-    a["Background"] = bela::color(as.bk).NarrowEncode();
+    a["Background"] = bela::color(as.bk).encode<char>();
     j["AppExec"] = a;
     auto buf = j.dump(4);
     FD fd;
