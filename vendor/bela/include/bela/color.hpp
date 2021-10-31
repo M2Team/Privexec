@@ -176,11 +176,11 @@ struct color {
     text.resize(n);
     return text;
   }
-
+  static constexpr bela::color unresolved() { return bela::color(); }
   // decode color from text eg: #F5F5F5
   template <typename CharT = char8_t>
   requires bela::character<CharT>
-  static constexpr bela::color decode(std::basic_string_view<CharT> text, bela::color defaults = bela::color(0, 0, 0)) {
+  static constexpr bela::color decode(std::basic_string_view<CharT> text, bela::color defaults = unresolved()) {
     if (text.size() < 7 || text.front() != '#') {
       return defaults;
     }
@@ -200,7 +200,7 @@ struct color {
   }
   template <typename CharT = char8_t, size_t N>
   requires bela::character<CharT>
-  [[nodiscard]] static constexpr bela::color decode(CharT (&str)[N], bela::color defaults = bela::color(0, 0, 0)) {
+  [[nodiscard]] static constexpr bela::color decode(CharT (&str)[N], bela::color defaults = unresolved()) {
     return decode(std::basic_string_view(str, N), defaults);
   }
 };
