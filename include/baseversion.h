@@ -22,8 +22,8 @@
   L"href=\"https://github.com/M2Team/Privexec/issues\">Privexec "                                  \
   L"Issues</a>"
 
-#define PRIVEXEC_APPVERSION L"Version: 2.6.1\nCopyright \xA9 2021, Privexec contributors."
+#define PRIVEXEC_APPVERSION L"Version: 2.6.1\nCopyright \xA9 2022, Privexec contributors."
 
-#define PRIVEXECUI_COPYRIGHT L"Copyright \xA9 2021, Privexec contributors."
+#define PRIVEXECUI_COPYRIGHT L"Copyright \xA9 2022, Privexec contributors."
 
 #endif
