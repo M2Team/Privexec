@@ -5,7 +5,7 @@
 #include <capabilities.hpp>
 
 /// SEE:
-/// https://github.com/googleprojectzero/sandbox-attacksurface-analysis-tools/blob/master/NtApiDotNet/SecurityCapabilities.cs
+/// https://github.com/googleprojectzero/sandbox-attacksurface-analysis-tools/blob/main/NtApiDotNet/SecurityCapabilities.cs
 // $source=Get-Content -Path .\SecurityCapabilities.cs -Raw
 // Add-Type -TypeDefinition $source
 

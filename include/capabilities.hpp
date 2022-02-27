@@ -2,8 +2,8 @@
 #define PRIVEXEC_CAPABILITIES_HPP
 
 /// SEE:
-/// https://github.com/googleprojectzero/sandbox-attacksurface-analysis-tools/blob/master/NtApiDotNet/SecurityCapabilities.cs
-// 67e28d2f7237bfdbfe9602ec049ab2da30c3a6c5
+/// https://github.com/googleprojectzero/sandbox-attacksurface-analysis-tools/blob/main/NtApiDotNet/SecurityCapabilities.cs
+// 6da4d4187179caa7c611fd69b7d58ba0d7830c7d
 // $source=Get-Content -Path .\SecurityCapabilities.cs -Raw
 // Add-Type -TypeDefinition $source
 
