@@ -18,7 +18,7 @@ wsudo::AliasEngine::~AliasEngine() {
 }
 
 bool wsudo::AliasEngine::Initialize(bool verbose) {
-  auto file = priv::PathSearcher::Instance().JoinEtc(L"Privexec.json");
+  auto file = priv::PathSearcher::Instance().JoinAppData(L"Privexec\\Privexec.json");
   DbgPrint(L"use %s", file);
   priv::FD fd;
   if (auto en = _wfopen_s(&fd.fd, file.data(), L"rb"); en != 0) {
@@ -49,7 +49,7 @@ std::optional<std::wstring> wsudo::AliasEngine::Target(std::wstring_view al) {
 }
 
 bool wsudo::AliasEngine::Apply() {
-  auto file = priv::PathSearcher::Instance().JoinEtc(L"Privexec.json");
+  auto file = priv::PathSearcher::Instance().JoinAppData(L"Privexec\\Privexec.json");
   DbgPrint(L"use %s", file);
   std::filesystem::path p(file);
   auto parent = p.parent_path();

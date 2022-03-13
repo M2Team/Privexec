@@ -46,11 +46,11 @@ bool AppAliasInitializeBuilt(std::wstring_view file) {
 
 std::wstring AppAliasFile() {
   //
-  return PathSearcher::Instance().JoinEtc(L"Privexec.json");
+  return PathSearcher::Instance().JoinAppData(L"Privexec\\Privexec.json");
 }
 
 bool AppAliasInitialize(HWND hbox, priv::alias_t &alias) {
-  auto file = PathSearcher::Instance().JoinEtc(L"Privexec.json");
+  auto file = PathSearcher::Instance().JoinAppData(L"Privexec\\Privexec.json");
   if (!bela::PathExists(file)) {
     if (!AppAliasInitializeBuilt(file)) {
       return false;

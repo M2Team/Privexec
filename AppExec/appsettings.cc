@@ -10,7 +10,7 @@
 namespace priv {
 
 bool AppInitializeSettings(AppSettings &as) {
-  auto file = PathSearcher::Instance().JoinEtc(L"AppExec.json");
+  auto file = PathSearcher::Instance().JoinAppData(L"Privexec\\AppExec.json");
   FD fd;
   if (_wfopen_s(&fd.fd, file.data(), L"rb") != 0) {
     return false;
@@ -29,7 +29,7 @@ bool AppInitializeSettings(AppSettings &as) {
 }
 
 bool AppApplySettings(const AppSettings &as) {
-  auto file = PathSearcher::Instance().JoinEtc(L"AppExec.json");
+  auto file = PathSearcher::Instance().JoinAppData(L"Privexec\\AppExec.json");
   std::filesystem::path p(file);
   auto parent = p.parent_path();
   std::error_code e;
