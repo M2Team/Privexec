@@ -15,7 +15,8 @@ struct AliasTarget {
   std::wstring desc;
   AliasTarget() = default;
   AliasTarget(std::wstring_view t, std::wstring_view d) : target(t), desc(d) {}
-  AliasTarget(std::string_view t, std::string_view d) : target(bela::ToWide(t)), desc(bela::ToWide(d)) {}
+  AliasTarget(std::string_view t, std::string_view d)
+      : target(bela::encode_into<char, wchar_t>(t)), desc(bela::encode_into<char, wchar_t>(d)) {}
 };
 
 class AliasEngine {

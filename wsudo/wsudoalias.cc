@@ -30,7 +30,7 @@ bool wsudo::AliasEngine::Initialize(bool verbose) {
     auto json = nlohmann::json::parse(fd.fd, nullptr, true, true);
     auto cmds = json["alias"];
     for (auto &cmd : cmds) {
-      alias.emplace(bela::ToWide(cmd["name"].get<std::string_view>()),
+      alias.emplace(bela::encode_into<char, wchar_t>(cmd["name"].get<std::string_view>()),
                     AliasTarget(cmd["target"].get<std::string_view>(), cmd["description"].get<std::string_view>()));
     }
   } catch (const std::exception &e) {
@@ -66,9 +66,9 @@ bool wsudo::AliasEngine::Apply() {
     nlohmann::json root, av;
     for (const auto &i : alias) {
       nlohmann::json a;
-      a["name"] = bela::ToNarrow(i.first);
-      a["target"] = bela::ToNarrow(i.second.target);
-      a["description"] = bela::ToNarrow(i.second.desc);
+      a["name"] = bela::encode_into<wchar_t, char>(i.first);
+      a["target"] = bela::encode_into<wchar_t, char>(i.second.target);
+      a["description"] = bela::encode_into<wchar_t, char>(i.second.desc);
       av.emplace_back(std::move(a));
     }
     root["alias"] = av;

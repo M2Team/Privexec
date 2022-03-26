@@ -48,7 +48,7 @@ bool LoadAppx(std::wstring_view file, std::vector<std::wstring> &caps, bela::err
   // wincap:Capability
   // DeviceCapability
   for (auto it : doc.child("Package").child("Capabilities")) {
-    addCapability(bela::ToWide(it.attribute("Name").as_string()));
+    addCapability(bela::encode_into<char, wchar_t>(it.attribute("Name").as_string()));
   }
   return true;
 }

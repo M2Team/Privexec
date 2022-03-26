@@ -64,8 +64,8 @@ bool AppAliasInitialize(HWND hbox, priv::alias_t &alias) {
     auto json = nlohmann::json::parse(fd.fd, nullptr, true, true);
     auto cmds = json["alias"];
     for (auto &cmd : cmds) {
-      auto desc = bela::ToWide(cmd["description"].get<std::string_view>());
-      alias.insert_or_assign(desc, bela::ToWide(cmd["target"].get<std::string_view>()));
+      auto desc = bela::encode_into<char, wchar_t>(cmd["description"].get<std::string_view>());
+      alias.insert_or_assign(desc, bela::encode_into<char, wchar_t>(cmd["target"].get<std::string_view>()));
       ::SendMessageW(hbox, CB_ADDSTRING, 0, (LPARAM)desc.data());
     }
   } catch (const std::exception &e) {
