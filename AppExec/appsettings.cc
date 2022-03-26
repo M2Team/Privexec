@@ -35,7 +35,7 @@ bool AppApplySettings(const AppSettings &as) {
   std::error_code e;
   if (!std::filesystem::exists(parent, e)) {
     if (!std::filesystem::create_directories(parent, e)) {
-      auto ec = bela::from_std_error_code(e);
+      auto ec = bela::make_error_code_from_std(e);
       return false;
     }
   }

@@ -22,7 +22,7 @@ bool wsudo::AliasEngine::Initialize(bool verbose) {
   DbgPrint(L"use %s", file);
   priv::FD fd;
   if (auto en = _wfopen_s(&fd.fd, file.data(), L"rb"); en != 0) {
-    auto ec = bela::make_stdc_error_code(en);
+    auto ec = bela::make_error_code_from_errno(en);
     DbgPrint(L"open %s: %s", file, ec.message);
     return false;
   }
@@ -56,7 +56,7 @@ bool wsudo::AliasEngine::Apply() {
   std::error_code e;
   if (!std::filesystem::exists(parent, e)) {
     if (!std::filesystem::create_directories(parent, e)) {
-      auto ec = bela::from_std_error_code(e);
+      auto ec = bela::make_error_code_from_std(e);
       bela::FPrintF(stderr, L"\x1b[31mAliasEngine::Apply: unable create dir %s %s\x1b[0m\n", parent.c_str(),
                     ec.message);
       return false;
