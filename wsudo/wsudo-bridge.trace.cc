@@ -1,6 +1,6 @@
 #include <bela/terminal.hpp>
 #include <bela/path.hpp>
-#include <bela/str_cat_narrow.hpp>
+#include <bela/str_cat.hpp>
 
 namespace wsudo::bridge {
 extern bool IsDebugMode;
@@ -32,8 +32,8 @@ public:
     if (fd == INVALID_HANDLE_VALUE) {
       return -1;
     }
-    auto um = bela::narrow::StringCat("[DEBUG] ", TimeNow(), " [", GetCurrentProcessId(), "] ",
-                                      bela::encode_into<wchar_t, char>(msg), "\n");
+    auto um = bela::StringNarrowCat("[DEBUG] ", TimeNow(), " [", GetCurrentProcessId(), "] ",
+                                    bela::encode_into<wchar_t, char>(msg), "\n");
     DWORD written = 0;
     if (WriteFile(fd, um.data(), static_cast<DWORD>(um.size()), &written, nullptr) != TRUE) {
       return -1;
@@ -91,8 +91,8 @@ public:
     if (fd == INVALID_HANDLE_VALUE) {
       return -1;
     }
-    auto um = bela::narrow::StringCat("[ERROR] ", TimeNow(), " [", GetCurrentProcessId(), "] ",
-                                      bela::encode_into<wchar_t, char>(msg), "\n");
+    auto um = bela::StringNarrowCat("[ERROR] ", TimeNow(), " [", GetCurrentProcessId(), "] ",
+                                    bela::encode_into<wchar_t, char>(msg), "\n");
     DWORD written = 0;
     if (WriteFile(fd, um.data(), static_cast<DWORD>(um.size()), &written, nullptr) != TRUE) {
       return -1;
