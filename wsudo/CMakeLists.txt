@@ -1,6 +1,12 @@
 # privexec
 
-add_executable(wsudo delegate.cc wsudo.cc wsudoalias.cc wsudo.rc wsudo.manifest)
+add_executable(
+  wsudo
+  delegate.cc
+  wsudo.cc
+  wsudoalias.cc
+  wsudo.rc
+  wsudo.manifest)
 
 if(PRIVEXEC_ENABLE_LTO)
   set_property(TARGET wsudo PROPERTY INTERPROCEDURAL_OPTIMIZATION TRUE)
