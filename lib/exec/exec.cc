@@ -10,8 +10,41 @@
 #include <wtsapi32.h>
 
 namespace wsudo::exec {
+bool make_standard_token(PHANDLE hNewToken, bela::error_code &ec) {
+  if (IsUserAdministratorsGroup()) {
+    privilege_view pv = {{SE_TCB_NAME, SE_ASSIGNPRIMARYTOKEN_NAME, SE_INCREASE_QUOTA_NAME}};
+    PermissionAdjuster eo;
+    if (!eo.Elevate(&pv, ec)) {
+      return false;
+    }
+    auto hToken = INVALID_HANDLE_VALUE;
+    auto deleter = bela::finally([&] { FreeToken(hToken); });
+    // get user login token
+    if (WTSQueryUserToken(eo.SID(), &hToken) != TRUE) {
+      ec = bela::make_system_error_code(L"WTSQueryUserToken: ");
+      return false;
+    }
+    if (DuplicateTokenEx(hToken, MAXIMUM_ALLOWED, NULL, SecurityIdentification, TokenPrimary, hNewToken) != TRUE) {
+      ec = bela::make_system_error_code(L"DuplicateTokenEx: ");
+      return false;
+    }
+    return true;
+  }
+  // when not administrator
+  HANDLE hCurrentToken = INVALID_HANDLE_VALUE;
+  if (!OpenProcessToken(GetCurrentProcess(), MAXIMUM_ALLOWED, &hCurrentToken)) {
+    return false;
+  }
+  if (!DuplicateTokenEx(hCurrentToken, MAXIMUM_ALLOWED, NULL, SecurityImpersonation, TokenPrimary, hNewToken)) {
+    CloseHandle(hCurrentToken);
+    return false;
+  }
+  CloseHandle(hCurrentToken);
+  return true;
+}
+
 // execute start a normal command
-bool execute(command &cmd, bela::error_code &ec) {
+bool execute_basic(command &cmd, bela::error_code &ec) {
   STARTUPINFO si;
   PROCESS_INFORMATION pi;
   ZeroMemory(&si, sizeof(si));
@@ -31,7 +64,7 @@ bool execute(command &cmd, bela::error_code &ec) {
   }
   if (CreateProcessW(string_nullable(cmd.path), ea.data(), nullptr, nullptr, FALSE, createflags,
                      string_nullable(cmd.env), string_nullable(cmd.cwd), &si, &pi) != TRUE) {
-    ec = bela::make_system_error_code(L"CreateProcessAsUserW");
+    ec = bela::make_system_error_code(L"CreateProcessW");
     return false;
   }
   cmd.pid = pi.dwProcessId;
@@ -40,7 +73,7 @@ bool execute(command &cmd, bela::error_code &ec) {
   return true;
 }
 
-bool execute(HANDLE hToken, bool desktop, command &cmd, bela::error_code &ec) {
+bool execute_with_token(HANDLE hToken, bool desktop, command &cmd, bela::error_code &ec) {
   STARTUPINFO si;
   PROCESS_INFORMATION pi;
   ZeroMemory(&si, sizeof(si));
@@ -73,41 +106,7 @@ bool execute(HANDLE hToken, bool desktop, command &cmd, bela::error_code &ec) {
   return true;
 }
 
-bool downgrade(PHANDLE hNewToken, bela::error_code &ec) {
-  if (IsUserAdministratorsGroup()) {
-    PrivilegeView pv = {{SE_TCB_NAME, SE_ASSIGNPRIMARYTOKEN_NAME, SE_INCREASE_QUOTA_NAME}};
-    Elevator eo;
-    std::wstring msg;
-    if (!eo.elevate(&pv, ec)) {
-      return false;
-    }
-    auto hToken = INVALID_HANDLE_VALUE;
-    auto deleter = bela::finally([&] { FreeToken(hToken); });
-    // get user login token
-    if (WTSQueryUserToken(eo.SID(), &hToken) != TRUE) {
-      ec = bela::make_system_error_code(L"WTSQueryUserToken: ");
-      return false;
-    }
-    if (DuplicateTokenEx(hToken, MAXIMUM_ALLOWED, NULL, SecurityIdentification, TokenPrimary, hNewToken) != TRUE) {
-      ec = bela::make_system_error_code(L"DuplicateTokenEx: ");
-      return false;
-    }
-    return true;
-  }
-  // when not administrator
-  HANDLE hCurrentToken = INVALID_HANDLE_VALUE;
-  if (!OpenProcessToken(GetCurrentProcess(), MAXIMUM_ALLOWED, &hCurrentToken)) {
-    return false;
-  }
-  if (!DuplicateTokenEx(hCurrentToken, MAXIMUM_ALLOWED, NULL, SecurityImpersonation, TokenPrimary, hNewToken)) {
-    CloseHandle(hCurrentToken);
-    return false;
-  }
-  CloseHandle(hCurrentToken);
-  return true;
-}
-
-bool executelow(command &cmd, bela::error_code &ec) {
+bool execute_with_low(command &cmd, bela::error_code &ec) {
   HANDLE hNewToken;
   LPCWSTR szIntegritySid = L"S-1-16-4096";
   PSID pIntegritySid = nullptr;
@@ -125,7 +124,7 @@ bool executelow(command &cmd, bela::error_code &ec) {
   }
   TIL.Label.Attributes = SE_GROUP_INTEGRITY;
   TIL.Label.Sid = pIntegritySid;
-  if (!downgrade(&hNewToken, ec)) {
+  if (!make_standard_token(&hNewToken, ec)) {
     return false;
   }
   // Set process integrity levels
@@ -134,12 +133,12 @@ bool executelow(command &cmd, bela::error_code &ec) {
     ec = bela::make_system_error_code(L"SetTokenInformation: ");
     return false;
   }
-  return execute(hNewToken, false, cmd, ec);
+  return execute_with_token(hNewToken, false, cmd, ec);
 }
 
-bool executeelevated(command &cmd, bela::error_code &ec) {
+bool execute_with_elevated(command &cmd, bela::error_code &ec) {
   if (IsUserAdministratorsGroup()) {
-    return execute(cmd, ec);
+    return execute_basic(cmd, ec);
   }
   SHELLEXECUTEINFOW info;
   ZeroMemory(&info, sizeof(info));
@@ -168,25 +167,36 @@ bool executeelevated(command &cmd, bela::error_code &ec) {
   return true;
 }
 
+bool execute_standard(command &cmd, bela::error_code &ec) {
+  HANDLE hNewToken{nullptr};
+  auto deleter = bela::finally([&] { FreeToken(hNewToken); });
+  if (!make_standard_token(&hNewToken, ec)) {
+    return false;
+  }
+  return execute_with_token(hNewToken, false, cmd, ec);
+}
+
 bool command::execute(bela::error_code &ec) {
   switch (priv) {
   case privilege_t::appcontainer:
     ec = bela::make_error_code(1, L"BUG: please use appcommand run appcontainer");
     return false;
   case privilege_t::mic:
-    return wsudo::exec::executelow(*this, ec);
+    return wsudo::exec::execute_with_low(*this, ec);
+  case privilege_t::basic:
+    return wsudo::exec::execute_basic(*this, ec);
   case privilege_t::standard:
-    return wsudo::exec::execute(*this, ec);
+    return wsudo::exec::execute_standard(*this, ec);
   case privilege_t::elevated:
-    return wsudo::exec::executeelevated(*this, ec);
+    return wsudo::exec::execute_with_elevated(*this, ec);
   case privilege_t::system:
-    return wsudo::exec::executesystem(*this, ec);
+    return wsudo::exec::execute_with_system(*this, ec);
   case privilege_t::trustedinstaller:
-    return wsudo::exec::executeti(*this, ec);
+    return wsudo::exec::execute_with_ti(*this, ec);
   default:
     break;
   }
-  return wsudo::exec::execute(*this, ec);
+  return wsudo::exec::execute_basic(*this, ec);
 }
 
 } // namespace wsudo::exec

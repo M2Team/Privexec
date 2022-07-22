@@ -31,8 +31,9 @@ usage: wsudo command args...
    -w|--wait           Start application and wait for it to terminate.
    -u|--user           run as user (optional), support '-uX', '-u X', '--user=X', '--user X'
                        Supported user categories (Ignore case):
-                       AppContainer    MIC       NoElevated
-                       Administrator   System    TrustedInstaller
+                       AppContainer  MIC            Basic
+                       Standard      Administrator  System
+                       TrustedInstaller
 
    -x|--appx           AppContainer AppManifest file path
    -L|--lpac           Less Privileged AppContainer mode.
@@ -42,13 +43,14 @@ usage: wsudo command args...
 Select user can use the following flags:
    -a|--appcontainer   AppContainer
    -M|--mic            Mandatory Integrity Control
+   -B|--basic          Basic execution, permission inheritance mode (default)
    -U|--standard       Standard user no elevated (UAC)
    -A|--administrator  Administrator
    -S|--system         System
    -T|--ti             TrustedInstaller
 
 Example:
-   wsudo -A "%SYSTEMROOT%/System32/WindowsPowerShell/v1.0/powershell.exe" -NoProfile
+   wsudo -A pwsh -NoProfile
    wsudo -T cmd
    wsudo -U -V -eCURL_SSL_BACKEND=schannel curl --verbose  -I https://nghttp2.org
    wsudo -U -V CURL_SSL_BACKEND=schannel curl --verbose  -I https://nghttp2.org
@@ -72,7 +74,8 @@ bool IsAppLevel(std::wstring_view k, wsudo::exec::privilege_t &level) {
       //
       {L"appcontainer", wsudo::exec::privilege_t::appcontainer},
       {L"mic", wsudo::exec::privilege_t::mic},
-      {L"noelevated", wsudo::exec::privilege_t::standard},
+      {L"basic", wsudo::exec::privilege_t::basic},
+      {L"standard", wsudo::exec::privilege_t::standard},
       {L"administrator", wsudo::exec::privilege_t::elevated},
       {L"system", wsudo::exec::privilege_t::system},
       {L"trustedinstaller", wsudo::exec::privilege_t::trustedinstaller}
@@ -95,6 +98,7 @@ const std::wstring_view AppSLevel(const wsudo::exec::privilege_t level) {
       //
       {L"AppContainer", wsudo::exec::privilege_t::appcontainer},
       {L"Mandatory Integrity Control", wsudo::exec::privilege_t::mic},
+      {L"Basic Inheritance Mode", wsudo::exec::privilege_t::basic},
       {L"Standard", wsudo::exec::privilege_t::standard},
       {L"Administrator", wsudo::exec::privilege_t::elevated},
       {L"System", wsudo::exec::privilege_t::system},
@@ -140,6 +144,7 @@ int App::ParseArgv(int argc, wchar_t **argv) {
       .Add(L"lpac", bela::no_argument, L'L')
       .Add(L"appcontainer", bela::no_argument, L'a')
       .Add(L"mic", bela::no_argument, L'M')
+      .Add(L"basic", bela::no_argument, L'B')
       .Add(L"standard", bela::no_argument, L'U')
       .Add(L"administrator", bela::no_argument, L'A')
       .Add(L"system", bela::no_argument, L'S')
@@ -193,6 +198,9 @@ int App::ParseArgv(int argc, wchar_t **argv) {
           break;
         case 'M':
           level = wsudo::exec::privilege_t::mic;
+          break;
+        case 'B':
+          level = wsudo::exec::privilege_t::basic;
           break;
         case 'U':
           level = wsudo::exec::privilege_t::standard;

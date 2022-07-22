@@ -3,10 +3,11 @@
 #include <wtsapi32.h>
 
 namespace wsudo::exec {
+
 // bela::EqualsIgnoreCase
 [[maybe_unused]] constexpr std::wstring_view WinLogonName = L"winlogon.exe";
 // Get Current Process SessionID and Enable SeDebugPrivilege
-bool PrepareElevate(DWORD &sid, bela::error_code &ec) {
+bool prepare_elevate(DWORD &sid, bela::error_code &ec) {
   if (!IsUserAdministratorsGroup()) {
     ec = bela::make_error_code(1, L"current process not runing in administrator");
     return false;
@@ -14,21 +15,20 @@ bool PrepareElevate(DWORD &sid, bela::error_code &ec) {
   auto hToken = INVALID_HANDLE_VALUE;
   constexpr DWORD flags = TOKEN_ADJUST_PRIVILEGES | TOKEN_QUERY;
   if (OpenProcessToken(GetCurrentProcess(), flags, &hToken) != TRUE) {
-    ec = bela::make_system_error_code(L"PrepareElevate<OpenProcessToken> ");
+    ec = bela::make_system_error_code(L"prepare_elevate<OpenProcessToken> ");
     return false;
   }
   auto closer = bela::finally([&] { CloseHandle(hToken); });
   DWORD Length = 0;
   if (GetTokenInformation(hToken, TokenSessionId, &sid, sizeof(DWORD), &Length) != TRUE) {
-    ec = bela::make_system_error_code(L"PrepareElevate<GetTokenInformation> ");
+    ec = bela::make_system_error_code(L"prepare_elevate<GetTokenInformation> ");
     return false;
   }
   TOKEN_PRIVILEGES tp;
   LUID luid;
 
   if (::LookupPrivilegeValueW(nullptr, SE_DEBUG_NAME, &luid) != TRUE) {
-
-    ec = bela::make_system_error_code(L"PrepareElevate<LookupPrivilegeValueW> ");
+    ec = bela::make_system_error_code(L"prepare_elevate<LookupPrivilegeValueW> ");
     return false;
   }
 
@@ -38,17 +38,17 @@ bool PrepareElevate(DWORD &sid, bela::error_code &ec) {
   // Enable the privilege or disable all privileges.
 
   if (::AdjustTokenPrivileges(hToken, FALSE, &tp, sizeof(TOKEN_PRIVILEGES), nullptr, nullptr) != TRUE) {
-    ec = bela::make_system_error_code(L"PrepareElevate<AdjustTokenPrivileges> ");
+    ec = bela::make_system_error_code(L"prepare_elevate<AdjustTokenPrivileges> ");
     return false;
   }
   if (::GetLastError() == ERROR_NOT_ALL_ASSIGNED) {
-    ec = bela::make_system_error_code(L"PrepareElevate<AdjustTokenPrivileges> ");
+    ec = bela::make_system_error_code(L"prepare_elevate<AdjustTokenPrivileges> ");
     return false;
   }
   return true;
 }
 
-bool PrivilegesEnableAll(HANDLE hToken) {
+bool privileges_enable_all(HANDLE hToken) {
   if (hToken == INVALID_HANDLE_VALUE) {
     return false;
   }
@@ -72,9 +72,9 @@ bool PrivilegesEnableAll(HANDLE hToken) {
   return (AdjustTokenPrivileges(hToken, FALSE, privs, 0, nullptr, nullptr) == TRUE);
 }
 
-bool PrivilegesEnableView(HANDLE hToken, const PrivilegeView *pv) {
+bool privileges_view_enabled(HANDLE hToken, const privilege_view *pv) {
   if (pv == nullptr) {
-    return PrivilegesEnableAll(hToken);
+    return privileges_enable_all(hToken);
   }
   for (const auto lpszPrivilege : pv->privis) {
     TOKEN_PRIVILEGES tp;
@@ -99,22 +99,22 @@ bool PrivilegesEnableView(HANDLE hToken, const PrivilegeView *pv) {
   return true;
 }
 
-bool Elevator::elevateimitate(bela::error_code &ec) {
+bool PermissionAdjuster::elevate_imitate(bela::error_code &ec) {
   HANDLE hExistingToken = INVALID_HANDLE_VALUE;
   auto hProcess = ::OpenProcess(MAXIMUM_ALLOWED, FALSE, pid);
   if (hProcess == INVALID_HANDLE_VALUE) {
-    ec = bela::make_system_error_code(L"Elevator::elevateimitate<OpenProcess> ");
+    ec = bela::make_system_error_code(L"PermissionAdjuster::elevate_imitate<OpenProcess> ");
     return false;
   }
   auto hpdeleter = bela::finally([&] { CloseHandle(hProcess); });
   if (OpenProcessToken(hProcess, MAXIMUM_ALLOWED, &hExistingToken) != TRUE) {
-    ec = bela::make_system_error_code(L"Elevator::elevateimitate<OpenProcessToken> ");
+    ec = bela::make_system_error_code(L"PermissionAdjuster::elevate_imitate<OpenProcessToken> ");
     return false;
   }
   auto htdeleter = bela::finally([&] { CloseHandle(hExistingToken); });
   if (DuplicateTokenEx(hExistingToken, MAXIMUM_ALLOWED, nullptr, SecurityImpersonation, TokenImpersonation, &hToken) !=
       TRUE) {
-    ec = bela::make_system_error_code(L"Elevator::elevateimitate<DuplicateTokenEx> ");
+    ec = bela::make_system_error_code(L"PermissionAdjuster::elevate_imitate<DuplicateTokenEx> ");
     return false;
   }
   return true;
@@ -154,23 +154,24 @@ bool GetCurrentSessionId(DWORD &dwSessionId) {
 }
 
 // Improve self-generated permissions
-bool Elevator::elevate(const PrivilegeView *pv, bela::error_code &ec) {
-  if (!PrepareElevate(sid, ec)) {
+bool PermissionAdjuster::Elevate(const privilege_view *pv, bela::error_code &ec) {
+  if (!prepare_elevate(sid, ec)) {
     return false;
   }
   if (!LookupSystemProcess(sid, pid)) {
-    ec = bela::make_error_code(1, L"Elevator::elevate unable lookup winlogon process pid");
+    ec = bela::make_error_code(1, L"Elevator::Elevate unable lookup winlogon process pid");
     return false;
   }
-  if (!elevateimitate(ec)) {
+  if (!elevate_imitate(ec)) {
     return false;
   }
-  if (!PrivilegesEnableView(hToken, pv)) {
-    ec = bela::make_error_code(1, L"Elevator::elevate unable enable privileges: ", pv == nullptr ? L"all" : pv->dump());
+  if (!privileges_view_enabled(hToken, pv)) {
+    ec = bela::make_error_code(1, L"Elevator::Elevate unable enable privileges: ",
+                               pv == nullptr ? L"all" : pv->format());
     return false;
   }
   if (SetThreadToken(nullptr, hToken) != TRUE) {
-    ec = bela::make_error_code(1, L"Elevator::elevate<SetThreadToken> ");
+    ec = bela::make_error_code(1, L"Elevator::Elevate<SetThreadToken> ");
     return false;
   }
   return true;

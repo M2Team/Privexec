@@ -11,6 +11,7 @@ enum class privilege_t : uint8_t {
   none,
   appcontainer,
   mic,
+  basic,
   standard,
   elevated, // such as administrator
   system,

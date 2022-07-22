@@ -78,38 +78,45 @@ AppExec 是一个启动 AppContainer 进程的程序，有一些开发者使用�
 wsudo 是 Privexec/AppExec 的控制台版本，详细使用帮助如下：
 
 ```txt
-wsudo 😋 ♥ run the program with the specified permissions
+wsudo 💖 5.0 run the program with the specified permissions
 usage: wsudo command args...
    -v|--version        print version and exit
    -h|--help           print help information and exit
-   -u|--user           run as user (optional), support '-uX', '-u X', '--user=X', '--user X'
-                       Supported user categories (Ignore case):
-                       AppContainer    MIC       NoElevated
-                       Administrator   System    TrustedInstaller
-
-   -n|--new-console    Starts a separate window to run a specified program or command.
+   -V|--verbose        Make the operation more talkative
+   -c|--cwd            Use a working directory to launch the process.
+   -e|--env            Use specific environment variables to start child processes.
+   -n|--nui            Starts a separate window to run a specified program or command.
    -H|--hide           Hide child process window. not wait. (CREATE_NO_WINDOW)
    -w|--wait           Start application and wait for it to terminate.
-   -V|--verbose        Make the operation more talkative
+   -u|--user           run as user (optional), support '-uX', '-u X', '--user=X', '--user X'
+                       Supported user categories (Ignore case):
+                       AppContainer  MIC            Basic
+                       Standard      Administrator  System
+                       TrustedInstaller
+
    -x|--appx           AppContainer AppManifest file path
-   -c|--cwd            Use a working directory to launch the process.
-   -e|--env            Set Environment Variable.
    -L|--lpac           Less Privileged AppContainer mode.
    --disable-alias     Disable Privexec alias, By default, if Privexec exists alias, use it.
-   --appname           Set AppContainer Name
+   --appid             Set AppContainer ID name (compatible --appname)
 
 Select user can use the following flags:
-   |-a  AppContainer    |-M  Mandatory Integrity Control|-U  No Elevated(UAC)|
-   |-A  Administrator   |-S  System                     |-T  TrustedInstaller|
+   -a|--appcontainer   AppContainer
+   -M|--mic            Mandatory Integrity Control
+   -B|--basic          Basic execution, permission inheritance mode (default)
+   -U|--standard       Standard user no elevated (UAC)
+   -A|--administrator  Administrator
+   -S|--system         System
+   -T|--ti             TrustedInstaller
+
 Example:
-   wsudo -A "%SYSTEMROOT%/System32/WindowsPowerShell/v1.0/powershell.exe" -NoProfile
+   wsudo -A pwsh -NoProfile
    wsudo -T cmd
-   wsudo -U -V --env CURL_SSL_BACKEND=schannel curl --verbose  -I https://nghttp2.org
+   wsudo -U -V -eCURL_SSL_BACKEND=schannel curl --verbose  -I https://nghttp2.org
+   wsudo -U -V CURL_SSL_BACKEND=schannel curl --verbose  -I https://nghttp2.org
 
 Builtin 'alias' command:
    wsudo alias add ehs "notepad %SYSTEMROOT%/System32/drivers/etc/hosts" "Edit Hosts"
    wsudo alias delete ehs
-
 ```
 
 Privexec, AppExec, wsudo 启动命令时，命令行和和启动目录支持通过 `ExpandEnvironmentString` 推导.

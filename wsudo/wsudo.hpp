@@ -14,7 +14,7 @@
 namespace wsudo {
 extern bool IsDebugMode;
 // DbgPrint added newline
-template <typename... Args> bela::ssize_t DbgPrint(const wchar_t *fmt, const Args &... args) {
+template <typename... Args> bela::ssize_t DbgPrint(const wchar_t *fmt, const Args &...args) {
   if (!IsDebugMode) {
     return 0;
   }
@@ -39,7 +39,7 @@ inline bela::ssize_t DbgPrint(const wchar_t *fmt) {
   return bela::terminal::WriteAuto(stderr, bela::StringCat(L"\x1b[33m* ", msg, L"\x1b[0m\n"));
 }
 
-template <typename... Args> bela::ssize_t DbgPrintEx(char32_t prefix, const wchar_t *fmt, const Args &... args) {
+template <typename... Args> bela::ssize_t DbgPrintEx(char32_t prefix, const wchar_t *fmt, const Args &...args) {
   if (!IsDebugMode) {
     return 0;
   }
@@ -72,7 +72,7 @@ struct App {
   std::wstring cwd;   // --cwd -c
   std::wstring appx;  // --appx -x
   std::wstring appid; // --appid
-  wsudo::exec::privilege_t level{wsudo::exec::privilege_t::standard};
+  wsudo::exec::privilege_t level{wsudo::exec::privilege_t::basic};
   wsudo::exec::visible_t visible{wsudo::exec::visible_t::none};
   bool disablealias{false}; // --disable-alias
   bool lpac{false};

@@ -57,13 +57,14 @@ bool App::Initialize(HWND window) {
 
   box.Append((int)wsudo::exec::privilege_t::appcontainer, L"AppContainer");
   box.Append((int)wsudo::exec::privilege_t::mic, L"Mandatory Integrity Control");
+  box.Append((int)wsudo::exec::privilege_t::basic, L"Basic Inheritance Mode");
   if (elevated) {
-    box.Append((int)wsudo::exec::privilege_t::standard, L"Not Elevated (UAC)", true);
+    box.Append((int)wsudo::exec::privilege_t::standard, L"Standard", true);
     box.Append((int)wsudo::exec::privilege_t::elevated, L"Administrator");
     box.Append((int)wsudo::exec::privilege_t::system, L"System");
     box.Append((int)wsudo::exec::privilege_t::trustedinstaller, L"TrustedInstaller");
   } else {
-    box.Append((int)wsudo::exec::privilege_t::standard, L"Not Elevated (UAC)");
+    box.Append((int)wsudo::exec::privilege_t::standard, L"Standard");
     box.Append((int)wsudo::exec::privilege_t::elevated, L"Administrator", true);
   }
   HMENU hSystemMenu = ::GetSystemMenu(hWnd, FALSE);

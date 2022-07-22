@@ -16,9 +16,9 @@ inline void FreeToken(HANDLE &hToken) {
     hToken = INVALID_HANDLE_VALUE;
   }
 }
-struct PrivilegeView {
+struct privilege_view {
   std::vector<const wchar_t *> privis;
-  std::wstring dump() const {
+  std::wstring format() const {
     auto sz = privis.size();
     std::wstring s = L"[";
     for (size_t i = 0; i < sz; i++) {
@@ -34,28 +34,28 @@ struct PrivilegeView {
 
 bool GetCurrentSessionId(DWORD &dwSessionId);
 // System process elavator
-class Elevator {
+class PermissionAdjuster {
 public:
-  Elevator() = default;
-  Elevator(const Elevator &) = delete;
-  Elevator &operator=(const Elevator &) = delete;
-  ~Elevator() { FreeToken(hToken); }
+  PermissionAdjuster() = default;
+  PermissionAdjuster(const PermissionAdjuster &) = delete;
+  PermissionAdjuster &operator=(const PermissionAdjuster &) = delete;
+  ~PermissionAdjuster() { FreeToken(hToken); }
   // System Process PID
   DWORD PID() const { return pid; }
   // Session ID
   DWORD SID() const { return sid; }
-  bool elevate(const PrivilegeView *pv, bela::error_code &ec);
+  bool Elevate(const privilege_view *pv, bela::error_code &ec);
 
 private:
-  bool elevateimitate(bela::error_code &ec);
+  bool elevate_imitate(bela::error_code &ec);
   HANDLE hToken{nullptr};
   DWORD sid{0};
   DWORD pid{0};
 };
-bool execute(command &cmd, bela::error_code &ec);
-bool execute(HANDLE hToken, bool desktop, command &cmd, bela::error_code &ec);
-bool executeti(command &cmd, bela::error_code &ec);
-bool executesystem(command &cmd, bela::error_code &ec);
+bool execute_basic(command &cmd, bela::error_code &ec);
+bool execute_with_token(HANDLE hToken, bool desktop, command &cmd, bela::error_code &ec);
+bool execute_with_ti(command &cmd, bela::error_code &ec);
+bool execute_with_system(command &cmd, bela::error_code &ec);
 } // namespace wsudo::exec
 
 #endif

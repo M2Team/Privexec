@@ -15,7 +15,7 @@ public:
   TiElevator(const TiElevator &) = delete;
   TiElevator &operator=(const TiElevator &) = delete;
   ~TiElevator();
-  bool elevate(bela::error_code &ec);
+  bool Elevate(bela::error_code &ec);
   bool duplicate(PHANDLE phToken, bela::error_code &ec);
 
 private:
@@ -33,16 +33,16 @@ TiElevator::~TiElevator() {
   FreeToken(hProcess);
 }
 
-bool TiElevator::elevate(bela::error_code &ec) {
+bool TiElevator::Elevate(bela::error_code &ec) {
   // https://docs.microsoft.com/zh-cn/windows/win32/api/winsvc/nf-winsvc-openscmanagera
   // Establishes a connection to the service control manager on the specified
   // computer and opens the specified service control manager database.
   if (hscm = OpenSCManagerW(nullptr, nullptr, SC_MANAGER_CONNECT); hscm == nullptr) {
-    ec = bela::make_system_error_code(L"TiElevator::elevate<OpenSCManagerW> ");
+    ec = bela::make_system_error_code(L"TiElevator::Elevate<OpenSCManagerW> ");
     return false;
   }
   if (hsrv = OpenServiceW(hscm, L"TrustedInstaller", SERVICE_QUERY_STATUS | SERVICE_START); hsrv == nullptr) {
-    ec = bela::make_system_error_code(L"TiElevator::elevate<OpenServiceW> ");
+    ec = bela::make_system_error_code(L"TiElevator::Elevate<OpenServiceW> ");
     return false;
   }
   DWORD dwNeed = 0;
@@ -108,10 +108,10 @@ bool TiElevator::duplicate(PHANDLE phToken, bela::error_code &ec) {
 }
 
 //
-bool executesystem(command &cmd, bela::error_code &ec) {
-  PrivilegeView pv = {{SE_TCB_NAME, SE_ASSIGNPRIMARYTOKEN_NAME, SE_INCREASE_QUOTA_NAME}};
-  Elevator eo;
-  if (!eo.elevate(&pv, ec)) {
+bool execute_with_system(command &cmd, bela::error_code &ec) {
+  privilege_view pv = {{SE_TCB_NAME, SE_ASSIGNPRIMARYTOKEN_NAME, SE_INCREASE_QUOTA_NAME}};
+  PermissionAdjuster eo;
+  if (!eo.Elevate(&pv, ec)) {
     return false;
   }
   auto hProcess{INVALID_HANDLE_VALUE};
@@ -123,32 +123,32 @@ bool executesystem(command &cmd, bela::error_code &ec) {
     FreeToken(hPrimary);
   });
   if ((hProcess = OpenProcess(MAXIMUM_ALLOWED, FALSE, eo.PID())) == nullptr) {
-    ec = bela::make_system_error_code(L"executesystem<OpenProcess> ");
+    ec = bela::make_system_error_code(L"execute_with_system<OpenProcess> ");
     return false;
   }
   if (OpenProcessToken(hProcess, MAXIMUM_ALLOWED, &hToken) != TRUE) {
-    ec = bela::make_system_error_code(L"executesystem<OpenProcessToken> ");
+    ec = bela::make_system_error_code(L"execute_with_system<OpenProcessToken> ");
     return false;
   }
   if (DuplicateTokenEx(hToken, TOKEN_ALL_ACCESS, nullptr, SecurityImpersonation, TokenPrimary, &hPrimary) != TRUE) {
-    ec = bela::make_system_error_code(L"executesystem<DuplicateTokenEx> ");
+    ec = bela::make_system_error_code(L"execute_with_system<DuplicateTokenEx> ");
     return false;
   }
   auto session = eo.SID();
   if (SetTokenInformation(hPrimary, TokenSessionId, &session, sizeof(session)) != TRUE) {
-    ec = bela::make_system_error_code(L"executesystem<SetTokenInformation> ");
+    ec = bela::make_system_error_code(L"execute_with_system<SetTokenInformation> ");
     return false;
   }
-  return execute(hPrimary, true, cmd, ec);
+  return execute_with_token(hPrimary, true, cmd, ec);
 }
 
-bool executeti(command &cmd, bela::error_code &ec) {
-  Elevator eo;
-  if (!eo.elevate(nullptr, ec)) {
+bool execute_with_ti(command &cmd, bela::error_code &ec) {
+  PermissionAdjuster eo;
+  if (!eo.Elevate(nullptr, ec)) {
     return false;
   }
   TiElevator te;
-  if (!te.elevate(ec)) {
+  if (!te.Elevate(ec)) {
     return false;
   }
   HANDLE hToken = INVALID_HANDLE_VALUE;
@@ -158,14 +158,14 @@ bool executeti(command &cmd, bela::error_code &ec) {
   auto closer = bela::finally([&] { FreeToken(hToken); });
   DWORD dwSessionId;
   if (!GetCurrentSessionId(dwSessionId)) {
-    ec = bela::make_system_error_code(L"executeti<GetCurrentSessionId> ");
+    ec = bela::make_system_error_code(L"execute_with_ti<GetCurrentSessionId> ");
     return false;
   }
   if (SetTokenInformation(hToken, TokenSessionId, (PVOID)&dwSessionId, sizeof(DWORD)) != TRUE) {
-    ec = bela::make_system_error_code(L"executeti<SetTokenInformation> ");
+    ec = bela::make_system_error_code(L"execute_with_ti<SetTokenInformation> ");
     return false;
   }
-  return execute(hToken, true, cmd, ec);
+  return execute_with_token(hToken, true, cmd, ec);
 }
 
 } // namespace wsudo::exec
