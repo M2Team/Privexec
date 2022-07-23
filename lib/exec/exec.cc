@@ -12,15 +12,15 @@
 namespace wsudo::exec {
 bool make_standard_token(PHANDLE hNewToken, bela::error_code &ec) {
   if (IsUserAdministratorsGroup()) {
-    privilege_view pv = {{SE_TCB_NAME, SE_ASSIGNPRIMARYTOKEN_NAME, SE_INCREASE_QUOTA_NAME}};
-    PermissionAdjuster eo;
-    if (!eo.Elevate(&pv, ec)) {
+    privilege_entries pv(SE_TCB_NAME, SE_ASSIGNPRIMARYTOKEN_NAME, SE_INCREASE_QUOTA_NAME);
+    Elavator eo;
+    if (!eo.ImpersonationSystemPrivilege(&pv, ec)) {
       return false;
     }
     auto hToken = INVALID_HANDLE_VALUE;
     auto deleter = bela::finally([&] { FreeToken(hToken); });
     // get user login token
-    if (WTSQueryUserToken(eo.SID(), &hToken) != TRUE) {
+    if (WTSQueryUserToken(eo.SessionID(), &hToken) != TRUE) {
       ec = bela::make_system_error_code(L"WTSQueryUserToken: ");
       return false;
     }
@@ -73,7 +73,7 @@ bool execute_basic(command &cmd, bela::error_code &ec) {
   return true;
 }
 
-bool execute_with_token(HANDLE hToken, bool desktop, command &cmd, bela::error_code &ec) {
+bool execute_with_token(command &cmd, HANDLE hToken, bool desktop, LPVOID lpEnvironment, bela::error_code &ec) {
   STARTUPINFO si;
   PROCESS_INFORMATION pi;
   ZeroMemory(&si, sizeof(si));
@@ -133,7 +133,7 @@ bool execute_with_low(command &cmd, bela::error_code &ec) {
     ec = bela::make_system_error_code(L"SetTokenInformation: ");
     return false;
   }
-  return execute_with_token(hNewToken, false, cmd, ec);
+  return execute_with_token(cmd, hNewToken, false, nullptr, ec);
 }
 
 bool execute_with_elevated(command &cmd, bela::error_code &ec) {
@@ -168,12 +168,25 @@ bool execute_with_elevated(command &cmd, bela::error_code &ec) {
 }
 
 bool execute_standard(command &cmd, bela::error_code &ec) {
+  if (!IsUserAdministratorsGroup()) {
+    return execute_basic(cmd, ec);
+  }
   HANDLE hNewToken{nullptr};
-  auto deleter = bela::finally([&] { FreeToken(hNewToken); });
+  LPVOID lpEnvironment{nullptr};
+  auto deleter = bela::finally([&] {
+    FreeToken(hNewToken);
+    if (lpEnvironment != nullptr) {
+      DestroyEnvironmentBlock(lpEnvironment);
+    }
+  });
   if (!make_standard_token(&hNewToken, ec)) {
     return false;
   }
-  return execute_with_token(hNewToken, false, cmd, ec);
+  if (CreateEnvironmentBlock(&lpEnvironment, hNewToken, FALSE) != TRUE) {
+    ec = bela::make_system_error_code();
+    return false;
+  }
+  return execute_with_token(cmd, hNewToken, true, lpEnvironment, ec);
 }
 
 bool command::execute(bela::error_code &ec) {

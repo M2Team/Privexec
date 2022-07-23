@@ -109,9 +109,9 @@ bool TiElevator::duplicate(PHANDLE phToken, bela::error_code &ec) {
 
 //
 bool execute_with_system(command &cmd, bela::error_code &ec) {
-  privilege_view pv = {{SE_TCB_NAME, SE_ASSIGNPRIMARYTOKEN_NAME, SE_INCREASE_QUOTA_NAME}};
-  PermissionAdjuster eo;
-  if (!eo.Elevate(&pv, ec)) {
+  privilege_entries pv(SE_TCB_NAME, SE_ASSIGNPRIMARYTOKEN_NAME, SE_INCREASE_QUOTA_NAME);
+  Elavator eo;
+  if (!eo.ImpersonationSystemPrivilege(&pv, ec)) {
     return false;
   }
   auto hProcess{INVALID_HANDLE_VALUE};
@@ -122,7 +122,7 @@ bool execute_with_system(command &cmd, bela::error_code &ec) {
     FreeToken(hToken);
     FreeToken(hPrimary);
   });
-  if ((hProcess = OpenProcess(MAXIMUM_ALLOWED, FALSE, eo.PID())) == nullptr) {
+  if ((hProcess = OpenProcess(MAXIMUM_ALLOWED, FALSE, eo.SystemPID())) == nullptr) {
     ec = bela::make_system_error_code(L"execute_with_system<OpenProcess> ");
     return false;
   }
@@ -134,17 +134,17 @@ bool execute_with_system(command &cmd, bela::error_code &ec) {
     ec = bela::make_system_error_code(L"execute_with_system<DuplicateTokenEx> ");
     return false;
   }
-  auto session = eo.SID();
+  auto session = eo.SessionID();
   if (SetTokenInformation(hPrimary, TokenSessionId, &session, sizeof(session)) != TRUE) {
     ec = bela::make_system_error_code(L"execute_with_system<SetTokenInformation> ");
     return false;
   }
-  return execute_with_token(hPrimary, true, cmd, ec);
+  return execute_with_token(cmd, hPrimary, true, nullptr, ec);
 }
 
 bool execute_with_ti(command &cmd, bela::error_code &ec) {
-  PermissionAdjuster eo;
-  if (!eo.Elevate(nullptr, ec)) {
+  Elavator eo;
+  if (!eo.ImpersonationSystemPrivilege(nullptr, ec)) {
     return false;
   }
   TiElevator te;
@@ -165,7 +165,7 @@ bool execute_with_ti(command &cmd, bela::error_code &ec) {
     ec = bela::make_system_error_code(L"execute_with_ti<SetTokenInformation> ");
     return false;
   }
-  return execute_with_token(hToken, true, cmd, ec);
+  return execute_with_token(cmd, hToken, true, nullptr, ec);
 }
 
 } // namespace wsudo::exec

@@ -2,6 +2,7 @@
 #ifndef WSUDO_EXE_INTERNAL_HPP
 #define WSUDO_EXE_INTERNAL_HPP
 #include <vector>
+#include <span>
 #include <bela/base.hpp>
 #include <bela/match.hpp>
 #include <bela/str_cat.hpp>
@@ -16,13 +17,14 @@ inline void FreeToken(HANDLE &hToken) {
     hToken = INVALID_HANDLE_VALUE;
   }
 }
-struct privilege_view {
-  std::vector<const wchar_t *> privis;
+struct privilege_entries {
+  template <typename... Args> privilege_entries(Args... a) { entries = std::initializer_list{a...}; }
+  std::vector<const wchar_t *> entries;
   std::wstring format() const {
-    auto sz = privis.size();
+    auto sz = entries.size();
     std::wstring s = L"[";
     for (size_t i = 0; i < sz; i++) {
-      bela::StrAppend(&s, L"\"", privis[i], L"\"");
+      bela::StrAppend(&s, L"\"", entries[i], L"\"");
       if (i != sz - 1) {
         bela::StrAppend(&s, L", ");
       }
@@ -32,30 +34,33 @@ struct privilege_view {
   }
 };
 
+bool GetCurrentSessionToken(PHANDLE hNewToken, bela::error_code &ec);
 bool GetCurrentSessionId(DWORD &dwSessionId);
+
 // System process elavator
-class PermissionAdjuster {
+class Elavator {
 public:
-  PermissionAdjuster() = default;
-  PermissionAdjuster(const PermissionAdjuster &) = delete;
-  PermissionAdjuster &operator=(const PermissionAdjuster &) = delete;
-  ~PermissionAdjuster() { FreeToken(hToken); }
+  Elavator() = default;
+  Elavator(const Elavator &) = delete;
+  Elavator &operator=(const Elavator &) = delete;
+  ~Elavator() { FreeToken(hToken); }
   // System Process PID
-  DWORD PID() const { return pid; }
+  DWORD SystemPID() const { return systemProcessId; }
   // Session ID
-  DWORD SID() const { return sid; }
-  bool Elevate(const privilege_view *pv, bela::error_code &ec);
+  DWORD SessionID() const { return currentSessionId; }
+  bool ImpersonationSystemPrivilege(const privilege_entries *pv, bela::error_code &ec);
 
 private:
-  bool elevate_imitate(bela::error_code &ec);
+  bool impersonation_system_token(bela::error_code &ec);
   HANDLE hToken{nullptr};
-  DWORD sid{0};
-  DWORD pid{0};
+  DWORD currentSessionId{0};
+  // system process id
+  DWORD systemProcessId{0};
 };
 bool execute_basic(command &cmd, bela::error_code &ec);
-bool execute_with_token(HANDLE hToken, bool desktop, command &cmd, bela::error_code &ec);
 bool execute_with_ti(command &cmd, bela::error_code &ec);
 bool execute_with_system(command &cmd, bela::error_code &ec);
+bool execute_with_token(command &cmd, HANDLE hToken, bool desktop, LPVOID lpEnvironment, bela::error_code &ec);
 } // namespace wsudo::exec
 
 #endif

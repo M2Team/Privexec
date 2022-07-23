@@ -1,5 +1,7 @@
 {
     "files.associations": {
+        "*.manifest": "xml",
+        "*.env": "jsonc",
         "*.ipp": "cpp",
         "vector": "cpp",
         "xstring": "cpp",
@@ -80,6 +82,8 @@
         "bit": "cpp",
         "bitset": "cpp",
         "span": "cpp",
-        "stop_token": "cpp"
+        "stop_token": "cpp",
+        "format": "cpp",
+        "source_location": "cpp"
     }
 }
