@@ -109,11 +109,11 @@ bool App::SelChanged() {
   if (box.IsMatch((int)wsudo::exec::privilege_t::appcontainer)) {
     appx.Update(L"");
     appx.Visible(TRUE);
-    appcas.Visible(TRUE);
+    capabilities.Visible(TRUE);
   } else {
     appx.Update(L"AppxManifest.xml or Package.appxmanifest");
     appx.Visible(FALSE);
-    appcas.Visible(FALSE);
+    capabilities.Visible(FALSE);
   }
   return true;
 }
@@ -161,9 +161,9 @@ bool App::AppExecute() {
                            bela::mbs_t::FATAL);
       return false;
     }
-    cmd.caps = appcas.Capabilities();
+    cmd.caps = capabilities.Capabilities();
     cmd.appmanifest = bela::WindowsExpandEnv(appx.Content());
-    cmd.islpac = appcas.IsLowPrivilegeAppContainer();
+    cmd.islpac = capabilities.IsLowPrivilegeAppContainer();
     cmd.cwd = ResolveCWD(true);
     if (!cmd.initialize(ec)) {
       bela::BelaMessageBox(hWnd, L"Privexec AppContainer init", ec.message.data(), PRIVEXEC_APPLINKE,
@@ -251,14 +251,22 @@ bool App::DropFiles(WPARAM wParam, LPARAM lParam) {
 
 INT_PTR App::MessageHandler(UINT message, WPARAM wParam, LPARAM lParam) {
   switch (message) {
-  case WM_CTLCOLORDLG:
-  case WM_CTLCOLORSTATIC: {
+  case WM_CTLCOLORDLG: {
     if (hbrBkgnd == nullptr) {
-      hbrBkgnd = CreateSolidBrush(RGB(255, 255, 255));
+      hbrBkgnd = CreateSolidBrush(RGB(243, 243, 243));
     }
     return (INT_PTR)hbrBkgnd;
   }
-
+  case WM_CTLCOLORSTATIC: {
+    HDC hdc = (HDC)wParam;
+    SetTextColor(hdc, RGB(0, 0, 0));
+    SetBkColor(hdc, RGB(243, 243, 243));
+    SetBkMode(hdc, TRANSPARENT);
+    if (hbrBkgnd == nullptr) {
+      hbrBkgnd = CreateSolidBrush(RGB(243, 243, 243));
+    }
+    return (INT_PTR)hbrBkgnd;
+  }
   case WM_DROPFILES:
     DropFiles(wParam, lParam);
     return TRUE;

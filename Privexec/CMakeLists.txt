@@ -2,7 +2,7 @@
 
 add_executable(
   Privexec WIN32
-  appalias.cc
+  alias.cc
   capabilities.cc
   app.cc
   main.cc

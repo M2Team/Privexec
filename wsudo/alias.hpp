@@ -1,6 +1,6 @@
 /////
-#ifndef WSUDOALIAS_HPP
-#define WSUDOALIAS_HPP
+#ifndef WSUDO_ALIAS_HPP
+#define WSUDO_ALIAS_HPP
 #pragma once
 #include <string>
 #include <string_view>

@@ -11,11 +11,11 @@
 #include <apphelp.hpp>
 //
 #include "wsudo.hpp"
-#include "wsudoalias.hpp"
+#include "alias.hpp"
 
 void Version() {
-  //
-  bela::FPrintF(stderr, L"\x1b[36mwsudo %s\x1b[0m\n", PRIVEXEC_VERSION);
+  bela::FPrintF(stderr, L"\x1b[36mwsudo %s 💖 run the program with the specified permissions\x1b[0m\n",
+                PRIVEXEC_VERSION);
 }
 
 void Usage(bool err = false) {
@@ -59,8 +59,7 @@ Builtin 'alias' command:
    wsudo alias add ehs "notepad %SYSTEMROOT%/System32/drivers/etc/hosts" "Edit Hosts"
    wsudo alias delete ehs
 )";
-  char32_t sh = 0x1F496; //  💖
-  bela::FPrintF(stderr, L"\x1b[%dmwsudo %c %d.%d %s\x1b[0m\n", err ? 31 : 36, sh, PRIVEXEC_VERSION_MAJOR,
+  bela::FPrintF(stderr, L"\x1b[%dmwsudo 💖 %d.%d %s\x1b[0m\n", err ? 31 : 36, PRIVEXEC_VERSION_MAJOR,
                 PRIVEXEC_VERSION_MINOR, kUsage);
 }
 
@@ -366,7 +365,8 @@ int App::Execute() {
     bela::FPrintF(stderr, L"wsudo: \x1b[31m%s\x1b[0m\n", ec.message);
     return 1;
   }
-  bela::FPrintF(stderr, L"\x1b[32mnew process %d running\x1b[0m\n", cmd.pid);
+  bela::FPrintF(stderr, L"\x1b[32mnew \x1b[36m%s\x1b[32m process is running: %d\x1b[0m\n", AppSLevel(cmd.priv),
+                cmd.pid);
   if (!Waitable()) {
     DbgPrint(L"Process not waitable");
     return 0;

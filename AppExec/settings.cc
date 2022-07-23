@@ -5,10 +5,10 @@
 #include <bela/color.hpp>
 #include <vfsenv.hpp>
 #include <filesystem>
+#include <graphics.hpp>
 #include "app.hpp"
 
 namespace priv {
-
 bool AppInitializeSettings(AppSettings &as) {
   auto file = PathSearcher::Instance().JoinAppData(L"Privexec\\AppExec.json");
   FD fd;

@@ -163,7 +163,7 @@ private:
   Element cmd;
   Element cwd;
   Element appx;
-  AppCapabilities appcas;
+  AppCapabilities capabilities;
   alias_t alias;
   HBRUSH hbrBkgnd{nullptr};
 };

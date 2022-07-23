@@ -13,7 +13,7 @@ namespace wsudo::bridge {
 bool IsDebugMode = false;
 int WriteTrace(std::wstring_view msg);
 
-template <typename... Args> bela::ssize_t DbgPrintP(const wchar_t *fmt, const Args&... args) {
+template <typename... Args> bela::ssize_t DbgPrintP(const wchar_t *fmt, const Args &...args) {
   if (!IsDebugMode) {
     return 0;
   }
@@ -37,7 +37,7 @@ inline bela::ssize_t DbgPrintP(const wchar_t *fmt) {
 }
 
 int WriteError(std::wstring_view msg);
-template <typename... Args> bela::ssize_t PrintError(const wchar_t *fmt, const Args&... args) {
+template <typename... Args> bela::ssize_t PrintError(const wchar_t *fmt, const Args &...args) {
   if (!IsDebugMode) {
     return 0;
   }
@@ -133,7 +133,9 @@ usage: wsudo-bridge command args...
    -A|--attach         Attached to the console of the parent process
    -u|--user           run as user (optional), support '-uX', '-u X', '--user=X', '--user X'
                        Supported user categories (Ignore case):
-                       Administrator   System    TrustedInstaller
+                       AppContainer  MIC            Basic
+                       Standard      Administrator  System
+                       TrustedInstaller
    --visible           Visibility level passed by wsudo
 
 )";
@@ -150,7 +152,8 @@ bool IsAppLevel(std::wstring_view k, wsudo::exec::privilege_t &level) {
       //
       {L"appcontainer", wsudo::exec::privilege_t::appcontainer},
       {L"mic", wsudo::exec::privilege_t::mic},
-      {L"noelevated", wsudo::exec::privilege_t::standard},
+      {L"basic", wsudo::exec::privilege_t::basic},
+      {L"standard", wsudo::exec::privilege_t::standard},
       {L"administrator", wsudo::exec::privilege_t::elevated},
       {L"system", wsudo::exec::privilege_t::system},
       {L"trustedinstaller", wsudo::exec::privilege_t::trustedinstaller}
@@ -325,12 +328,13 @@ const std::wstring_view AppSLevel(const wsudo::exec::privilege_t level) {
     wsudo::exec::privilege_t level;
   } userlevels[] = {
       //
-      {L"appcontainer", wsudo::exec::privilege_t::appcontainer},
-      {L"mandatory integrity control", wsudo::exec::privilege_t::mic},
-      {L"standard", wsudo::exec::privilege_t::standard},
-      {L"administrator", wsudo::exec::privilege_t::elevated},
-      {L"system", wsudo::exec::privilege_t::system},
-      {L"trustedinstaller", wsudo::exec::privilege_t::trustedinstaller}
+      {L"AppContainer", wsudo::exec::privilege_t::appcontainer},
+      {L"Mandatory Integrity Control", wsudo::exec::privilege_t::mic},
+      {L"Basic Inheritance Mode", wsudo::exec::privilege_t::basic},
+      {L"Standard", wsudo::exec::privilege_t::standard},
+      {L"Administrator", wsudo::exec::privilege_t::elevated},
+      {L"System", wsudo::exec::privilege_t::system},
+      {L"TrustedInstaller", wsudo::exec::privilege_t::trustedinstaller}
       //
   };
   for (const auto &u : userlevels) {

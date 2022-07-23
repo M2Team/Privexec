@@ -15,15 +15,15 @@
 #include <string_view>
 #include <vector>
 #include <unordered_map>
+#include <bela/color.hpp>
 
 namespace priv {
-
 using wid_t = WELL_KNOWN_SID_TYPE;
 static constexpr const auto whitecolor = RGB(255, 255, 255);
 static constexpr const auto blackcolor = RGB(0, 0, 0);
 
 struct AppSettings {
-  COLORREF bk{whitecolor};
+  COLORREF bk{RGB(243, 243, 243)};
   COLORREF textcolor{blackcolor};
 };
 bool AppInitializeSettings(AppSettings &as);

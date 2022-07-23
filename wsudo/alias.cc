@@ -8,7 +8,7 @@
 #include <vfsenv.hpp>
 #include <file.hpp>
 #include <filesystem>
-#include "wsudoalias.hpp"
+#include "alias.hpp"
 #include "wsudo.hpp"
 
 wsudo::AliasEngine::~AliasEngine() {

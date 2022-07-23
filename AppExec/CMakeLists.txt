@@ -2,7 +2,7 @@
 
 add_executable(
   AppExec WIN32
-  appsettings.cc
+  settings.cc
   capabilities.cc
   app.cc
   appx.cc

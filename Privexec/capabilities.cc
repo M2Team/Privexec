@@ -20,13 +20,13 @@ bool IsKnownCapabilityNames(std::wstring_view name) {
 }
 
 bool App::InitializeCapabilities() {
-  appcas.hlview = GetDlgItem(hWnd, IDL_APPCONTAINER_LISTVIEW);
-  appcas.hlpacbox = GetDlgItem(hWnd, IDC_LPACMODE);
-  ListView_SetExtendedListViewStyleEx(appcas.hlview, LVS_EX_CHECKBOXES, LVS_EX_CHECKBOXES);
+  capabilities.hlview = GetDlgItem(hWnd, IDL_APPCONTAINER_LISTVIEW);
+  capabilities.hlpacbox = GetDlgItem(hWnd, IDC_LPACMODE);
+  ListView_SetExtendedListViewStyleEx(capabilities.hlview, LVS_EX_CHECKBOXES, LVS_EX_CHECKBOXES);
   LVCOLUMNW lvw;
   memset(&lvw, 0, sizeof(lvw));
   lvw.cx = 200;
-  ListView_InsertColumn(appcas.hlview, 0, &lvw);
+  ListView_InsertColumn(capabilities.hlview, 0, &lvw);
   constexpr std::size_t wnlen = sizeof(wncas) / sizeof(CapabilityName);
   for (std::size_t n = wnlen; n > 0; n--) {
     const auto &w = wncas[n - 1];
@@ -35,9 +35,9 @@ bool App::InitializeCapabilities() {
     item.mask = LVIF_TEXT | LVIF_PARAM;
     item.pszText = const_cast<LPWSTR>(w.name);
     item.lParam = (LPARAM)w.value;
-    ListView_InsertItem(appcas.hlview, &item);
+    ListView_InsertItem(capabilities.hlview, &item);
   }
-  ListView_SetColumnWidth(appcas.hlview, 0, LVSCW_AUTOSIZE_USEHEADER);
+  ListView_SetColumnWidth(capabilities.hlview, 0, LVSCW_AUTOSIZE_USEHEADER);
   return true;
 }
 } // namespace priv

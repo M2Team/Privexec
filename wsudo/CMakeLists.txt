@@ -4,7 +4,7 @@ add_executable(
   wsudo
   delegate.cc
   wsudo.cc
-  wsudoalias.cc
+  alias.cc
   wsudo.rc
   wsudo.manifest)
 
