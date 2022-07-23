@@ -54,7 +54,7 @@ inline std::wstring AppCwd() {
   return stack;
 }
 
-std::optional<std::wstring> AppTieExecuteExists() {
+std::optional<std::wstring> AppBridgeExecuteExists() {
   bela::error_code ec;
   auto finalexeparent = bela::ExecutableFinalPathParent(ec);
   if (!finalexeparent) {
@@ -81,7 +81,7 @@ const wchar_t *AppStringLevel(wsudo::exec::privilege_t level) {
 }
 
 int App::DelegateExecute() {
-  auto tie = AppTieExecuteExists();
+  auto tie = AppBridgeExecuteExists();
   if (!tie) {
     return 1;
   }
