@@ -72,9 +72,8 @@ bool wsudo::AliasEngine::Apply() {
       av.emplace_back(std::move(a));
     }
     root["alias"] = av;
-    auto buf = root.dump(4);
     bela::error_code ec;
-    if (bela::io::WriteTextAtomic(buf, file, ec)) {
+    if (bela::io::AtomicWriteText(file, bela::io::as_bytes<char>(root.dump(4)), ec)) {
       bela::FPrintF(stderr, L"\x1b[31mAliasEngine::Apply: %s\x1b[0m\n", ec.message);
       return false;
     }
