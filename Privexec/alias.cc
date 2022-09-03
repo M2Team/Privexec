@@ -32,9 +32,8 @@ bool AppAliasInitializeBuilt(std::wstring_view file) {
       alias.push_back(std::move(a));
     }
     j["alias"] = alias;
-    auto buf = j.dump(4);
     bela::error_code ec;
-    if (!bela::io::WriteTextAtomic(buf, file, ec)) {
+    if (!bela::io::AtomicWriteText(file, bela::io::as_bytes<char>(j.dump(4)), ec)) {
       return false;
     }
   } catch (const std::exception &e) {
