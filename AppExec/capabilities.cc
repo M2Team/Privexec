@@ -21,9 +21,9 @@ bool App::InitializeCapabilities() {
   memset(&lvw, 0, sizeof(lvw));
   lvw.cx = 200;
   ListView_InsertColumn(appx.hlview, 0, &lvw);
-  constexpr std::size_t wnlen = sizeof(wncas) / sizeof(CapabilityName);
+  constexpr std::size_t wnlen = sizeof(capabilityNames) / sizeof(CapabilityName);
   for (std::size_t n = wnlen; n > 0; n--) {
-    const auto &w = wncas[n - 1];
+    const auto &w = capabilityNames[n - 1];
     LVITEMW item;
     ZeroMemory(&item, sizeof(item));
     item.mask = LVIF_TEXT | LVIF_PARAM;
