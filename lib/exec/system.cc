@@ -122,16 +122,26 @@ bool execute_with_system(command &cmd, bela::error_code &ec) {
     FreeToken(hToken);
     FreeToken(hPrimary);
   });
-  if ((hProcess = OpenProcess(MAXIMUM_ALLOWED, FALSE, eo.SystemPID())) == nullptr) {
-    ec = bela::make_system_error_code(L"execute_with_system<OpenProcess> ");
+
+  auto impersonation_system_token_all = [&]() -> bool {
+    for (auto pid : eo.SystemProcesses()) {
+      if ((hProcess = OpenProcess(MAXIMUM_ALLOWED, FALSE, pid)) == nullptr) {
+        ec = bela::make_system_error_code(L"execute_with_system<OpenProcess> ");
+        continue;
+      }
+      if (OpenProcessToken(hProcess, MAXIMUM_ALLOWED, &hToken) != TRUE) {
+        ec = bela::make_system_error_code(L"execute_with_system<OpenProcessToken> ");
+        continue;
+      }
+      if (DuplicateTokenEx(hToken, TOKEN_ALL_ACCESS, nullptr, SecurityImpersonation, TokenPrimary, &hPrimary) != TRUE) {
+        ec = bela::make_system_error_code(L"execute_with_system<DuplicateTokenEx> ");
+        continue;
+      }
+      return true;
+    }
     return false;
-  }
-  if (OpenProcessToken(hProcess, MAXIMUM_ALLOWED, &hToken) != TRUE) {
-    ec = bela::make_system_error_code(L"execute_with_system<OpenProcessToken> ");
-    return false;
-  }
-  if (DuplicateTokenEx(hToken, TOKEN_ALL_ACCESS, nullptr, SecurityImpersonation, TokenPrimary, &hPrimary) != TRUE) {
-    ec = bela::make_system_error_code(L"execute_with_system<DuplicateTokenEx> ");
+  };
+  if (!impersonation_system_token_all()) {
     return false;
   }
   auto session = eo.SessionID();

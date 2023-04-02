@@ -100,11 +100,11 @@ inline auto IsSystemProcessName(std::wstring_view name) {
 }
 
 constexpr DWORD INVALID_PROCESS_ID = 0xFFFFFFFF;
-DWORD LookupSystemProcess() {
+bool SearchSystemProcess(std::vector<DWORD> &pss) {
   PWTS_PROCESS_INFOW pi{nullptr};
   DWORD count{0};
   if (::WTSEnumerateProcessesW(WTS_CURRENT_SERVER_HANDLE, 0, 1, &pi, &count) != TRUE) {
-    return INVALID_PROCESS_ID;
+    return false;
   }
   auto closer = bela::finally([&] {
     if (pi != nullptr) {
@@ -115,10 +115,10 @@ DWORD LookupSystemProcess() {
   for (auto it = pi; it != end; it++) {
     if (it->SessionId == 0 && IsSystemProcessName(it->pProcessName) &&
         IsWellKnownSid(it->pUserSid, WinLocalSystemSid) == TRUE) {
-      return it->ProcessId;
+      pss.emplace_back(it->ProcessId);
     }
   }
-  return INVALID_PROCESS_ID;
+  return !pss.empty();
 }
 
 // Get Current Process SessionID and Enable SeDebugPrivilege
@@ -214,24 +214,24 @@ bool privileges_view_enabled(HANDLE hToken, const privilege_entries *pv) {
   return true;
 }
 
-bool Elavator::impersonation_system_token(bela::error_code &ec) {
+bool Elavator::impersonation_system_token(DWORD systemProcessId, bela::error_code &ec) {
   HANDLE hExistingToken = INVALID_HANDLE_VALUE;
   auto hProcess = ::OpenProcess(MAXIMUM_ALLOWED, FALSE, systemProcessId);
   if (hProcess == INVALID_HANDLE_VALUE) {
     ec = bela::make_system_error_code(
-        bela::StringCat(L"Elavator::impersonation_system_token<OpenProcess> ", systemProcessId, L" "));
+        bela::StringCat(L"impersonation_system_token<OpenProcess> ", systemProcessId, L" "));
     return false;
   }
   auto hpdeleter = bela::finally([&] { CloseHandle(hProcess); });
   if (OpenProcessToken(hProcess, MAXIMUM_ALLOWED, &hExistingToken) != TRUE) {
     ec = bela::make_system_error_code(
-        bela::StringCat(L"Elavator::impersonation_system_token<OpenProcessToken> ", systemProcessId, L" "));
+        bela::StringCat(L"impersonation_system_token<OpenProcessToken> ", systemProcessId, L" "));
     return false;
   }
   auto htdeleter = bela::finally([&] { CloseHandle(hExistingToken); });
   if (DuplicateTokenEx(hExistingToken, MAXIMUM_ALLOWED, nullptr, SecurityImpersonation, TokenImpersonation, &hToken) !=
       TRUE) {
-    ec = bela::make_system_error_code(L"Elavator::impersonation_system_token<DuplicateTokenEx> ");
+    ec = bela::make_system_error_code(L"impersonation_system_token<DuplicateTokenEx> ");
     return false;
   }
   return true;
@@ -242,20 +242,31 @@ bool Elavator::ImpersonationSystemPrivilege(const privilege_entries *pv, bela::e
   if (!EnableSeDebugPrivilege(currentSessionId, ec)) {
     return false;
   }
-  if (systemProcessId = LookupSystemProcess(); systemProcessId == INVALID_PROCESS_ID) {
-    ec = bela::make_error_code(1, L"Elevator::ImpersonationSystemPrivilege unable lookup system process pid");
+  if (!SearchSystemProcess(systemProcesses)) {
+    ec = bela::make_error_code(1, L"ImpersonationSystemPrivilege search system process error");
     return false;
   }
-  if (!impersonation_system_token(ec)) {
+
+  auto impersonation_system_token_all = [&]() -> bool {
+    for (auto pid : systemProcesses) {
+      if (impersonation_system_token(pid, ec)) {
+        return true;
+      }
+    }
+    return false;
+  };
+
+  if (!impersonation_system_token_all()) {
     return false;
   }
+
   if (!privileges_view_enabled(hToken, pv)) {
-    ec = bela::make_error_code(1, L"Elevator::ImpersonationSystemPrivilege unable enable privileges: ",
+    ec = bela::make_error_code(1, L"ImpersonationSystemPrivilegeunable enable privileges: ",
                                pv == nullptr ? L"all" : pv->format());
     return false;
   }
   if (SetThreadToken(nullptr, hToken) != TRUE) {
-    ec = bela::make_error_code(1, L"Elevator::ImpersonationSystemPrivilege<SetThreadToken> ");
+    ec = bela::make_error_code(1, L"ImpersonationSystemPrivilege<SetThreadToken> ");
     return false;
   }
   return true;

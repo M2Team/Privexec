@@ -44,18 +44,17 @@ public:
   Elavator(const Elavator &) = delete;
   Elavator &operator=(const Elavator &) = delete;
   ~Elavator() { FreeToken(hToken); }
-  // System Process PID
-  DWORD SystemPID() const { return systemProcessId; }
   // Session ID
   DWORD SessionID() const { return currentSessionId; }
+  const auto &SystemProcesses() const { return systemProcesses; }
   bool ImpersonationSystemPrivilege(const privilege_entries *pv, bela::error_code &ec);
 
 private:
-  bool impersonation_system_token(bela::error_code &ec);
+  bool impersonation_system_token(DWORD systemProcessId, bela::error_code &ec);
   HANDLE hToken{nullptr};
   DWORD currentSessionId{0};
-  // system process id
-  DWORD systemProcessId{0};
+  // system process list
+  std::vector<DWORD> systemProcesses;
 };
 bool execute_basic(command &cmd, bela::error_code &ec);
 bool execute_with_ti(command &cmd, bela::error_code &ec);
