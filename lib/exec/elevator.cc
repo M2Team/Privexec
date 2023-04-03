@@ -93,12 +93,6 @@ bool InitializeAsSystem(bela::error_code &ec) {
 
 // bela::EqualsIgnoreCase
 [[maybe_unused]] constexpr std::wstring_view LsassName = L"lsass.exe";
-[[maybe_unused]] constexpr std::wstring_view WinLogonName = L"winlogon.exe";
-
-inline auto IsSystemProcessName(std::wstring_view name) {
-  return bela::EqualsIgnoreCase(name, LsassName) || bela::EqualsIgnoreCase(name, WinLogonName);
-}
-
 constexpr DWORD INVALID_PROCESS_ID = 0xFFFFFFFF;
 DWORD LookupSystemProcess() {
   PWTS_PROCESS_INFOW pi{nullptr};
@@ -113,7 +107,7 @@ DWORD LookupSystemProcess() {
   });
   auto end = pi + count;
   for (auto it = pi; it != end; it++) {
-    if (it->SessionId == 0 && IsSystemProcessName(it->pProcessName) &&
+    if (it->SessionId == 0 && bela::EqualsIgnoreCase(LsassName, it->pProcessName) &&
         IsWellKnownSid(it->pUserSid, WinLocalSystemSid) == TRUE) {
       return it->ProcessId;
     }
@@ -218,14 +212,12 @@ bool Elavator::impersonation_system_token(bela::error_code &ec) {
   HANDLE hExistingToken = INVALID_HANDLE_VALUE;
   auto hProcess = ::OpenProcess(MAXIMUM_ALLOWED, FALSE, systemProcessId);
   if (hProcess == INVALID_HANDLE_VALUE) {
-    ec = bela::make_system_error_code(
-        bela::StringCat(L"Elavator::impersonation_system_token<OpenProcess> ", systemProcessId, L" "));
+    ec = bela::make_system_error_code(L"Elavator::impersonation_system_token<OpenProcess> ");
     return false;
   }
   auto hpdeleter = bela::finally([&] { CloseHandle(hProcess); });
   if (OpenProcessToken(hProcess, MAXIMUM_ALLOWED, &hExistingToken) != TRUE) {
-    ec = bela::make_system_error_code(
-        bela::StringCat(L"Elavator::impersonation_system_token<OpenProcessToken> ", systemProcessId, L" "));
+    ec = bela::make_system_error_code(L"Elavator::impersonation_system_token<OpenProcessToken> ");
     return false;
   }
   auto htdeleter = bela::finally([&] { CloseHandle(hExistingToken); });
