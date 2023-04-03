@@ -68,7 +68,7 @@ bool App::Initialize(HWND window) {
     box.Append((int)wsudo::exec::privilege_t::elevated, L"Administrator", true);
   }
   HMENU hSystemMenu = ::GetSystemMenu(hWnd, FALSE);
-  InsertMenuW(hSystemMenu, SC_CLOSE, MF_ENABLED, IDM_EDIT_ALIASFILE, L"Open Privexec.json");
+  InsertMenuW(hSystemMenu, SC_CLOSE, MF_ENABLED, IDM_EDIT_ALIASFILE, L"Edit Privexec.json");
   InsertMenuW(hSystemMenu, SC_CLOSE, MF_ENABLED, IDM_PRIVEXEC_ABOUT, L"About Privexec\tAlt+F1");
   cmd.hInput = GetDlgItem(hWnd, IDC_COMMAND_COMBOX);
   cmd.hButton = GetDlgItem(hWnd, IDB_COMMAND_TARGET);

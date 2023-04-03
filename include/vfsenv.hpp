@@ -43,9 +43,15 @@ private:
   PathSearcher() {
     bela::error_code ec;
     if (!vfsInitialize(ec)) {
-      etc = std::filesystem::path{L"."};
+      if (auto e = bela::ExecutableFinalPathParent(ec); e) {
+        basePath = std::filesystem::path{*e};
+        appdata = basePath / L"appdata";
+        etc = basePath / L"etc";
+        return;
+      }
       basePath = std::filesystem::path{L"."};
-      appdata = std::filesystem::path{L"."};
+      appdata = basePath / L"appdata";
+      etc = basePath / L"etc";
     }
   }
 

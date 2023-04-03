@@ -18,8 +18,7 @@ struct alias_item_t {
 };
 bool AppAliasInitializeBuilt(std::wstring_view file) {
   constexpr alias_item_t items[] = {
-      {"windbg", "Windows Debugger", "\"%ProgramFiles(x86)%\\Windows Kits\\10\\Debuggers\\x64\\windbg.exe\""}, //
-      {"edit-hosts", "Edit Hosts", "Notepad %windir%\\System32\\Drivers\\etc\\hosts"},                         //
+      {"edit-hosts", "Edit Hosts", "Notepad %windir%\\System32\\Drivers\\etc\\hosts"}, //
   };
   try {
     nlohmann::json j;
@@ -33,6 +32,14 @@ bool AppAliasInitializeBuilt(std::wstring_view file) {
     }
     j["alias"] = alias;
     bela::error_code ec;
+    std::filesystem::path p(file);
+    auto parent = p.parent_path();
+    if (std::error_code e; !std::filesystem::exists(parent, e)) {
+      if (!std::filesystem::create_directories(parent, e)) {
+        ec = bela::make_error_code_from_std(e);
+        return false;
+      }
+    }
     if (!bela::io::AtomicWriteText(file, bela::io::as_bytes<char>(j.dump(4)), ec)) {
       return false;
     }
@@ -45,11 +52,11 @@ bool AppAliasInitializeBuilt(std::wstring_view file) {
 
 std::wstring AppAliasFile() {
   //
-  return PathSearcher::Instance().JoinAppData(L"Privexec\\Privexec.json");
+  return PathSearcher::Instance().JoinAppData(LR"(Privexec\Privexec.json)");
 }
 
 bool AppAliasInitialize(HWND hbox, priv::alias_t &alias) {
-  auto file = PathSearcher::Instance().JoinAppData(L"Privexec\\Privexec.json");
+  auto file = PathSearcher::Instance().JoinAppData(LR"(Privexec\Privexec.json)");
   if (!bela::PathExists(file)) {
     if (!AppAliasInitializeBuilt(file)) {
       return false;
