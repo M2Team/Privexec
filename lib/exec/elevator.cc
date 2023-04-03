@@ -4,7 +4,6 @@
 #include <wtsapi32.h>
 
 namespace wsudo::exec {
-
 bool IsUserAdministratorsGreater(bela::error_code &ec) {
   HANDLE hToken{nullptr};
   auto closer = bela::finally([&] {
@@ -13,13 +12,13 @@ bool IsUserAdministratorsGreater(bela::error_code &ec) {
     }
   });
   if (::OpenProcessToken(::GetCurrentProcess(), TOKEN_ALL_ACCESS, &hToken) != TRUE) {
-    ec = bela::make_system_error_code(L"OpenProcessToken");
+    ec = bela::make_system_error_code(L"open current process token: ");
     return false;
   }
   TOKEN_ELEVATION info{0};
   DWORD len = sizeof(info);
-  if (::GetTokenInformation(hToken, TOKEN_INFORMATION_CLASS::TokenElevation, &info, len, &len) != TRUE) {
-    ec = bela::make_system_error_code(L"GetTokenInformation");
+  if (::GetTokenInformation(hToken, TokenElevation, &info, len, &len) != TRUE) {
+    ec = bela::make_system_error_code(L"get current token elevation: ");
     return false;
   }
   return info.TokenIsElevated != 0;
@@ -92,12 +91,13 @@ bool InitializeAsSystem(bela::error_code &ec) {
 }
 
 // bela::EqualsIgnoreCase
-[[maybe_unused]] constexpr std::wstring_view LsassName = L"lsass.exe";
+[[maybe_unused]] constexpr std::wstring_view WinLogonName = L"winlogon.exe";
 constexpr DWORD INVALID_PROCESS_ID = 0xFFFFFFFF;
-DWORD LookupSystemProcess() {
+DWORD LookupSystemProcess(DWORD sid, bela::error_code &ec) {
   PWTS_PROCESS_INFOW pi{nullptr};
   DWORD count{0};
   if (::WTSEnumerateProcessesW(WTS_CURRENT_SERVER_HANDLE, 0, 1, &pi, &count) != TRUE) {
+    ec = bela::make_system_error_code(L"WTSEnumerateProcessesW: ");
     return INVALID_PROCESS_ID;
   }
   auto closer = bela::finally([&] {
@@ -107,11 +107,12 @@ DWORD LookupSystemProcess() {
   });
   auto end = pi + count;
   for (auto it = pi; it != end; it++) {
-    if (it->SessionId == 0 && bela::EqualsIgnoreCase(LsassName, it->pProcessName) &&
+    if (it->SessionId == sid && bela::EqualsIgnoreCase(WinLogonName, it->pProcessName) &&
         IsWellKnownSid(it->pUserSid, WinLocalSystemSid) == TRUE) {
       return it->ProcessId;
     }
   }
+  ec = bela::make_error_code(1, L"a suitable system process could not be found");
   return INVALID_PROCESS_ID;
 }
 
@@ -212,18 +213,21 @@ bool Elavator::impersonation_system_token(bela::error_code &ec) {
   HANDLE hExistingToken = INVALID_HANDLE_VALUE;
   auto hProcess = ::OpenProcess(MAXIMUM_ALLOWED, FALSE, systemProcessId);
   if (hProcess == INVALID_HANDLE_VALUE) {
-    ec = bela::make_system_error_code(L"Elavator::impersonation_system_token<OpenProcess> ");
+    ec = bela::make_system_error_code(
+        bela::StringCat(L"impersonation_system_token OpenProcess (WinLogon - ", systemProcessId, L") error: "));
     return false;
   }
   auto hpdeleter = bela::finally([&] { CloseHandle(hProcess); });
   if (OpenProcessToken(hProcess, MAXIMUM_ALLOWED, &hExistingToken) != TRUE) {
-    ec = bela::make_system_error_code(L"Elavator::impersonation_system_token<OpenProcessToken> ");
+    ec = bela::make_system_error_code(
+        bela::StringCat(L"impersonation_system_token OpenProcessToken (WinLogon - ", systemProcessId, L") error: "));
     return false;
   }
   auto htdeleter = bela::finally([&] { CloseHandle(hExistingToken); });
   if (DuplicateTokenEx(hExistingToken, MAXIMUM_ALLOWED, nullptr, SecurityImpersonation, TokenImpersonation, &hToken) !=
       TRUE) {
-    ec = bela::make_system_error_code(L"Elavator::impersonation_system_token<DuplicateTokenEx> ");
+    ec = bela::make_system_error_code(
+        bela::StringCat(L"impersonation_system_token DuplicateTokenEx (WinLogon - ", systemProcessId, L") error: "));
     return false;
   }
   return true;
@@ -234,8 +238,7 @@ bool Elavator::ImpersonationSystemPrivilege(const privilege_entries *pv, bela::e
   if (!EnableSeDebugPrivilege(currentSessionId, ec)) {
     return false;
   }
-  if (systemProcessId = LookupSystemProcess(); systemProcessId == INVALID_PROCESS_ID) {
-    ec = bela::make_error_code(1, L"Elevator::ImpersonationSystemPrivilege unable lookup system process pid");
+  if (systemProcessId = LookupSystemProcess(currentSessionId, ec); systemProcessId == INVALID_PROCESS_ID) {
     return false;
   }
   if (!impersonation_system_token(ec)) {
