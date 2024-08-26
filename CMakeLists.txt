@@ -1,5 +1,5 @@
 # Privexec cmake
-cmake_minimum_required(VERSION 3.22)
+cmake_minimum_required(VERSION 3.27)
 
 project(Privexec)
 
@@ -15,7 +15,7 @@ Please delete them.")
 endif()
 
 set(CMAKE_C_STANDARD 17)
-set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED YES)
 
 set(PRIVEXEC_ENABLE_LTO OFF)
