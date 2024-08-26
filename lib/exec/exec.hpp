@@ -51,6 +51,7 @@ struct appcommand {
   visible_t visible;
   uint32_t pid{0};
   bool islpac{false};
+  bool retain{false};
   bool initialize(bela::error_code &ec);
   bool execute(bela::error_code &ec);
 };

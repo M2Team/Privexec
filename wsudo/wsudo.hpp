@@ -79,6 +79,7 @@ struct App {
   bool wait{false};
   bool nowait{false};
   bool console{true};
+  bool retain{false};
   int AppExecute();
   int Execute();
   int DelegateExecute();

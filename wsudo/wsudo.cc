@@ -39,6 +39,7 @@ usage: wsudo command args...
    -L|--lpac           Less Privileged AppContainer mode.
    --disable-alias     Disable Privexec alias, By default, if Privexec exists alias, use it.
    --appid             Set AppContainer ID name (compatible --appname)
+   --retain            Retain AppContainer Profile (experimental)
 
 Select user can use the following flags:
    -a|--appcontainer   AppContainer
@@ -151,7 +152,8 @@ int App::ParseArgv(int argc, wchar_t **argv) {
       .Add(L"appid", bela::required_argument, 1001)
       .Add(L"disable-alias", bela::no_argument, 1002)
       .Add(L"appname", bela::required_argument, 1003)
-      .Add(L"new-console", bela::no_argument, 1004);
+      .Add(L"new-console", bela::no_argument, 1004)
+      .Add(L"retain", bela::no_argument, 1005);
   bela::error_code ec;
   auto result = pa.Execute(
       [&](int val, const wchar_t *va, const wchar_t *) {
@@ -223,6 +225,9 @@ int App::ParseArgv(int argc, wchar_t **argv) {
           appid = va;
           break;
         case 1004:
+          break;
+        case 1005:
+          retain = true;
           break;
         default:
           break;
@@ -329,6 +334,7 @@ int App::AppExecute() {
   cmd.cwd.assign(std::move(cwd));
   cmd.islpac = lpac;
   cmd.visible = visible;
+  cmd.retain = retain;
   bela::error_code ec;
   if (!cmd.initialize(ec)) {
     bela::FPrintF(stderr, L"wsudo: initialize AppContainer: \x1b[31m%s\x1b[0m\n", ec.message);

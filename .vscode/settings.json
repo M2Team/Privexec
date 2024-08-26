@@ -88,5 +88,6 @@
         "any": "cpp",
         "codecvt": "cpp",
         "ranges": "cpp"
-    }
+    },
+    "cmake.configureOnOpen": true
 }

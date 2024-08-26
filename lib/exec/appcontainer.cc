@@ -3,7 +3,7 @@
 #include <bela/base.hpp>
 #include <bela/codecvt.hpp>
 #include <bela/escapeargv.hpp>
-//#include <bela/phmap.hpp>
+// #include <bela/phmap.hpp>
 #define PUGIXML_HEADER_ONLY 1
 #include <pugixml.hpp>
 #include <sddl.h>
@@ -121,11 +121,16 @@ bool MakeDeriveSID(PSID &appcontainersid, capabilities_t &cas, appcommand &cmd, 
   if (cmd.appid.empty()) {
     cmd.appid = appid;
   }
-  DeleteAppContainerProfile(cmd.appid.data()); // ignore error
+  if (!cmd.retain) {
+    DeleteAppContainerProfile(cmd.appid.data()); // ignore error
+  }
   if (CreateAppContainerProfile(cmd.appid.data(), cmd.appid.data(), cmd.appid.data(), (cas.empty() ? NULL : cas.data()),
                                 (DWORD)cas.size(), &appcontainersid) != S_OK) {
-    ec = bela::make_system_error_code(L"MakeDeriveSID<CreateAppContainerProfile> ");
-    return false;
+    auto hr = ::DeriveAppContainerSidFromAppContainerName(cmd.appid.data(), &appcontainersid);
+    if (FAILED(hr)) {
+      ec = bela::make_system_error_code(L"MakeDeriveSID<CreateAppContainerProfile> ");
+      return false;
+    }
   }
   return true;
 }
@@ -170,11 +175,16 @@ bool MakeSID(PSID &appcontainersid, capabilities_t &cas, appcommand &cmd, bela::
   if (cmd.appid.empty()) {
     cmd.appid = appid;
   }
-  DeleteAppContainerProfile(cmd.appid.data()); // ignore error
+  if (!cmd.retain) {
+    DeleteAppContainerProfile(cmd.appid.data()); // ignore error
+  }
   if (CreateAppContainerProfile(cmd.appid.data(), cmd.appid.data(), cmd.appid.data(), (cas.empty() ? NULL : cas.data()),
                                 (DWORD)cas.size(), &appcontainersid) != S_OK) {
-    ec = bela::make_system_error_code(L"MakeSID<CreateAppContainerProfile> ");
-    return false;
+    auto hr = ::DeriveAppContainerSidFromAppContainerName(cmd.appid.data(), &appcontainersid);
+    if (FAILED(hr)) {
+      ec = bela::make_system_error_code(L"MakeDeriveSID<CreateAppContainerProfile> ");
+      return false;
+    }
   }
   return true;
 }
