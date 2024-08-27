@@ -98,6 +98,7 @@ usage: wsudo command args...
    -L|--lpac           Less Privileged AppContainer mode.
    --disable-alias     Disable Privexec alias, By default, if Privexec exists alias, use it.
    --appid             Set AppContainer ID name (compatible --appname)
+   --retain            Retain AppContainer Profile (experimental)
 
 Select user can use the following flags:
    -a|--appcontainer   AppContainer
