@@ -29,7 +29,7 @@ jobs:
           - Privexec_target: Privexec-arm64
             short_target: arm64
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           fetch-depth: 1
       - name: compile-Privexec
