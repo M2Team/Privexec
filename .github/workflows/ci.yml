@@ -20,20 +20,13 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        Privexec_target: [Privexec-win64, Privexec-win32, Privexec-arm64]
-        include:
-          - Privexec_target: Privexec-win64
-            short_target: win64
-          - Privexec_target: Privexec-win32
-            short_target: win32
-          - Privexec_target: Privexec-arm64
-            short_target: arm64
+        target: [win64, arm64]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           fetch-depth: 1
       - name: compile-Privexec
-        run: pwsh -NoProfile -NoLogo -ExecutionPolicy unrestricted -File "./build.ps1" -Target "${{ matrix.short_target }}"
+        run: pwsh -NoProfile -NoLogo -ExecutionPolicy unrestricted -File "./build.ps1" -Target "${{ matrix.target }}"
 
       - name: Package release
         if: startsWith(github.ref, 'refs/tags/')
